@@ -5,12 +5,14 @@
 
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
+#include <iostream>
 
 // Function: PushMatrix
 // Address: 0x2c0908 - 0x2c0a14
 void PushMatrix_0x2c0908(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     ctx->pc = 0x2c0908u;
+    std::cerr << "[PushMatrix] ENTRY ra=0x" << std::hex << GPR_U32(ctx, 31) << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << " sp=0x" << GPR_U32(ctx, 29) << "\n" << std::dec;
 
     // 0x2c0908: 0x27bdffc0
     ctx->pc = 0x2c0908u;
@@ -71,7 +73,10 @@ void PushMatrix_0x2c0908(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
         FatalErrorC_0x2d2698(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0948u; }
     }
-    if (ctx->pc != 0x2C0948u) { return; }
+    if (ctx->pc != 0x2C0948u) {
+        std::cerr << "[PushMatrix] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << "\n" << std::dec;
+        return;
+    }
     ctx->pc = 0x2C0948u;
 label_2c0948:
     // 0x2c0948: 0x3c02003d
@@ -154,7 +159,10 @@ label_2c0948:
         MulMat4Scale_0x2d5b68(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C09A4u; }
     }
-    if (ctx->pc != 0x2C09A4u) { return; }
+    if (ctx->pc != 0x2C09A4u) {
+        std::cerr << "[PushMatrix] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << "\n" << std::dec;
+        return;
+    }
     ctx->pc = 0x2C09A4u;
     // 0x2c09a4: 0x8e43a0f0
     ctx->pc = 0x2c09a4u;
@@ -256,6 +264,7 @@ label_2c09fc:
             case 0x2C09FCu: goto label_2c09fc;
             default: break;
         }
+        std::cerr << "[PushMatrix] EXIT ra=0x" << std::hex << jumpTarget << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << " sp=0x" << GPR_U32(ctx, 29) << "\n" << std::dec;
         return;
     }
     ctx->pc = 0x2C0A14u;

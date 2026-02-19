@@ -5,12 +5,14 @@
 
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
+#include <iostream>
 
 // Function: CameraFace
 // Address: 0x2c0a30 - 0x2c0c14
 void CameraFace_0x2c0a30(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     ctx->pc = 0x2c0a30u;
+    std::cerr << "[CameraFace] ENTRY ra=0x" << std::hex << GPR_U32(ctx, 31) << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << " sp=0x" << GPR_U32(ctx, 29) << "\n" << std::dec;
 
     // 0x2c0a30: 0x27bdffc0
     ctx->pc = 0x2c0a30u;
@@ -279,7 +281,7 @@ label_2c0b04:
         FaceCamMat_0x2c8298(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0B10u; }
     }
-    if (ctx->pc != 0x2C0B10u) { return; }
+    if (ctx->pc != 0x2C0B10u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0B10u;
     // 0x2c0b10: 0x1000003c
     ctx->pc = 0x2C0B10u;
@@ -305,7 +307,7 @@ label_2c0b18:
         TopFaceMat_0x2c83e0(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0B20u; }
     }
-    if (ctx->pc != 0x2C0B20u) { return; }
+    if (ctx->pc != 0x2C0B20u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0B20u;
     // 0x2c0b20: 0x10000038
     ctx->pc = 0x2C0B20u;
@@ -331,7 +333,7 @@ label_2c0b28:
         QuickYawMat_0x2c8188(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0B30u; }
     }
-    if (ctx->pc != 0x2C0B30u) { return; }
+    if (ctx->pc != 0x2C0B30u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0B30u;
     // 0x2c0b30: 0x10000034
     ctx->pc = 0x2C0B30u;
@@ -363,7 +365,7 @@ label_2c0b38:
         FaceCamMat_0x2c8298(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0B48u; }
     }
-    if (ctx->pc != 0x2C0B48u) { return; }
+    if (ctx->pc != 0x2C0B48u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0B48u;
     // 0x2c0b48: 0x1000002e
     ctx->pc = 0x2C0B48u;
@@ -404,7 +406,7 @@ label_2c0b50:
         ExtractScaleMat4_0x2d5c00(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0B64u; }
     }
-    if (ctx->pc != 0x2C0B64u) { return; }
+    if (ctx->pc != 0x2C0B64u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0B64u;
     // 0x2c0b64: 0x8e250004
     ctx->pc = 0x2c0b64u;
@@ -429,7 +431,7 @@ label_2c0b50:
         MulMat3_0x2d5d18(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0B7Cu; }
     }
-    if (ctx->pc != 0x2C0B7Cu) { return; }
+    if (ctx->pc != 0x2C0B7Cu) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0B7Cu;
     // 0x2c0b7c: 0x200202d
     ctx->pc = 0x2c0b7cu;
@@ -448,7 +450,7 @@ label_2c0b50:
         ScaleMat3Vec3_0x2d54b0(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0B8Cu; }
     }
-    if (ctx->pc != 0x2C0B8Cu) { return; }
+    if (ctx->pc != 0x2C0B8Cu) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0B8Cu;
     // 0x2c0b8c: 0x1000001d
     ctx->pc = 0x2C0B8Cu;
@@ -486,7 +488,7 @@ label_2c0b94:
         MulMat3_0x2d5d18(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0BACu; }
     }
-    if (ctx->pc != 0x2C0BACu) { return; }
+    if (ctx->pc != 0x2C0BACu) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0BACu;
     // 0x2c0bac: 0x10000015
     ctx->pc = 0x2C0BACu;
@@ -521,7 +523,7 @@ label_2c0bb4:
         FaceCamMat_0x2c8298(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0BC8u; }
     }
-    if (ctx->pc != 0x2C0BC8u) { return; }
+    if (ctx->pc != 0x2C0BC8u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0BC8u;
     // 0x2c0bc8: 0x1000000e
     ctx->pc = 0x2C0BC8u;
@@ -556,7 +558,7 @@ label_2c0bd0:
         FaceCamMat_0x2c8298(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0BE4u; }
     }
-    if (ctx->pc != 0x2C0BE4u) { return; }
+    if (ctx->pc != 0x2C0BE4u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0BE4u;
     // 0x2c0be4: 0x10000007
     ctx->pc = 0x2C0BE4u;
@@ -591,7 +593,7 @@ label_2c0bec:
         FaceCamMat_0x2c8298(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0C00u; }
     }
-    if (ctx->pc != 0x2C0C00u) { return; }
+    if (ctx->pc != 0x2C0C00u) { std::cerr << "[CameraFace] EXIT(early) ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << "\n" << std::dec; return; }
     ctx->pc = 0x2C0C00u;
     // 0x2c0c00: 0xdfbf0030
     ctx->pc = 0x2c0c00u;
@@ -628,6 +630,7 @@ label_2c0c08:
             case 0x2C0C08u: goto label_2c0c08;
             default: break;
         }
+        std::cerr << "[CameraFace] EXIT ra=0x" << std::hex << jumpTarget << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << " sp=0x" << GPR_U32(ctx, 29) << "\n" << std::dec;
         return;
     }
     ctx->pc = 0x2C0C14u;

@@ -5,12 +5,17 @@
 
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
+#include <iostream>
 
 // Function: pbErrorDie
 // Address: 0x2a56d0 - 0x2a5730
+// Original MIPS spins on *(0x36007FFC) waiting for a VBlank/hardware sync flag.
+// That flag is never set in the recompiled runtime, so we skip the spin and fall through.
 void pbErrorDie_0x2a56d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     ctx->pc = 0x2a56d0u;
+
+    std::cerr << "[pbErrorDie] called (spin skipped, no PS2 hardware sync)\n";
 
     // 0x2a56d0: 0x3c030036
     ctx->pc = 0x2a56d0u;
@@ -18,31 +23,11 @@ void pbErrorDie_0x2a56d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     // 0x2a56d4: 0x0
     ctx->pc = 0x2a56d4u;
     // NOP
-label_2a56d8:
-    // 0x2a56d8: 0x8c627ffc
+
+    // Original spin loop on *(0x36000000 + 0x7FFC) -- skipped; read once and proceed
     ctx->pc = 0x2a56d8u;
     SET_GPR_U32(ctx, 2, READ32(ADD32(GPR_U32(ctx, 3), 32764)));
-    // 0x2a56dc: 0x0
-    ctx->pc = 0x2a56dcu;
-    // NOP
-    // 0x2a56e0: 0x0
-    ctx->pc = 0x2a56e0u;
-    // NOP
-    // 0x2a56e4: 0x0
-    ctx->pc = 0x2a56e4u;
-    // NOP
-    // 0x2a56e8: 0x0
-    ctx->pc = 0x2a56e8u;
-    // NOP
-    // 0x2a56ec: 0x1040fffa
-    ctx->pc = 0x2A56ECu;
-    {
-        const bool branch_taken_0x2a56ec = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
-        if (branch_taken_0x2a56ec) {
-            ctx->pc = 0x2A56D8u;
-            goto label_2a56d8;
-        }
-    }
+
     ctx->pc = 0x2A56F4u;
     // 0x2a56f4: 0x3c020036
     ctx->pc = 0x2a56f4u;
@@ -110,7 +95,6 @@ label_2a5728:
         uint32_t jumpTarget = GPR_U32(ctx, 31);
         ctx->pc = jumpTarget;
         switch (jumpTarget) {
-            case 0x2A56D8u: goto label_2a56d8;
             case 0x2A5724u: goto label_2a5724;
             case 0x2A5728u: goto label_2a5728;
             default: break;

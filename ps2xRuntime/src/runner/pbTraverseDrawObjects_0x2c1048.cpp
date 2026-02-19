@@ -5,6 +5,20 @@
 
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
+#include <iostream>
+
+// Loop semantics:
+// - s0 (GPR16) = current node; s2 (GPR18) = param_2 sentinel.
+// - Next sibling = *(s0 + 0x7c). Loop ends when s0==0 (no sibling) OR s0==s2 (sentinel).
+
+#define TRAVERSE_LOG_CTX(tag) do { \
+    std::cerr << "[pbTraverseDrawObjects] " << (tag) << " | ctx->pc=0x" << std::hex << ctx->pc \
+        << " | s0(GPR16)=0x" << GPR_U32(ctx,16) << " (current_node; loop_ends_if_0_or==s2)" \
+        << " s2(GPR18)=0x" << GPR_U32(ctx,18) << " (param2_sentinel)" \
+        << " ra(GPR31)=0x" << GPR_U32(ctx,31) << " sp(GPR29)=0x" << GPR_U32(ctx,29) \
+        << " s17=0x" << GPR_U32(ctx,17) << " s20(GPR20)=0x" << GPR_U32(ctx,20) \
+        << " s21=0x" << GPR_U32(ctx,21) << " s22=0x" << GPR_U32(ctx,22) << std::dec << "\n"; \
+} while(0)
 
 // Function: pbTraverseDrawObjects
 // Address: 0x2c1048 - 0x2c11cc
@@ -12,9 +26,19 @@ void pbTraverseDrawObjects_0x2c1048(uint8_t* rdram, R5900Context* ctx, PS2Runtim
 
     ctx->pc = 0x2c1048u;
 
+    static int s_loopCount = 0;
+    static int s_logCap = 200;
+    auto log = [&](const char* tag, uint32_t s0_val, uint32_t s2_val) {
+        if (s_loopCount++ < 30 || (s_loopCount % 100 == 0 && s_loopCount < s_logCap))
+            std::cerr << "[pbTraverseDrawObjects] " << tag << " | s0(GPR16)=0x" << std::hex << s0_val << " (current_node) s2(GPR18)=0x" << s2_val << " (sentinel) ra(GPR31)=0x" << GPR_U32(ctx,31) << " sp(GPR29)=0x" << GPR_U32(ctx,29) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
+    };
+
 label_2c1048:
     // 0x2c1048: 0x27bdff80
     ctx->pc = 0x2c1048u;
+    if (s_loopCount <= s_logCap) {
+        std::cerr << "[pbTraverseDrawObjects] ENTRY/RECURSE | a0(GPR4)=0x" << std::hex << GPR_U32(ctx,4) << " (param1_node) a1(GPR5)=0x" << GPR_U32(ctx,5) << " (param2_sentinel) a2(GPR6)=0x" << GPR_U32(ctx,6) << " (param3_flags) sp(GPR29)=0x" << GPR_U32(ctx,29) << " ra(GPR31)=0x" << GPR_U32(ctx,31) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
+    }
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967168));
     // 0x2c104c: 0xffbf0070
     ctx->pc = 0x2c104cu;
@@ -81,6 +105,9 @@ label_2c108c:
     ctx->pc = 0x2C108Cu;
     {
         const bool branch_taken_0x2c108c = (GPR_U32(ctx, 16) == GPR_U32(ctx, 0));
+        if (s_loopCount < s_logCap) {
+            std::cerr << "[pbTraverseDrawObjects] 2c108c (s0==0?) | s0(GPR16)=0x" << std::hex << GPR_U32(ctx,16) << " (current_node; if_0_goto_2c1174_exit) s2(GPR18)=0x" << GPR_U32(ctx,18) << " branch_taken=" << branch_taken_0x2c108c << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
+        }
         if (branch_taken_0x2c108c) {
             ctx->pc = 0x2C1174u;
             goto label_2c1174;
@@ -105,11 +132,13 @@ label_2c108c:
 label_2c10a8:
     // 0x2c10a8: 0x1212003e
     ctx->pc = 0x2C10A8u;
+    log("loop_top", GPR_U32(ctx, 16), GPR_U32(ctx, 18));
     {
         const bool branch_taken_0x2c10a8 = (GPR_U32(ctx, 16) == GPR_U32(ctx, 18));
         ctx->pc = 0x2C10ACu;
         SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));
         if (branch_taken_0x2c10a8) {
+            if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] FOUND s0==s2 (sentinel) -> goto 2c11a4 | s0(GPR16)=0x" << std::hex << GPR_U32(ctx,16) << " s2(GPR18)=0x" << GPR_U32(ctx,18) << " ra=0x" << GPR_U32(ctx,31) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
             ctx->pc = 0x2C11A4u;
             goto label_2c11a4;
         }
@@ -125,6 +154,7 @@ label_2c10a8:
     ctx->pc = 0x2C10B8u;
     {
         const bool branch_taken_0x2c10b8 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
+        if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] 2c10b8 flags&2=" << (branch_taken_0x2c10b8 ? "0->process_node" : "set->skip") << " | s0(GPR16)=0x" << std::hex << GPR_U32(ctx,16) << " node+0x60(flags)=read then &2 s2(GPR18)=0x" << GPR_U32(ctx,18) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
         if (branch_taken_0x2c10b8) {
             ctx->pc = 0x2C10BCu;
             WRITE32(ADD32(GPR_U32(ctx, 17), 8), GPR_U32(ctx, 21));
@@ -133,12 +163,14 @@ label_2c10a8:
         }
     }
     ctx->pc = 0x2C10C0u;
-    // 0x2c10c0: 0x1000002a
+    // 0x2c10c0: 0x1000002a — skip path: load next sibling
     ctx->pc = 0x2C10C0u;
     {
         const bool branch_taken_0x2c10c0 = (GPR_U32(ctx, 0) == GPR_U32(ctx, 0));
         ctx->pc = 0x2C10C4u;
+        uint32_t prev_s0 = GPR_U32(ctx, 16);
         SET_GPR_U32(ctx, 16, READ32(ADD32(GPR_U32(ctx, 16), 124)));
+        if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] skip_load (next=s0+0x7c) | prev_s0(GPR16)=0x" << std::hex << prev_s0 << " next_s0(GPR16)=0x" << GPR_U32(ctx,16) << " (*(prev_s0+124)) s2(GPR18)=0x" << GPR_U32(ctx,18) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
         if (branch_taken_0x2c10c0) {
             ctx->pc = 0x2C116Cu;
             goto label_2c116c;
@@ -157,7 +189,10 @@ label_2c10c8:
         PushMatrix_0x2c0908(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C10D0u; }
     }
-    if (ctx->pc != 0x2C10D0u) { return; }
+    if (ctx->pc != 0x2C10D0u) {
+        TRAVERSE_LOG_CTX("EARLY_RETURN after PushMatrix (expected 0x2C10D0)");
+        return;
+    }
     ctx->pc = 0x2C10D0u;
     // 0x2c10d0: 0x8e040060
     ctx->pc = 0x2c10d0u;
@@ -269,6 +304,7 @@ label_2c112c:
     SET_GPR_U32(ctx, 31, 0x2C113Cu);
     ctx->pc = 0x2C1138u;
     SET_GPR_U64(ctx, 6, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
+    if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] RECURSE child | a0(GPR4)=0x" << std::hex << GPR_U32(ctx,4) << " a1(GPR5)=0x" << GPR_U32(ctx,5) << " a2(GPR6)=0x" << GPR_U32(ctx,6) << " s0(GPR16)=0x" << GPR_U32(ctx,16) << " s2(GPR18)=0x" << GPR_U32(ctx,18) << " ra=0x" << GPR_U32(ctx,31) << " ctx->pc=0x" << ctx->pc << " (goto 2c1048)\n" << std::dec;
     ctx->pc = 0x2C1048u;
     goto label_2c1048;
     ctx->pc = 0x2C113Cu;
@@ -295,7 +331,10 @@ label_2c1144:
         PopMatrix_0x2c0a18(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C114Cu; }
     }
-    if (ctx->pc != 0x2C114Cu) { return; }
+    if (ctx->pc != 0x2C114Cu) {
+        TRAVERSE_LOG_CTX("EARLY_RETURN after PopMatrix (expected 0x2C114C)");
+        return;
+    }
     ctx->pc = 0x2C114Cu;
     // 0x2c114c: 0x3c03003d
     ctx->pc = 0x2c114cu;
@@ -307,8 +346,10 @@ label_2c1144:
     ctx->pc = 0x2C1154u;
     {
         const bool branch_taken_0x2c1154 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
+        uint32_t cur_s0 = GPR_U32(ctx, 16);
         ctx->pc = 0x2C1158u;
         SET_GPR_U32(ctx, 16, READ32(ADD32(GPR_U32(ctx, 16), 124)));
+        if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] after_PopMatrix (next=s0+0x7c) | cur_s0(GPR16)=0x" << std::hex << cur_s0 << " next_s0(GPR16)=0x" << GPR_U32(ctx,16) << " s2(GPR18)=0x" << GPR_U32(ctx,18) << " clear_alpha=" << branch_taken_0x2c1154 << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
         if (branch_taken_0x2c1154) {
             ctx->pc = 0x2C116Cu;
             goto label_2c116c;
@@ -332,6 +373,7 @@ label_2c116c:
     ctx->pc = 0x2C116Cu;
     {
         const bool branch_taken_0x2c116c = (GPR_U32(ctx, 16) != GPR_U32(ctx, 0));
+        if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] 2c116c (s0!=0 -> loop_back) | s0(GPR16)=0x" << std::hex << GPR_U32(ctx,16) << " (if_0_fallthrough_exit) s2(GPR18)=0x" << GPR_U32(ctx,18) << " loop_back=" << branch_taken_0x2c116c << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
         if (branch_taken_0x2c116c) {
             ctx->pc = 0x2C10A8u;
             goto label_2c10a8;
@@ -339,8 +381,9 @@ label_2c116c:
     }
     ctx->pc = 0x2C1174u;
 label_2c1174:
-    // 0x2c1174: 0x5280000b
+    // 0x2c1174: 0x5280000b — outer exit: s0 was 0 at 2c108c
     ctx->pc = 0x2C1174u;
+    if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] 2c1174 outer_exit (s0 was 0 at 2c108c) | s20(GPR20)=0x" << std::hex << GPR_U32(ctx,20) << " s0(GPR16)=0x" << GPR_U32(ctx,16) << " s2(GPR18)=0x" << GPR_U32(ctx,18) << " ra=0x" << GPR_U32(ctx,31) << " sp=0x" << GPR_U32(ctx,29) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
     {
         const bool branch_taken_0x2c1174 = (GPR_U32(ctx, 20) == GPR_U32(ctx, 0));
         if (branch_taken_0x2c1174) {
@@ -373,6 +416,7 @@ label_2c1174:
     SET_GPR_U32(ctx, 31, 0x2C1194u);
     ctx->pc = 0x2C1190u;
     SET_GPR_S32(ctx, 6, ADD32(GPR_U32(ctx, 0), 2));
+    if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] RECURSE param3=2 | a0(GPR4)=0x" << std::hex << GPR_U32(ctx,4) << " a1(GPR5)=0x" << GPR_U32(ctx,5) << " a2(GPR6)=0x" << GPR_U32(ctx,6) << " s0=0x" << GPR_U32(ctx,16) << " s2=0x" << GPR_U32(ctx,18) << " ra=0x" << GPR_U32(ctx,31) << " ctx->pc=0x" << ctx->pc << " (goto 2c1048)\n" << std::dec;
     ctx->pc = 0x2C1048u;
     goto label_2c1048;
     ctx->pc = 0x2C1194u;
@@ -424,6 +468,7 @@ label_2c11a4:
     ctx->pc = 0x2C11C4u;
     {
         uint32_t jumpTarget = GPR_U32(ctx, 31);
+        if (s_loopCount <= s_logCap) std::cerr << "[pbTraverseDrawObjects] epilogue | jumpTarget=ra(GPR31)=0x" << std::hex << jumpTarget << " v0(GPR2)=0x" << GPR_U32(ctx,2) << " sp(GPR29)=0x" << GPR_U32(ctx,29) << " sp_after=0x" << (GPR_U32(ctx,29) + 128) << " s0(GPR16)=0x" << GPR_U32(ctx,16) << " s2(GPR18)=0x" << GPR_U32(ctx,18) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
         ctx->pc = 0x2C11C8u;
         SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 128));
         ctx->pc = jumpTarget;
@@ -442,6 +487,7 @@ label_2c11a4:
             case 0x2C11A4u: goto label_2c11a4;
             default: break;
         }
+        std::cerr << "[pbTraverseDrawObjects] RETURN_TO_CALLER | ra(GPR31)=0x" << std::hex << jumpTarget << " v0(GPR2)=0x" << GPR_U32(ctx,2) << " s0(GPR16)=0x" << GPR_U32(ctx,16) << " s2(GPR18)=0x" << GPR_U32(ctx,18) << " sp(GPR29)=0x" << GPR_U32(ctx,29) << " ctx->pc=0x" << ctx->pc << std::dec << "\n";
         return;
     }
     ctx->pc = 0x2C11CCu;

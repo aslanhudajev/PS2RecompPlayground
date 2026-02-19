@@ -11,6 +11,7 @@
 void pbCameraCalc_0x2ab9c8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     ctx->pc = 0x2ab9c8u;
+    const uint32_t __callerRa = GPR_U32(ctx, 31);  // save return address; subcalls overwrite $ra
 
     // 0x2ab9c8: 0x27bdffe0
     ctx->pc = 0x2ab9c8u;
@@ -124,7 +125,7 @@ void pbCameraCalc_0x2ab9c8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     // 0x2aba34: 0x3e00008
     ctx->pc = 0x2ABA34u;
     {
-        uint32_t jumpTarget = GPR_U32(ctx, 31);
+        uint32_t jumpTarget = __callerRa;  // use saved $ra; subcalls may have clobbered GPR 31
         ctx->pc = 0x2ABA38u;
         SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 32));
         ctx->pc = jumpTarget;

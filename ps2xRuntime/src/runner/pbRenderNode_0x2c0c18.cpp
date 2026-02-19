@@ -5,12 +5,18 @@
 
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
+#include <iostream>
+
+static void _pbRenderNode_exit_log(R5900Context* ctx, const char* kind) {
+    std::cerr << "[pbRenderNode] EXIT(" << kind << ") ctx->pc=0x" << std::hex << ctx->pc << " ra=0x" << GPR_U32(ctx, 31) << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << "\n" << std::dec;
+}
 
 // Function: pbRenderNode
 // Address: 0x2c0c18 - 0x2c1044
 void pbRenderNode_0x2c0c18(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     ctx->pc = 0x2c0c18u;
+    std::cerr << "[pbRenderNode] ENTRY ra=0x" << std::hex << GPR_U32(ctx, 31) << " s0=0x" << GPR_U32(ctx, 16) << " s2=0x" << GPR_U32(ctx, 18) << " sp=0x" << GPR_U32(ctx, 29) << "\n" << std::dec;
 
 label_2c0c18:
     // 0x2c0c18: 0x27bdffa0
@@ -429,6 +435,7 @@ label_2c0c98:
             case 0x2C1040u: goto label_2c1040;
             default: break;
         }
+        _pbRenderNode_exit_log(ctx, "epilogue1");
         return;
     }
     ctx->pc = 0x2C0C9Cu;
@@ -503,7 +510,7 @@ label_2c0cc8:
         Errorf_0x2d24b8(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0CCCu; }
     }
-    if (ctx->pc != 0x2C0CCCu) { return; }
+    if (ctx->pc != 0x2C0CCCu) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0CCCu;
 label_2c0ccc:
     // 0x2c0ccc: 0x8e060004
@@ -536,7 +543,7 @@ label_2c0cdc:
         sub_002D89B4_0x2d89b4(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0CE0u; }
     }
-    if (ctx->pc != 0x2C0CE0u) { return; }
+    if (ctx->pc != 0x2C0CE0u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0CE0u;
 label_2c0ce0:
     // 0x2c0ce0: 0x3c020037
@@ -685,7 +692,7 @@ label_2c0d58:
         MBDrawObjectTest_0x2c8748(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0D5Cu; }
     }
-    if (ctx->pc != 0x2C0D5Cu) { return; }
+    if (ctx->pc != 0x2C0D5Cu) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0D5Cu;
 label_2c0d5c:
     // 0x2c0d5c: 0x1040002e
@@ -774,7 +781,7 @@ label_2c0d8c:
         MBSetupObject_0x2c8538(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0D90u; }
     }
-    if (ctx->pc != 0x2C0D90u) { return; }
+    if (ctx->pc != 0x2C0D90u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0D90u;
 label_2c0d90:
     // 0x2c0d90: 0xc60028e0
@@ -847,7 +854,7 @@ label_2c0dbc:
         MBSetupObject_0x2c8538(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0DC0u; }
     }
-    if (ctx->pc != 0x2C0DC0u) { return; }
+    if (ctx->pc != 0x2C0DC0u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0DC0u;
 label_2c0dc0:
     // 0x2c0dc0: 0x8e430074
@@ -956,7 +963,7 @@ label_2c0df8:
         MBNodeSetVis_0x2c0828(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0DFCu; }
     }
-    if (ctx->pc != 0x2C0DFCu) { return; }
+    if (ctx->pc != 0x2C0DFCu) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0DFCu;
 label_2c0dfc:
     // 0x2c0dfc: 0x1000008b
@@ -1001,7 +1008,7 @@ label_2c0e0c:
         MBDrawPsysTest_0x2cc888(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0E10u; }
     }
-    if (ctx->pc != 0x2C0E10u) { return; }
+    if (ctx->pc != 0x2C0E10u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0E10u;
 label_2c0e10:
     // 0x2c0e10: 0x14400006
@@ -1098,7 +1105,7 @@ label_2c0e3c:
         MBTraversePsys_0x2cc818(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0E40u; }
     }
-    if (ctx->pc != 0x2C0E40u) { return; }
+    if (ctx->pc != 0x2C0E40u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0E40u;
 label_2c0e40:
     // 0x2c0e40: 0x1000007a
@@ -1179,7 +1186,7 @@ label_2c0e68:
         MBDrawSortObjects_0x2c8120(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0E6Cu; }
     }
-    if (ctx->pc != 0x2C0E6Cu) { return; }
+    if (ctx->pc != 0x2C0E6Cu) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0E6Cu;
 label_2c0e6c:
     // 0x2c0e6c: 0x8e0200b8
@@ -1288,7 +1295,7 @@ label_2c0eb0:
         MBDrawDistObjects_0x2c8138(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0EB4u; }
     }
-    if (ctx->pc != 0x2C0EB4u) { return; }
+    if (ctx->pc != 0x2C0EB4u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0EB4u;
 label_2c0eb4:
     // 0x2c0eb4: 0x8e0200c8
@@ -1397,7 +1404,7 @@ label_2c0ef8:
         MBDrawPsysObjects_0x2c8150(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0EFCu; }
     }
-    if (ctx->pc != 0x2C0EFCu) { return; }
+    if (ctx->pc != 0x2C0EFCu) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0EFCu;
 label_2c0efc:
     // 0x2c0efc: 0x8e0200e8
@@ -1510,7 +1517,7 @@ label_2c0f44:
         MBDrawPolyInsts_0x2ced68(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0F48u; }
     }
-    if (ctx->pc != 0x2C0F48u) { return; }
+    if (ctx->pc != 0x2C0F48u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0F48u;
 label_2c0f48:
     // 0x2c0f48: 0x8e0200f8
@@ -1623,7 +1630,7 @@ label_2c0f90:
         MBDrawBlits_0x2c27d8(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0F94u; }
     }
-    if (ctx->pc != 0x2C0F94u) { return; }
+    if (ctx->pc != 0x2C0F94u) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0F94u;
 label_2c0f94:
     // 0x2c0f94: 0x8e020108
@@ -1732,7 +1739,7 @@ label_2c0fd8:
         MBRenderText_0x2c5188(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x2C0FDCu; }
     }
-    if (ctx->pc != 0x2C0FDCu) { return; }
+    if (ctx->pc != 0x2C0FDCu) { _pbRenderNode_exit_log(ctx, "early"); return; }
     ctx->pc = 0x2C0FDCu;
 label_2c0fdc:
     // 0x2c0fdc: 0x8e020098
@@ -2127,6 +2134,7 @@ label_2c1040:
             case 0x2C1040u: goto label_2c1040;
             default: break;
         }
+        _pbRenderNode_exit_log(ctx, "epilogue2");
         return;
     }
 label_fallthrough_0x2c103c:

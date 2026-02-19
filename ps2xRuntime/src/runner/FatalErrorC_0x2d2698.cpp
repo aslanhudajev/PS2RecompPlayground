@@ -5,12 +5,20 @@
 
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
+#include <iostream>
+#include <cstdio>
 
 // Function: FatalErrorC
 // Address: 0x2d2698 - 0x2d26b8
 void FatalErrorC_0x2d2698(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     ctx->pc = 0x2d2698u;
+
+    const char* fmtStr = (const char*)(rdram + GPR_U32(ctx, 4));
+    char buf[512];
+    snprintf(buf, sizeof(buf), fmtStr, GPR_U32(ctx, 5), GPR_U32(ctx, 6), GPR_U32(ctx, 7));
+    std::cerr << "[FatalErrorC] FATAL ERROR: " << buf << "\n";
+    std::cerr << "  (format string at 0x" << std::hex << GPR_U32(ctx, 4) << ", args: a1=0x" << GPR_U32(ctx, 5) << " a2=0x" << GPR_U32(ctx, 6) << " a3=0x" << GPR_U32(ctx, 7) << ")\n" << std::dec;
 
     // 0x2d2698: 0x27bdfff0
     ctx->pc = 0x2d2698u;

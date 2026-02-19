@@ -5,12 +5,20 @@
 
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
+#include "ps2_fake_gs.h"
 
 // Function: pbLoadTex
 // Address: 0x2adb88 - 0x2ae1b8
 void pbLoadTex_0x2adb88(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     ctx->pc = 0x2adb88u;
+
+    // Fake GS: always stub so we return to caller with v0=1 and pc=ra (never run body).
+    if (runtime)
+        fakeGSStubLoadTex(rdram, ctx, runtime);
+    SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));
+    ctx->pc = GPR_U32(ctx, 31);
+    return;
 
 label_2adb88:
     // 0x2adb88: 0x27bdff20

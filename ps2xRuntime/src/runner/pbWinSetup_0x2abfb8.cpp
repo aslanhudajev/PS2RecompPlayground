@@ -617,6 +617,7 @@ label_2ac240:
     {
         const uint32_t __entryPc = ctx->pc;
         pbCameraCalc_0x2ab9c8(rdram, ctx, runtime);
+        
         if (ctx->pc == __entryPc) { ctx->pc = 0x2AC260u; }
     }
     if (ctx->pc != 0x2AC260u) { return; }
