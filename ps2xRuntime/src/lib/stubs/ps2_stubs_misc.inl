@@ -853,7 +853,43 @@ void sceFsReset(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceIoctl(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceIoctl", rdram, ctx, runtime);
+    const uint32_t fd = getRegU32(ctx, 4);   // a0 = param_1
+    const uint32_t cmd = getRegU32(ctx, 5);   // a1 = param_2
+    const uint32_t dataPtr = getRegU32(ctx, 6); // a2 = param_3
+
+    // get_iob(fd): returns 0 if fd >= 16, else (0x3e6a50 + (fd << 4))
+    const uint32_t kIobBase = 0x003e6a50u;
+    uint8_t *iob = nullptr;
+    if (fd < 16u)
+    {
+        const uint32_t iobAddr = kIobBase + (fd << 4);
+        iob = getMemPtr(rdram, iobAddr);
+    }
+
+    // If cmd != 1, original would call _sceFsDbChk(); we assume it returns 0 (OK).
+    // Invalid or closed fd: IOB null or IOB[1] == 0
+    const uint32_t iobFlags = iob ? *reinterpret_cast<const uint32_t *>(iob + 4) : 0u;
+    if (!iob || iobFlags == 0u)
+    {
+        setReturnS32(ctx, static_cast<int32_t>(0xfffffff7u)); // -9 SCE_FS_ERR_NODEV
+        return;
+    }
+
+    if (cmd == 1u)
+    {
+        // Check RPC status (sceSifCheckStatRpc). Stub: report "not busy" (0).
+        if (uint32_t *out = dataPtr ? reinterpret_cast<uint32_t *>(getMemPtr(rdram, dataPtr)) : nullptr)
+            *out = 0u;
+        setReturnS32(ctx, 0);
+        return;
+    }
+
+    // Other commands: original would copy 0x400 bytes to 0x3e5d48, set 0x3e5d44 = cmd,
+    // then sceSifCallRpc. We stub by writing 0 to the result buffer and returning 0.
+    const uint32_t kRcvResultAddr = 0x003e6980u; // result from IOP (same as 0x203e6980)
+    if (uint32_t *result = reinterpret_cast<uint32_t *>(getMemPtr(rdram, kRcvResultAddr)))
+        *result = 0u;
+    setReturnS32(ctx, 0);
 }
 
 void sceIpuInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1623,7 +1659,13 @@ void sceSifLoadElfPart(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceSifLoadFileReset(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifLoadFileReset", rdram, ctx, runtime);
+    // _bind_check = (uint32_t)-1; memset(&_lfversion, 0, 4); return 0 (eeloadfile.c)
+    if (runtime)
+    {
+        runtime->Store32(rdram, ctx, 0x3a4398u, 0xffffffffu);  // _bind_check
+        runtime->Store32(rdram, ctx, 0x3e6fe8u, 0u);          // _lfversion (4 bytes)
+    }
+    setReturnS32(ctx, 0);
 }
 
 void sceSifLoadIopHeap(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2255,7 +2297,12 @@ void sceVpu0Reset(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceVu0AddVector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0AddVector", rdram, ctx, runtime);
+    float *dst = reinterpret_cast<float *>(getMemPtr(rdram, getRegU32(ctx, 4)));
+    const float *a = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 5)));
+    const float *b = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 6)));
+    if (dst && a && b)
+        for (int i = 0; i < 4; ++i)
+            dst[i] = a[i] + b[i];
 }
 
 void sceVu0ApplyMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2265,7 +2312,44 @@ void sceVu0ApplyMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceVu0CameraMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0CameraMatrix", rdram, ctx, runtime);
+    const uint32_t resultAddr = getRegU32(ctx, 4);
+    const uint32_t param_2 = getRegU32(ctx, 5);
+    const uint32_t param_3 = getRegU32(ctx, 6);
+    const uint32_t param_4 = getRegU32(ctx, 7);
+    const uint32_t sp = getRegU32(ctx, 29);
+    const uint32_t sp_10 = sp + 0x10u;
+    const uint32_t sp_20 = sp + 0x20u;
+    const uint32_t sp_40 = sp + 0x40u;
+
+    SET_GPR_U32(ctx, 4, sp);
+    sceVu0UnitMatrix(rdram, ctx, runtime);
+
+    SET_GPR_U32(ctx, 4, sp_40);
+    SET_GPR_U32(ctx, 5, param_4);
+    SET_GPR_U32(ctx, 6, param_3);
+    sceVu0OuterProduct(rdram, ctx, runtime);
+
+    SET_GPR_U32(ctx, 4, sp);
+    SET_GPR_U32(ctx, 5, sp_40);
+    sceVu0Normalize(rdram, ctx, runtime);
+
+    SET_GPR_U32(ctx, 4, sp_20);
+    SET_GPR_U32(ctx, 5, param_3);
+    sceVu0Normalize(rdram, ctx, runtime);
+
+    SET_GPR_U32(ctx, 4, sp_10);
+    SET_GPR_U32(ctx, 5, sp_20);
+    SET_GPR_U32(ctx, 6, sp);
+    sceVu0OuterProduct(rdram, ctx, runtime);
+
+    SET_GPR_U32(ctx, 4, sp);
+    SET_GPR_U32(ctx, 5, sp);
+    SET_GPR_U32(ctx, 6, param_2);
+    sceVu0TransMatrix(rdram, ctx, runtime);
+
+    SET_GPR_U32(ctx, 4, resultAddr);
+    SET_GPR_U32(ctx, 5, sp);
+    sceVu0InversMatrix(rdram, ctx, runtime);
 }
 
 void sceVu0ClampVector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2290,12 +2374,20 @@ void sceVu0ClipScreen3(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceVu0CopyMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0CopyMatrix", rdram, ctx, runtime);
+    uint8_t *dst = getMemPtr(rdram, getRegU32(ctx, 4));
+    const uint8_t *src = getMemPtr(rdram, getRegU32(ctx, 5));
+    if (dst && src)
+        std::memcpy(dst, src, 64);
 }
 
 void sceVu0CopyVector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0CopyVector", rdram, ctx, runtime);
+    const uint32_t dstAddr = getRegU32(ctx, 4);
+    const uint32_t srcAddr = getRegU32(ctx, 5);
+    uint8_t *dst = getMemPtr(rdram, dstAddr);
+    const uint8_t *src = getMemPtr(rdram, srcAddr);
+    if (dst && src)
+        std::memcpy(dst, src, 16);
 }
 
 void sceVu0CopyVectorXYZ(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2345,7 +2437,24 @@ void sceVu0InterVectorXYZ(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime
 
 void sceVu0InversMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0InversMatrix", rdram, ctx, runtime);
+    float *out = reinterpret_cast<float *>(getMemPtr(rdram, getRegU32(ctx, 4)));
+    const float *M = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 5)));
+    if (!out || !M) return;
+    // Affine 4x4: R is 3x3 rotation, t is translation column. Inverse = [R^T | -R^T*t]; [0 0 0 1].
+    float R[9];
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            R[j * 3 + i] = M[i * 4 + j];
+    float tx = M[3], ty = M[7], tz = M[11];
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col)
+            out[row * 4 + col] = R[row * 3 + col];
+        out[row * 4 + 3] = -(R[row * 3 + 0] * tx + R[row * 3 + 1] * ty + R[row * 3 + 2] * tz);
+    }
+    out[12] = 0.f;
+    out[13] = 0.f;
+    out[14] = 0.f;
+    out[15] = 1.f;
 }
 
 void sceVu0ITOF0Vector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2365,12 +2474,29 @@ void sceVu0ITOF4Vector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceVu0LightColorMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0LightColorMatrix", rdram, ctx, runtime);
+    const uint32_t outAddr = getRegU32(ctx, 4);
+    const uint32_t v1 = getRegU32(ctx, 5), v2 = getRegU32(ctx, 6), v3 = getRegU32(ctx, 7), v4 = getRegU32(ctx, 8);
+    for (unsigned i = 0; i < 4; ++i) {
+        uint32_t d = outAddr + i * 16, s = (i == 0 ? v1 : i == 1 ? v2 : i == 2 ? v3 : v4);
+        uint8_t *dst = getMemPtr(rdram, d);
+        const uint8_t *src = getMemPtr(rdram, s);
+        if (dst && src) std::memcpy(dst, src, 16);
+    }
 }
 
 void sceVu0MulMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0MulMatrix", rdram, ctx, runtime);
+    float *result = reinterpret_cast<float *>(getMemPtr(rdram, getRegU32(ctx, 4)));
+    const float *A = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 5)));
+    const float *B = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 6)));
+    if (!result || !A || !B) return;
+    for (int row = 0; row < 4; ++row)
+        for (int col = 0; col < 4; ++col) {
+            float sum = 0.f;
+            for (int k = 0; k < 4; ++k)
+                sum += A[row * 4 + k] * B[k * 4 + col];
+            result[row * 4 + col] = sum;
+        }
 }
 
 void sceVu0MulVector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2380,17 +2506,55 @@ void sceVu0MulVector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceVu0Normalize(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0Normalize", rdram, ctx, runtime);
+    float *dst = reinterpret_cast<float *>(getMemPtr(rdram, getRegU32(ctx, 4)));
+    const float *src = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 5)));
+    if (!dst || !src) return;
+    float len = std::sqrt(src[0]*src[0] + src[1]*src[1] + src[2]*src[2] + src[3]*src[3]);
+    if (len > 1e-10f)
+        for (int i = 0; i < 4; ++i) dst[i] = src[i] / len;
+    else
+        std::memcpy(dst, src, 16);
 }
 
 void sceVu0NormalLightMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0NormalLightMatrix", rdram, ctx, runtime);
+    const uint32_t outAddr = getRegU32(ctx, 4);
+    const uint32_t d1 = getRegU32(ctx, 5), d2 = getRegU32(ctx, 6), d3 = getRegU32(ctx, 7);
+    const float scale = -1.f;
+    float tmp[4];
+    auto scaleAndNorm = [&](uint32_t dirAddr, uint32_t outOffset) {
+        const float *dir = reinterpret_cast<const float *>(getMemPtr(rdram, dirAddr));
+        float *outRow = reinterpret_cast<float *>(getMemPtr(rdram, outAddr + outOffset));
+        if (!dir || !outRow) return;
+        for (int i = 0; i < 4; ++i) tmp[i] = scale * dir[i];
+        float len = std::sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1] + tmp[2]*tmp[2] + tmp[3]*tmp[3]);
+        if (len > 1e-10f)
+            for (int i = 0; i < 4; ++i) outRow[i] = tmp[i] / len;
+        else
+            std::memcpy(outRow, tmp, 16);
+    };
+    scaleAndNorm(d1, 0);
+    scaleAndNorm(d2, 16);
+    scaleAndNorm(d3, 32);
+    float *row3 = reinterpret_cast<float *>(getMemPtr(rdram, outAddr + 48));
+    if (row3) { row3[0] = 0; row3[1] = 0; row3[2] = 0; row3[3] = 1.f; }
+    float *M = reinterpret_cast<float *>(getMemPtr(rdram, outAddr));
+    if (!M) return;
+    float T[16];
+    for (int i = 0; i < 4; ++i) for (int j = 0; j < 4; ++j) T[j*4+i] = M[i*4+j];
+    std::memcpy(M, T, 16 * sizeof(float));
 }
 
 void sceVu0OuterProduct(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0OuterProduct", rdram, ctx, runtime);
+    float *dst = reinterpret_cast<float *>(getMemPtr(rdram, getRegU32(ctx, 4)));
+    const float *a = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 5)));
+    const float *b = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 6)));
+    if (!dst || !a || !b) return;
+    dst[0] = a[1] * b[2] - a[2] * b[1];
+    dst[1] = a[2] * b[0] - a[0] * b[2];
+    dst[2] = a[0] * b[1] - a[1] * b[0];
+    dst[3] = 0.f;
 }
 
 void sceVu0RotMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2425,7 +2589,11 @@ void sceVu0RotTransPersN(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceVu0ScaleVector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0ScaleVector", rdram, ctx, runtime);
+    const float scale = ctx->f[12];
+    float *dst = reinterpret_cast<float *>(getMemPtr(rdram, getRegU32(ctx, 4)));
+    const float *src = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 5)));
+    if (dst && src)
+        for (int i = 0; i < 4; ++i) dst[i] = scale * src[i];
 }
 
 void sceVu0ScaleVectorXYZ(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2440,12 +2608,30 @@ void sceVu0SubVector(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceVu0TransMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0TransMatrix", rdram, ctx, runtime);
+    float *dst = reinterpret_cast<float *>(getMemPtr(rdram, getRegU32(ctx, 4)));
+    const float *src = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 5)));
+    const float *trans = reinterpret_cast<const float *>(getMemPtr(rdram, getRegU32(ctx, 6)));
+    if (!dst || !src || !trans) return;
+    std::memcpy(dst, src, 16 * sizeof(float));
+    dst[3] = trans[3];
+    dst[7] = trans[7];
+    dst[11] = trans[11];
+    dst[15] = trans[15];
 }
 
 void sceVu0TransposeMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceVu0TransposeMatrix", rdram, ctx, runtime);
+    const uint32_t dstAddr = getRegU32(ctx, 4);
+    const uint32_t srcAddr = getRegU32(ctx, 5);
+    float *dst = reinterpret_cast<float *>(getMemPtr(rdram, dstAddr));
+    const float *src = reinterpret_cast<const float *>(getMemPtr(rdram, srcAddr));
+    if (!dst || !src) return;
+    if (dst == src) {
+        float T[16];
+        for (int i = 0; i < 4; ++i) for (int j = 0; j < 4; ++j) T[j*4+i] = src[i*4+j];
+        std::memcpy(dst, T, 16 * sizeof(float));
+    } else
+        for (int i = 0; i < 4; ++i) for (int j = 0; j < 4; ++j) dst[j*4+i] = src[i*4+j];
 }
 
 void sceVu0UnitMatrix(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)

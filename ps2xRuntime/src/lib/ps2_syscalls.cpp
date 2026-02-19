@@ -39,6 +39,50 @@ namespace ps2_syscalls
 #include "syscalls/ps2_syscalls_system.inl"
     void iDeleteSema(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime);
 
+    // 0x77 GetCop0(reg_id): read EE COP0 register; $a0 = reg_id, return value in $v0
+    void GetCop0(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+    {
+        (void)rdram;
+        (void)runtime;
+        const uint32_t reg_id = getRegU32(ctx, 4);
+        uint32_t value = 0;
+        switch (reg_id)
+        {
+            case 0:  value = ctx->cop0_index;    break;
+            case 1:  value = ctx->cop0_random;  break;
+            case 2:  value = ctx->cop0_entrylo0; break;
+            case 3:  value = ctx->cop0_entrylo1; break;
+            case 4:  value = ctx->cop0_context; break;
+            case 5:  value = ctx->cop0_pagemask; break;
+            case 6:  value = ctx->cop0_wired;    break;
+            case 8:  value = ctx->cop0_badvaddr; break;
+            case 9:  value = ctx->cop0_count;    break;
+            case 10: value = ctx->cop0_entryhi;  break;
+            case 11: value = ctx->cop0_compare;  break;
+            case 12: value = ctx->cop0_status;  break;
+            case 13: value = ctx->cop0_cause;   break;
+            case 14: value = ctx->cop0_epc;     break;
+            case 15: value = ctx->cop0_prid;    break;
+            case 16: value = ctx->cop0_config;  break;
+            case 23: value = ctx->cop0_badpaddr; break;
+            case 24: value = ctx->cop0_debug;   break;
+            case 25: value = ctx->cop0_perf;    break;
+            case 28: value = ctx->cop0_taglo;   break;
+            case 29: value = ctx->cop0_taghi;   break;
+            case 30: value = ctx->cop0_errorepc; break;
+            default: break;
+        }
+        setReturnU32(ctx, value);
+    }
+
+    // 0x7a ExecPS2(entry, gp, argc, argv): execute PS2 program; we don't support exec, return -1
+    void ExecPS2(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+    {
+        (void)rdram;
+        (void)runtime;
+        setReturnS32(ctx, -1);
+    }
+
     bool dispatchNumericSyscall(uint32_t syscallNumber, uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     {
         switch (syscallNumber)
@@ -278,6 +322,11 @@ namespace ps2_syscalls
             ps2_stubs::sceSifDmaStat(rdram, ctx, runtime);
             return true;
         case 0x77:
+            GetCop0(rdram, ctx, runtime);
+            return true;
+        case 0x7a:
+            ExecPS2(rdram, ctx, runtime);
+            return true;
         case static_cast<uint32_t>(-0x77):
             ps2_stubs::sceSifSetDma(rdram, ctx, runtime);
             return true;

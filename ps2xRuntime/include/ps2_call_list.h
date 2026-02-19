@@ -101,7 +101,9 @@
     X(SetupThread)            \
     X(QueryBootMode)          \
     X(GetThreadTLS)           \
-    X(RegisterExitHandler)
+    X(RegisterExitHandler)    \
+    X(GetCop0)                \
+    X(ExecPS2)
 
 // Stubs
 #define PS2_STUB_LIST(X)                      \

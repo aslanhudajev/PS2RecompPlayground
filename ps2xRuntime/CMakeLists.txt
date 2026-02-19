@@ -18,6 +18,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(raylib)
 
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
+FetchContent_Declare(
+    miniz
+    GIT_REPOSITORY "https://github.com/richgel999/miniz.git"
+    GIT_TAG "3.0.2"
+    GIT_PROGRESS TRUE
+)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(miniz)
+
 add_library(ps2_runtime STATIC
     src/lib/game_overrides.cpp
     src/lib/ps2_memory.cpp
@@ -44,18 +54,20 @@ add_executable(ps2EntryRunner
 )
 
 if(MSVC)
-    target_compile_options(ps2EntryRunner PRIVATE /FS)
+    target_compile_options(ps2EntryRunner PRIVATE /FS /Z7 /arch:AVX)
 endif()
 
 target_include_directories(ps2_runtime PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(ps2_runtime PRIVATE raylib)
+target_link_libraries(ps2_runtime PRIVATE raylib miniz)
+
 target_link_libraries(ps2EntryRunner
     PRIVATE
     ps2_runtime
     raylib
+    miniz
 )
 
 # Work around WinAPI vs raylib symbol clash for CloseWindow on x64

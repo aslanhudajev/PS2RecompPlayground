@@ -157,6 +157,18 @@ void fioRead(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         bytesRead = fread(hostBuf, 1, size, fp);
     }
 
+    {
+        static int s_readLogCount = 0;
+        if (s_readLogCount < 20 && bytesRead >= 8)
+        {
+            std::cerr << "[fioRead] fd=" << ps2Fd << " size=" << size << " bytesRead=" << bytesRead << " first8: "
+                      << std::hex << (unsigned)hostBuf[0] << " " << (unsigned)hostBuf[1] << " " << (unsigned)hostBuf[2]
+                      << " " << (unsigned)hostBuf[3] << " " << (unsigned)hostBuf[4] << " " << (unsigned)hostBuf[5]
+                      << " " << (unsigned)hostBuf[6] << " " << (unsigned)hostBuf[7] << std::dec << std::endl;
+            ++s_readLogCount;
+        }
+    }
+
     if (bytesRead < size && ferror(fp))
     {
         std::cerr << "fioRead error: fread failed for fd " << ps2Fd << ": " << strerror(errno) << std::endl;
@@ -216,6 +228,16 @@ void fioLseek(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     int ps2Fd = (int)getRegU32(ctx, 4);  // $a0
     int32_t offset = getRegU32(ctx, 5);  // $a1 (PS2 seems to use 32-bit offset here commonly)
     int whence = (int)getRegU32(ctx, 6); // $a2 (PS2 FIO_SEEK constants)
+
+    {
+        static int s_lseekLogCount = 0;
+        if (s_lseekLogCount < 20)
+        {
+            std::cerr << "[fioLseek] fd=" << ps2Fd << " offset=0x" << std::hex << (unsigned)offset
+                      << std::dec << " whence=" << whence << std::endl;
+            ++s_lseekLogCount;
+        }
+    }
 
     FILE *fp = getHostFile(ps2Fd);
     if (!fp)

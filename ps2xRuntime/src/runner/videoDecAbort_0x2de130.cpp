@@ -1,0 +1,28 @@
+#include "ps2_runtime_macros.h"
+#include "ps2_runtime.h"
+#include "ps2_recompiled_functions.h"
+#include "ps2_recompiled_stubs.h"
+
+#include "ps2_syscalls.h"
+#include "ps2_stubs.h"
+
+// Function: videoDecAbort
+// Address: 0x2de130 - 0x2de13c
+void videoDecAbort_0x2de130(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+
+    ctx->pc = 0x2de130u;
+
+    // 0x2de130: 0x24020001
+    ctx->pc = 0x2de130u;
+    SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));
+    // 0x2de134: 0x3e00008
+    ctx->pc = 0x2DE134u;
+    {
+        uint32_t jumpTarget = GPR_U32(ctx, 31);
+        ctx->pc = 0x2DE138u;
+        WRITE32(ADD32(GPR_U32(ctx, 4), 168), GPR_U32(ctx, 2));
+        ctx->pc = jumpTarget;
+        return;
+    }
+    ctx->pc = 0x2DE13Cu;
+}
