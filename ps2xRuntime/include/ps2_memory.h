@@ -6,6 +6,8 @@
 #include <vector>
 #include <unordered_map>
 #include <atomic>
+#include "ps2_gs.h"
+#include "ps2_iop.h"
 #if defined(_MSC_VER)
     #include <intrin.h>
 #elif defined(USE_SSE2NEON)
@@ -282,6 +284,16 @@ public:
     uint8_t *getGSVRAM() { return m_gsVRAM; }
     const uint8_t *getGSVRAM() const { return m_gsVRAM; }
     bool hasSeenGifCopy() const { return m_seenGifCopy; }
+
+    GS &gsEmulator() { return m_gsEmu; }
+    const GS &gsEmulator() const { return m_gsEmu; }
+
+    IOP &iop() { return m_iop; }
+    const IOP &iop() const { return m_iop; }
+
+    // Texture loading intercept: replaces the recompiled pbLoadTex body.
+    // Returns 1 on success/skip, 0 on failure.
+    int loadTexToVRAM(uint8_t *rdram, uint32_t texId);
     // Main RAM (32MB)
     uint8_t *m_rdram;
 
@@ -328,6 +340,9 @@ public:
     bool isAddressInRegion(uint32_t address, const CodeRegion &region);
     void markModified(uint32_t address, uint32_t size);
     bool isScratchpad(uint32_t address) const;
+
+    GS m_gsEmu;
+    IOP m_iop;
 };
 
 #endif // PS2_MEMORY_H

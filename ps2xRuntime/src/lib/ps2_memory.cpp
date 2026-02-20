@@ -36,6 +36,24 @@ namespace
         return addr >= PS2_GS_PRIV_REG_BASE && addr < PS2_GS_PRIV_REG_BASE + PS2_GS_PRIV_REG_SIZE;
     }
 
+    inline int dmaChannelIndex(uint32_t channelBase)
+    {
+        switch (channelBase)
+        {
+        case 0x10008000: return 0;  // VIF0
+        case 0x10009000: return 1;  // VIF1
+        case 0x1000A000: return 2;  // GIF
+        case 0x1000B000: return 3;  // IPU_FROM
+        case 0x1000B400: return 4;  // IPU_TO
+        case 0x1000C000: return 5;  // SIF0
+        case 0x1000C400: return 6;  // SIF1
+        case 0x1000C800: return 7;  // SIF2
+        case 0x1000D000: return 8;  // SPR_FROM
+        case 0x1000D400: return 9;  // SPR_TO
+        default:         return -1;
+        }
+    }
+
     inline uint64_t *gsRegPtr(GSRegisters &gs, uint32_t addr)
     {
         uint32_t off = addr - PS2_GS_PRIV_REG_BASE;
@@ -180,6 +198,10 @@ bool PS2Memory::initialize(size_t ramSize)
         // Allocate GS VRAM (4MB)
         m_gsVRAM = new uint8_t[PS2_GS_VRAM_SIZE];
         std::memset(m_gsVRAM, 0, PS2_GS_VRAM_SIZE);
+
+        m_gsEmu.init(m_gsVRAM, PS2_GS_VRAM_SIZE, &gs_regs);
+
+        m_iop.init(m_rdram);
 
         // Initialize VIF registers
         memset(&vif0_regs, 0, sizeof(vif0_regs));
@@ -602,6 +624,17 @@ void PS2Memory::write128(uint32_t address, __m128i value)
 
 bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
 {
+    // D_STAT: writing 1 to bits 0-9 clears them, bits 16-25 toggles mask.
+    // Must NOT overwrite the existing value; operate on it in place.
+    if (address == 0x1000E010)
+    {
+        uint32_t stat = m_ioRegisters[0x1000E010];
+        stat &= ~(value & 0x03FF);
+        stat ^=  (value & 0x03FF0000);
+        m_ioRegisters[0x1000E010] = stat;
+        return true;
+    }
+
     m_ioRegisters[address] = value;
 
     if (address >= 0x10008000 && address < 0x1000F000)
@@ -613,9 +646,24 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
             const uint32_t qwc = m_ioRegisters[channelBase + 0x20];
             m_dmaStartCount.fetch_add(1, std::memory_order_relaxed);
 
+            {
+                const char* chName = (channelBase == 0x1000A000) ? "GIF" :
+                                     (channelBase == 0x10009000) ? "VIF1" :
+                                     (channelBase == 0x10008000) ? "VIF0" : "???";
+                uint32_t tadr = m_ioRegisters[channelBase + 0x30];
+                uint32_t mode = (value >> 2) & 0x3;
+                std::cerr << "[DMA START] ch=" << chName
+                          << " CHCR=0x" << std::hex << value
+                          << " MADR=0x" << madr
+                          << " QWC=0x" << qwc
+                          << " TADR=0x" << tadr
+                          << " mode=" << std::dec << mode
+                          << (mode == 1 ? "(chain)" : mode == 0 ? "(normal)" : "(?)") << std::endl;
+            }
+
             if ((channelBase == 0x1000A000 || channelBase == 0x10009000) && m_gsVRAM)
             {
-                auto doCopy = [&](uint32_t srcAddr, uint32_t qwCount)
+                auto feedGIF = [&](uint32_t srcAddr, uint32_t qwCount)
                 {
                     const uint64_t bytes64 = static_cast<uint64_t>(qwCount) * 16ull;
                     uint32_t bytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
@@ -628,57 +676,247 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                     {
                         return;
                     }
-                    uint32_t basePage = static_cast<uint32_t>(gs_regs.dispfb1 & 0x1FF);
-                    uint32_t dest = basePage * 2048;
-                    if (dest >= PS2_GS_VRAM_SIZE)
-                    {
-                        return;
-                    }
-                    if (dest + bytes > PS2_GS_VRAM_SIZE)
-                    {
-                        bytes = std::min<uint32_t>(bytes, PS2_GS_VRAM_SIZE - dest);
-                    }
                     if (src >= PS2_RAM_SIZE)
-                    {
                         return;
-                    }
                     if (src + bytes > PS2_RAM_SIZE)
-                    {
-                        bytes = std::min<uint32_t>(bytes, PS2_RAM_SIZE - src);
-                    }
+                        bytes = PS2_RAM_SIZE - src;
                     if (bytes == 0)
-                    {
                         return;
-                    }
-                    std::memcpy(m_gsVRAM + dest, m_rdram + src, bytes);
+
+                    m_gsEmu.processGIFPacket(m_rdram + src, bytes);
                     m_seenGifCopy = true;
                     m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
                 };
 
+                // VIF1 data contains VIF commands, not raw GIF data.
+                // Parse VIF commands and only feed DIRECT/DIRECTHL payload to the GIF.
+                auto feedVIF1 = [&](uint32_t srcAddr, uint32_t qwCount)
+                {
+                    const uint32_t totalBytes = qwCount * 16;
+                    uint32_t src = 0;
+                    try { src = translateAddress(srcAddr); }
+                    catch (...) { return; }
+                    if (src >= PS2_RAM_SIZE)
+                        return;
+                    uint32_t avail = (src + totalBytes > PS2_RAM_SIZE)
+                                     ? (PS2_RAM_SIZE - src) : totalBytes;
+                    if (avail < 4)
+                        return;
+
+                    const uint8_t *base = m_rdram + src;
+                    uint32_t off = 0;
+                    while (off + 4 <= avail)
+                    {
+                        uint32_t vifWord;
+                        std::memcpy(&vifWord, base + off, 4);
+                        uint8_t cmd = static_cast<uint8_t>((vifWord >> 24) & 0x7F);
+                        uint16_t imm = static_cast<uint16_t>(vifWord & 0xFFFF);
+                        uint8_t num = static_cast<uint8_t>((vifWord >> 16) & 0xFF);
+
+                        if (cmd == 0x00) // NOP
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x01) // STCYCL
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x02) // OFFSET
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x03) // BASE
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x04) // ITOP
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x05) // STMOD
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x06) // MSKPATH3
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x07) // MARK
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x10) // FLUSHE
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x11) // FLUSH
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x13) // FLUSHA
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x14) // MSCAL
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x15) // MSCALF
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x17) // MSCNT
+                        {
+                            off += 4;
+                        }
+                        else if (cmd == 0x20) // STMASK
+                        {
+                            off += 8; // command + 1 word of data
+                        }
+                        else if (cmd == 0x30) // STROW
+                        {
+                            off += 20; // command + 4 words
+                        }
+                        else if (cmd == 0x31) // STCOL
+                        {
+                            off += 20;
+                        }
+                        else if (cmd == 0x4A) // MPG
+                        {
+                            uint32_t mpgBytes = static_cast<uint32_t>(num) * 8;
+                            off += 4 + mpgBytes;
+                            // Align to 128-bit
+                            off = (off + 15) & ~15u;
+                        }
+                        else if (cmd == 0x50 || cmd == 0x51) // DIRECT / DIRECTHL
+                        {
+                            uint32_t gifQwc = imm;
+                            uint32_t gifBytes = gifQwc * 16;
+                            off += 4;
+                            // DIRECT data is 128-bit aligned
+                            off = (off + 15) & ~15u;
+                            if (off + gifBytes <= avail)
+                            {
+                                m_gsEmu.processGIFPacket(base + off, gifBytes);
+                                m_seenGifCopy = true;
+                                m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+                            }
+                            off += gifBytes;
+                        }
+                        else if ((cmd & 0x60) == 0x60) // UNPACK variants
+                        {
+                            // Decode UNPACK format to compute data size
+                            uint8_t vn = (cmd >> 2) & 0x3;  // 0=S,1=V2,2=V3,3=V4
+                            uint8_t vl = cmd & 0x3;          // 0=32,1=16,2=8,3=5
+                            bool usn = ((vifWord >> 14) & 1) != 0;
+                            (void)usn;
+
+                            static const int componentBits[4] = {32, 16, 8, 5};
+                            int bitsPerElement = componentBits[vl] * (vn + 1);
+                            uint32_t dataBytes = (static_cast<uint32_t>(num) * bitsPerElement + 7) / 8;
+                            off += 4;
+                            // Align payload to 32-bit
+                            uint32_t padded = (dataBytes + 3) & ~3u;
+                            off += padded;
+                            // VIF commands are processed until next 128-bit aligned DMA tag
+                        }
+                        else
+                        {
+                            // Unknown VIF command - skip 1 word
+                            off += 4;
+                        }
+                    }
+                };
+
+                auto feedData = [&](uint32_t srcAddr, uint32_t qwCount)
+                {
+                    if (channelBase == 0x1000A000) // GIF
+                        feedGIF(srcAddr, qwCount);
+                    else // VIF1
+                        feedVIF1(srcAddr, qwCount);
+                };
+
                 if (qwc > 0)
                 {
-                    doCopy(madr, qwc);
+                    feedData(madr, qwc);
+                    m_ioRegisters[channelBase + 0x10] = madr + qwc * 16;
+                    m_ioRegisters[channelBase + 0x20] = 0;
                 }
                 else
                 {
                     uint32_t tadr = m_ioRegisters[channelBase + 0x30];
-                    uint32_t physTag = translateAddress(tadr);
-                    if (physTag + 16 <= PS2_RAM_SIZE)
+                    constexpr int kMaxChainLinks = 4096;
+                    for (int link = 0; link < kMaxChainLinks; ++link)
                     {
+                        uint32_t physTag = 0;
+                        try { physTag = translateAddress(tadr); }
+                        catch (...) { break; }
+                        if (physTag + 16 > PS2_RAM_SIZE)
+                            break;
+
                         const uint8_t *tp = m_rdram + physTag;
                         uint64_t tag = loadScalar<uint64_t>(tp, 0, 16, "dma chain tag", tadr);
                         uint16_t tagQwc = static_cast<uint16_t>(tag & 0xFFFF);
                         uint32_t id = static_cast<uint32_t>((tag >> 28) & 0x7);
-                        uint32_t addr = static_cast<uint32_t>((tag >> 32) & 0x7FFFFFF);
-                        if (id == 0 || id == 1 || id == 2)
+                        uint32_t addr = static_cast<uint32_t>((tag >> 32) & 0x7FFFFFFF);
+                        bool irq = ((tag >> 31) & 1) != 0;
+
+                        uint32_t dataAddr = 0;
+                        uint32_t nextTagAddr = 0;
+                        bool endChain = false;
+
+                        switch (id)
                         {
-                            doCopy(addr, tagQwc);
+                        case 0: // REFE
+                            dataAddr = addr;
+                            nextTagAddr = tadr + 16;
+                            endChain = true;
+                            break;
+                        case 1: // CNT
+                            dataAddr = tadr + 16;
+                            nextTagAddr = tadr + 16 + tagQwc * 16;
+                            break;
+                        case 2: // NEXT
+                            dataAddr = tadr + 16;
+                            nextTagAddr = addr;
+                            break;
+                        case 3: // REF
+                        case 4: // REFS
+                            dataAddr = addr;
+                            nextTagAddr = tadr + 16;
+                            break;
+                        case 7: // END
+                            dataAddr = tadr + 16;
+                            endChain = true;
+                            break;
+                        default:
+                            endChain = true;
+                            break;
                         }
+
+                        m_ioRegisters[channelBase + 0x10] = dataAddr;
+                        m_ioRegisters[channelBase + 0x20] = 0;
+
+                        if (tagQwc > 0)
+                            feedData(dataAddr, tagQwc);
+
+                        if (endChain || irq)
+                            break;
+
+                        tadr = nextTagAddr;
                     }
                 }
-                m_ioRegisters[address] &= ~0x100;
+            }
+
+            // DMA completes instantly: clear STR and raise D_STAT flag
+            m_ioRegisters[address] &= ~0x100;
+            int chIdx = dmaChannelIndex(channelBase);
+            if (chIdx >= 0)
+            {
+                m_ioRegisters[0x1000E010] |= (1u << chIdx);
             }
         }
+
         return true;
     }
 
@@ -882,4 +1120,181 @@ void PS2Memory::clearModifiedFlag(uint32_t address, uint32_t size)
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// loadTexToVRAM  --  clean C++ reimplementation of the core pbLoadTex logic.
+//
+// Follows the game's pointer chain to locate a texture entry in RDRAM, reads
+// its parameters, and copies pixel data directly into GS VRAM, bypassing the
+// recompiled MIPS DMA-queue machinery that is fragile under ctx->pc dispatch.
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    inline uint32_t rdram32(const uint8_t *rdram, uint32_t addr)
+    {
+        uint32_t v;
+        std::memcpy(&v, rdram + (addr & PS2_RAM_MASK), sizeof(v));
+        return v;
+    }
+    inline uint16_t rdram16(const uint8_t *rdram, uint32_t addr)
+    {
+        uint16_t v;
+        std::memcpy(&v, rdram + (addr & PS2_RAM_MASK), sizeof(v));
+        return v;
+    }
+    inline uint8_t rdram8(const uint8_t *rdram, uint32_t addr)
+    {
+        return rdram[addr & PS2_RAM_MASK];
+    }
+    inline void wdram8(uint8_t *rdram, uint32_t addr, uint8_t v)
+    {
+        rdram[addr & PS2_RAM_MASK] = v;
+    }
+
+    inline uint32_t texBytesForPixels(uint8_t psm, uint32_t pixels)
+    {
+        switch (psm)
+        {
+        case 0:  // PSMCT32
+        case 1:  // PSMCT24
+        case 27: // PSMT8H
+        case 36: // PSMT4HL
+        case 44: // PSMT4HH
+            return pixels * 4u;
+        case 2:  // PSMCT16
+        case 10: // PSMCT16S
+            return pixels * 2u;
+        case 19: // PSMT8
+            return pixels;
+        case 20: // PSMT4
+            return (pixels + 1u) / 2u;
+        default:
+            return pixels * 4u;
+        }
+    }
+} // anonymous namespace
+
+int PS2Memory::loadTexToVRAM(uint8_t *rdram, uint32_t texId)
+{
+    if (!rdram || !m_gsVRAM)
+        return 1;
+
+    // ---- 1. Extract bank / texture index from the packed ID ----
+    const uint32_t bankIdx = texId >> 16;
+    const uint32_t texIdx  = texId & 0xFFFFu;
+
+    // ---- 2. Follow MBRomTexPtr pointer chain ----
+    const uint32_t base = rdram32(rdram, 0x36DEE0u);
+    if (base == 0)
+        return 1;
+
+    const uint32_t banksArray = rdram32(rdram, base + 0x38u);
+    if (banksArray == 0)
+        return 1;
+
+    const uint32_t bankPtr = rdram32(rdram, banksArray + bankIdx * 16u + 4u);
+    if (bankPtr == 0)
+        return 1;
+
+    const uint32_t texArray = rdram32(rdram, bankPtr + 0x58u);
+    if (texArray == 0)
+        return 1;
+
+    const uint32_t texEntryAddr = texArray + texIdx * 64u;
+
+    // ---- 3. Check the loaded bitmap ----
+    const uint32_t bitmapBase = rdram32(rdram, bankPtr + 0x78u);
+    const uint32_t fmtShift   = rdram32(rdram, 0x3785E0u);
+
+    if (bitmapBase != 0)
+    {
+        uint8_t bitmapByte = rdram8(rdram, bitmapBase + texIdx);
+        uint8_t mask = static_cast<uint8_t>(1u << (fmtShift & 7u));
+        if (bitmapByte & mask)
+            return 1; // already loaded
+    }
+
+    // ---- 4. Read texture parameters from the 64-byte entry ----
+    const uint32_t srcAddr = rdram32(rdram, texEntryAddr + 12u);
+    const uint16_t texW    = rdram16(rdram, texEntryAddr + 22u);
+    const uint16_t texH    = rdram16(rdram, texEntryAddr + 24u);
+    const uint16_t cacheSz = rdram16(rdram, texEntryAddr + 26u);
+    const uint32_t vramRaw = rdram32(rdram, texEntryAddr + 36u);
+    const uint16_t psmRaw  = rdram16(rdram, texEntryAddr + 60u);
+    const uint8_t  psm     = static_cast<uint8_t>(psmRaw & 0x3Fu);
+
+    if (texW == 0 || texH == 0 || srcAddr == 0)
+        return 1; // nothing to upload
+
+    // ---- 5. Compute VRAM destination ----
+    const uint32_t texVramOffset = (vramRaw >> 5) & 0x3FFFu;
+
+    // Per-format cache base (game stores per-format allocation pointers here)
+    const uint32_t fmtBase = rdram32(rdram, 0x378A98u + (fmtShift & 0xFu) * 4u);
+    const uint32_t vramBlock = fmtBase + texVramOffset;
+
+    // Each block is 256 bytes in PS2 GS addressing
+    const uint32_t vramByteOff = vramBlock * 256u;
+
+    // ---- 6. Copy pixel data row-by-row ----
+    const uint32_t rowBytes = texBytesForPixels(psm, texW);
+    if (rowBytes == 0)
+        return 1;
+
+    const uint32_t fbw    = std::max<uint32_t>(1u, (texW + 63u) / 64u);
+    const uint32_t stride = texBytesForPixels(psm, fbw * 64u);
+    if (stride == 0)
+        return 1;
+
+    const uint8_t *src = getMemPtr(rdram, srcAddr);
+    if (!src)
+        return 1;
+
+    static int logCount = 0;
+    if (logCount < 32)
+    {
+        ++logCount;
+        std::cerr << "[loadTexToVRAM] id=0x" << std::hex << texId
+                  << " bank=" << bankIdx << " idx=" << texIdx
+                  << " src=0x" << srcAddr
+                  << " " << std::dec << texW << "x" << texH
+                  << " psm=" << (int)psm
+                  << " vramOff=0x" << std::hex << vramByteOff
+                  << " fmtBase=" << fmtBase << " texVramOff=" << texVramOffset
+                  << std::dec << "\n";
+    }
+
+    for (uint32_t row = 0; row < texH; ++row)
+    {
+        uint32_t dstOff = vramByteOff + row * stride;
+        uint32_t srcOff = row * rowBytes;
+
+        if (dstOff >= PS2_GS_VRAM_SIZE)
+            break;
+
+        uint32_t copyBytes = rowBytes;
+        if (dstOff + copyBytes > PS2_GS_VRAM_SIZE)
+            copyBytes = static_cast<uint32_t>(PS2_GS_VRAM_SIZE - dstOff);
+
+        std::memcpy(m_gsVRAM + dstOff, src + srcOff, copyBytes);
+    }
+
+    // ---- 7. Update global cache usage ----
+    uint32_t curUsage = rdram32(rdram, 0x378A80u);
+    curUsage += cacheSz;
+    uint32_t tmp;
+    std::memcpy(&tmp, &curUsage, sizeof(tmp));
+    std::memcpy(rdram + (0x378A80u & PS2_RAM_MASK), &tmp, sizeof(tmp));
+
+    // ---- 8. Mark texture as loaded in the bitmap ----
+    if (bitmapBase != 0)
+    {
+        uint8_t bitmapByte = rdram8(rdram, bitmapBase + texIdx);
+        bitmapByte |= static_cast<uint8_t>(1u << (fmtShift & 7u));
+        wdram8(rdram, bitmapBase + texIdx, bitmapByte);
+    }
+
+    return 1;
 }

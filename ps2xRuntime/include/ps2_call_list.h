@@ -482,6 +482,9 @@
     X(sceSifSetSysCmdBuffer)                  \
     X(sceSifStopDma)                          \
     X(sceSifSyncIop)                          \
+    X(sceMtapPortOpen)                        \
+    X(sceMtapGetConnection)                   \
+    X(stream_playing)                         \
     X(sceSifWriteBackDCache)                  \
     X(sceSynthSizerLfoTriangle)               \
     X(sceSynthesizerAmpProcI)                 \

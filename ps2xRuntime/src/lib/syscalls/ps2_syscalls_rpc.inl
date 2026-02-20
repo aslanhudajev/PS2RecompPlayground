@@ -253,6 +253,19 @@ void SifCallRpc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     uint32_t resultPtr = 0;
     bool handled = false;
 
+    // ---- IOP module dispatch ----
+    // Give the IOP emulator first crack at known module SIDs (e.g. DCS audio).
+    // If it handles the call, skip all further server/DTX dispatch.
+    if (runtime)
+    {
+        IOP &iop = runtime->memory().iop();
+        if (iop.handleRPC(sid, rpcNum, sendBuf, sendSize, recvBuf, recvSize))
+        {
+            handled = true;
+            resultPtr = recvBuf;
+        }
+    }
+
     auto readRpcU32 = [&](uint32_t addr, uint32_t &out) -> bool
     {
         if (!addr)

@@ -112,6 +112,12 @@ struct alignas(16) R5900Context
     // COP2 control registers (VU0 integer + control)
     uint32_t cop2_ccr[32];
 
+    // Delay slot tracking for correct exception handling (BD bit / EPC).
+    // Set to 1 by recompiled code while executing a delay-slot instruction,
+    // cleared immediately after.  raiseCop0Exception uses this to set the
+    // Cause.BD bit and to leave EPC pointing at the branch instruction.
+    uint32_t in_delay_slot;
+
     // FPU registers (COP1)
     float f[32];
     uint32_t fcr31; // Control/status register

@@ -30,7 +30,8 @@ FetchContent_MakeAvailable(miniz)
 
 add_library(ps2_runtime STATIC
     src/lib/game_overrides.cpp
-    src/lib/ps2_fake_gs.cpp
+    src/lib/ps2_gs.cpp
+    src/lib/ps2_iop.cpp
     src/lib/ps2_memory.cpp
     src/lib/ps2_runtime.cpp
     src/lib/ps2_stubs.cpp

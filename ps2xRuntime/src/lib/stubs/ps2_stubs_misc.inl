@@ -1219,7 +1219,10 @@ void scePadGetState(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void scePadInfoAct(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadInfoAct", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    // No real pad connected: return 0 (no actuator info).
+    setReturnU32(ctx, 0u);
 }
 
 void scePadInfoComb(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1336,7 +1339,10 @@ void scePadReqIntToStr(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void scePadSetActAlign(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadSetActAlign", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    // Stub: report success so pad init continues.
+    setReturnS32(ctx, 1);
 }
 
 void scePadSetActDirect(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1533,7 +1539,7 @@ void sceSifExecRequest(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceSifExitCmd(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifExitCmd", rdram, ctx, runtime);
+    WRITE32(0x3a4280, 0);
 }
 
 void sceSifExitRpc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1623,7 +1629,9 @@ void sceSifGetReg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceSifGetSreg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifGetSreg", rdram, ctx, runtime);
+    int32_t index = GPR_S32(ctx, 4);
+    uint32_t value = runtime ? runtime->memory().iop().getSReg(static_cast<uint32_t>(index)) : 0;
+    SET_GPR_U32(ctx, 2, value);
 }
 
 void sceSifInitCmd(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1802,7 +1810,11 @@ void sceSifSetRpcQueue(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceSifSetSreg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifSetSreg", rdram, ctx, runtime);
+    int32_t index = GPR_S32(ctx, 4);
+    uint32_t value = GPR_U32(ctx, 5);
+    if (runtime)
+        runtime->memory().iop().setSReg(static_cast<uint32_t>(index), value);
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 5)); // return param_2
 }
 
 void sceSifSetSysCmdBuffer(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2669,7 +2681,9 @@ void sceWrite(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void srand(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("srand", rdram, ctx, runtime);
+    uint32_t seed = GPR_U32(ctx, 4);
+    uint32_t impure_ptr = READ32(0x3a3dec);
+    WRITE32(impure_ptr + 0x58, seed);
 }
 
 void stat(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2737,6 +2751,47 @@ void vsprintf(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     }
 
     setReturnS32(ctx, ret);
+}
+
+// =============================================================================
+// sceMtapPortOpen / sceMtapGetConnection
+// =============================================================================
+// STUB ONLY - NOT A REAL IMPLEMENTATION.
+// These functions are thin wrappers around sceSifCallRpc() which sends an RPC
+// request to the IOP (I/O Processor) over the SIF bus. The REAL multitap logic
+// runs entirely on the IOP side, which we DO NOT emulate.
+// Without an IOP, there is nothing to execute the RPC against. We fake success
+// so the game doesn't think there's no controller and bail out.
+// If the game misbehaves around controller detection, revisit these stubs.
+// =============================================================================
+
+void sceMtapPortOpen(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    uint32_t param_1 = GPR_U32(ctx, 4);
+    WRITE32(0x3E0780, param_1);  // sif_buffer = param_1 (matches real EE-side behavior)
+    WRITE32(0x3E0784, 1);        // FAKE: IOP would write the real result here via RPC
+    SET_GPR_U32(ctx, 2, 1);     // FAKE: return 1 = "port opened OK"
+}
+
+void sceMtapGetConnection(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    uint32_t param_1 = GPR_U32(ctx, 4);
+    WRITE32(0x3E0780, param_1);  // sif_buffer = param_1 (matches real EE-side behavior)
+    WRITE32(0x3E0784, 1);        // FAKE: IOP would write the real result here via RPC
+    SET_GPR_U32(ctx, 2, 1);     // FAKE: return 1 = "controller connected"
+}
+
+// =============================================================================
+// stream_playing
+// =============================================================================
+// Reads the IOP's SIF soft register 0x1f and returns bit 0 (playing flag).
+// The IOP's DCS module handler clears this bit when STOP_STREAM is processed.
+// =============================================================================
+
+void stream_playing(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    uint32_t sreg = runtime ? runtime->memory().iop().getSReg(0x1f) : 0;
+    SET_GPR_U32(ctx, 2, sreg & 1u);
 }
 
 void write(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)

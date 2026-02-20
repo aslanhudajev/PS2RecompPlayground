@@ -91,6 +91,11 @@ namespace
         ctx->cop0_epc = ctx->pc;
         ctx->cop0_cause = (ctx->cop0_cause & ~(COP0_CAUSE_EXCCODE_MASK | COP0_CAUSE_BD)) |
                           ((exceptionCode << 2) & COP0_CAUSE_EXCCODE_MASK);
+        if (ctx->in_delay_slot)
+        {
+            ctx->cop0_cause |= COP0_CAUSE_BD;
+            ctx->in_delay_slot = 0;
+        }
         ctx->cop0_status |= COP0_STATUS_EXL;
         ctx->pc = selectExceptionVector(ctx, tlbRefill);
     }
