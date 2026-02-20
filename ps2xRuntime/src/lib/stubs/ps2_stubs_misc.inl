@@ -2754,44 +2754,39 @@ void vsprintf(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 }
 
 // =============================================================================
-// sceMtapPortOpen / sceMtapGetConnection
+// sceMtapPortOpen / sceMtapGetConnection (libmtap.c)
 // =============================================================================
-// STUB ONLY - NOT A REAL IMPLEMENTATION.
-// These functions are thin wrappers around sceSifCallRpc() which sends an RPC
-// request to the IOP (I/O Processor) over the SIF bus. The REAL multitap logic
-// runs entirely on the IOP side, which we DO NOT emulate.
-// Without an IOP, there is nothing to execute the RPC against. We fake success
-// so the game doesn't think there's no controller and bail out.
-// If the game misbehaves around controller detection, revisit these stubs.
+// Implemented in runner: sceMtapPortOpen_0x2e5168.cpp, sceMtapGetConnection_0x2e5248.cpp
 // =============================================================================
 
 void sceMtapPortOpen(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    uint32_t param_1 = GPR_U32(ctx, 4);
-    WRITE32(0x3E0780, param_1);  // sif_buffer = param_1 (matches real EE-side behavior)
-    WRITE32(0x3E0784, 1);        // FAKE: IOP would write the real result here via RPC
-    SET_GPR_U32(ctx, 2, 1);     // FAKE: return 1 = "port opened OK"
+    (void)rdram;
+    (void)ctx;
+    (void)runtime;
+    TODO_NAMED("sceMtapPortOpen", rdram, ctx, runtime);
 }
 
 void sceMtapGetConnection(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    uint32_t param_1 = GPR_U32(ctx, 4);
-    WRITE32(0x3E0780, param_1);  // sif_buffer = param_1 (matches real EE-side behavior)
-    WRITE32(0x3E0784, 1);        // FAKE: IOP would write the real result here via RPC
-    SET_GPR_U32(ctx, 2, 1);     // FAKE: return 1 = "controller connected"
+    (void)rdram;
+    (void)ctx;
+    (void)runtime;
+    TODO_NAMED("sceMtapGetConnection", rdram, ctx, runtime);
 }
 
 // =============================================================================
-// stream_playing
+// stream_playing (dcs_ps2.c)
 // =============================================================================
-// Reads the IOP's SIF soft register 0x1f and returns bit 0 (playing flag).
-// The IOP's DCS module handler clears this bit when STOP_STREAM is processed.
+// Implemented in runner: stream_playing_0x224208.cpp
 // =============================================================================
 
 void stream_playing(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    uint32_t sreg = runtime ? runtime->memory().iop().getSReg(0x1f) : 0;
-    SET_GPR_U32(ctx, 2, sreg & 1u);
+    (void)rdram;
+    (void)ctx;
+    (void)runtime;
+    TODO_NAMED("stream_playing", rdram, ctx, runtime);
 }
 
 void write(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)

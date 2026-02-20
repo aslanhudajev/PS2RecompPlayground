@@ -1360,6 +1360,32 @@ void PS2Runtime::run()
 
     std::cout << "Starting execution at address 0x" << std::hex << m_cpuContext.pc << std::dec << std::endl;
 
+    // Ensure PB texture page state is initialized so pbLoadTex can allocate.
+    // MIPS address = lui 0x37 (0x370000) + sign-extended 16-bit offset:
+    //   tex_load_page:   0x370000 + (-0x7A20) = 0x3685E0
+    //   tex_page_start:  0x370000 + (-0x7568) = 0x368A98  (array of 2 uint32)
+    //   tex_page_end:    0x370000 + (-0x7560) = 0x368AA0  (array of 2 uint32)
+    {
+        uint8_t* rdram = m_memory.getRDRAM();
+        auto writeLe32 = [&](uint32_t vaddr, uint32_t value) {
+            const uint32_t phys = vaddr & PS2_RAM_MASK;
+            if (phys + 4u <= PS2_RAM_SIZE) {
+                std::memcpy(rdram + phys, &value, sizeof(value));
+            }
+        };
+        constexpr uint32_t TEX_PAGE_START = 0x368A98u;
+        constexpr uint32_t TEX_PAGE_END   = 0x368AA0u;
+        constexpr uint32_t TEX_LOAD_PAGE  = 0x3685E0u;
+        // GS VRAM = 0x4000 64-byte blocks. Reserve 0x100 for framebuffers; split rest into 2 pages.
+        constexpr uint32_t VRAM_BASE  = 0x100u;
+        constexpr uint32_t PAGE_SIZE  = (0x4000u - VRAM_BASE) / 2u & ~0x1Fu; // ~7904 blocks per page
+        writeLe32(TEX_PAGE_START + 0u, VRAM_BASE);                    // page 0 current alloc
+        writeLe32(TEX_PAGE_START + 4u, VRAM_BASE + PAGE_SIZE);        // page 1 current alloc
+        writeLe32(TEX_PAGE_END   + 0u, VRAM_BASE + PAGE_SIZE);        // page 0 end
+        writeLe32(TEX_PAGE_END   + 4u, VRAM_BASE + PAGE_SIZE * 2u);   // page 1 end
+        writeLe32(TEX_LOAD_PAGE, 0u);                                  // use page 0
+    }
+
     // A blank image to use as a framebuffer
     Image blank = GenImageColor(FB_WIDTH, FB_HEIGHT, BLANK);
     Texture2D frameTex = LoadTextureFromImage(blank);
