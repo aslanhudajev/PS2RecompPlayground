@@ -18,6 +18,7 @@ ps2xRuntime/include/ps2_recompiled_stubs.h
 ps2xRuntime/src/runner/ps2_recompiled_functions.cpp
 ps2xRuntime/src/runner/register_functions.cpp
 ps2xRuntime/output
+ps2xRuntime/src/runner
 
 _OUTPUTS
 _GAMES
