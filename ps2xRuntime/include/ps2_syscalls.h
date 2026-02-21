@@ -20,6 +20,9 @@ namespace ps2_syscalls
     bool dispatchNumericSyscall(uint32_t syscallNumber, uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime);
     void TODO(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime, uint32_t encodedSyscallId);
     void notifyRuntimeStop();
+
+    // Fire all registered DMAC handlers whose cause matches the given channel.
+    void dispatchDmacHandlers(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime, int channel);
 }
 
 #endif // PS2_SYSCALLS_H

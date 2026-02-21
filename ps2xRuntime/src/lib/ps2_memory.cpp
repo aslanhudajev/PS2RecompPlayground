@@ -54,6 +54,16 @@ namespace
         }
     }
 
+    // Returns a pointer into VU1 code or data memory for the given physical address, or nullptr.
+    inline uint8_t *vu1MemPtr(uint8_t *vu1Code, uint8_t *vu1Data, uint32_t physAddr, uint32_t size)
+    {
+        if (physAddr >= PS2_VU1_CODE_BASE && physAddr + size <= PS2_VU1_CODE_BASE + PS2_VU1_CODE_SIZE)
+            return vu1Code + (physAddr - PS2_VU1_CODE_BASE);
+        if (physAddr >= PS2_VU1_DATA_BASE && physAddr + size <= PS2_VU1_DATA_BASE + PS2_VU1_DATA_SIZE)
+            return vu1Data + (physAddr - PS2_VU1_DATA_BASE);
+        return nullptr;
+    }
+
     inline uint64_t *gsRegPtr(GSRegisters &gs, uint32_t addr)
     {
         uint32_t off = addr - PS2_GS_PRIV_REG_BASE;
@@ -210,6 +220,11 @@ bool PS2Memory::initialize(size_t ramSize)
         // Initialize DMA registers
         memset(dma_regs, 0, sizeof(dma_regs));
 
+        // Initialize VU1 memory
+        std::memset(m_vu1Code, 0, PS2_VU1_CODE_SIZE);
+        std::memset(m_vu1Data, 0, PS2_VU1_DATA_SIZE);
+        m_vif1Itop = 0;
+
         return true;
     }
     catch (const std::exception &e)
@@ -331,6 +346,8 @@ uint8_t PS2Memory::read8(uint32_t address)
     {
         return m_scratchpad[physAddr];
     }
+    if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 1))
+        return *p;
     if (physAddr < PS2_RAM_SIZE)
     {
         return m_rdram[physAddr];
@@ -359,6 +376,10 @@ uint16_t PS2Memory::read16(uint32_t address)
     if (scratch)
     {
         return loadScalar<uint16_t>(m_scratchpad, physAddr, PS2_SCRATCHPAD_SIZE, "read16 scratchpad", address);
+    }
+    if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 2))
+    {
+        uint16_t v; std::memcpy(&v, p, 2); return v;
     }
     if (physAddr < PS2_RAM_SIZE)
     {
@@ -397,6 +418,10 @@ uint32_t PS2Memory::read32(uint32_t address)
     {
         return loadScalar<uint32_t>(m_scratchpad, physAddr, PS2_SCRATCHPAD_SIZE, "read32 scratchpad", address);
     }
+    if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 4))
+    {
+        uint32_t v; std::memcpy(&v, p, 4); return v;
+    }
     if (physAddr < PS2_RAM_SIZE)
     {
         return loadScalar<uint32_t>(m_rdram, physAddr, PS2_RAM_SIZE, "read32 rdram", address);
@@ -429,12 +454,15 @@ uint64_t PS2Memory::read64(uint32_t address)
     {
         return loadScalar<uint64_t>(m_scratchpad, physAddr, PS2_SCRATCHPAD_SIZE, "read64 scratchpad", address);
     }
+    if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 8))
+    {
+        uint64_t v; std::memcpy(&v, p, 8); return v;
+    }
     if (physAddr < PS2_RAM_SIZE)
     {
         return loadScalar<uint64_t>(m_rdram, physAddr, PS2_RAM_SIZE, "read64 rdram", address);
     }
 
-    // 64-bit IO operations are not common, but who knows
     return (uint64_t)read32(address) | ((uint64_t)read32(address + 4) << 32);
 }
 
@@ -453,14 +481,14 @@ __m128i PS2Memory::read128(uint32_t address)
         inRange(physAddr, sizeof(__m128i), PS2_SCRATCHPAD_SIZE, "read128 scratchpad", address);
         return _mm_loadu_si128(reinterpret_cast<__m128i *>(&m_scratchpad[physAddr]));
     }
+    if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 16))
+        return _mm_loadu_si128(reinterpret_cast<__m128i *>(p));
     if (physAddr < PS2_RAM_SIZE)
     {
         inRange(physAddr, sizeof(__m128i), PS2_RAM_SIZE, "read128 rdram", address);
         return _mm_loadu_si128(reinterpret_cast<__m128i *>(&m_rdram[physAddr]));
     }
 
-    // 128-bit reads are primarily for quad-word loads in the EE, which are only valid for RAM areas
-    // Return zeroes for unsupported areas
     return _mm_setzero_si128();
 }
 
@@ -472,6 +500,10 @@ void PS2Memory::write8(uint32_t address, uint8_t value)
     if (scratch)
     {
         m_scratchpad[physAddr] = value;
+    }
+    else if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 1))
+    {
+        *p = value;
     }
     else if (physAddr < PS2_RAM_SIZE)
     {
@@ -501,6 +533,10 @@ void PS2Memory::write16(uint32_t address, uint16_t value)
     if (scratch)
     {
         storeScalar<uint16_t>(m_scratchpad, physAddr, PS2_SCRATCHPAD_SIZE, value, "write16 scratchpad", address);
+    }
+    else if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 2))
+    {
+        std::memcpy(p, &value, 2);
     }
     else if (physAddr < PS2_RAM_SIZE)
     {
@@ -543,11 +579,13 @@ void PS2Memory::write32(uint32_t address, uint32_t value)
     {
         storeScalar<uint32_t>(m_scratchpad, physAddr, PS2_SCRATCHPAD_SIZE, value, "write32 scratchpad", address);
     }
+    else if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 4))
+    {
+        std::memcpy(p, &value, 4);
+    }
     else if (physAddr < PS2_RAM_SIZE)
     {
-        // Check if this might be code modification
         markModified(address, 4);
-
         storeScalar<uint32_t>(m_rdram, physAddr, PS2_RAM_SIZE, value, "write32 rdram", address);
     }
     else if (physAddr >= PS2_IO_BASE && physAddr < PS2_IO_BASE + PS2_IO_SIZE)
@@ -568,6 +606,31 @@ void PS2Memory::write64(uint32_t address, uint64_t value)
         uint64_t *reg = gsRegPtr(gs_regs, address);
         if (reg)
         {
+            uint32_t off = address - PS2_GS_PRIV_REG_BASE;
+            if (off == 0x0070 || off == 0x0080 || off == 0x0020) {
+                static int s_gsPrivLog = 0;
+                if (++s_gsPrivLog <= 30 || (s_gsPrivLog % 200) == 0) {
+                    const char *name = (off == 0x0070) ? "DISPFB1" : (off == 0x0080) ? "DISPLAY1" : "SMODE2";
+                    printf("[GS_PRIV_WRITE #%d] %s(0x%08x) = 0x%016llx\n",
+                           s_gsPrivLog, name, address, (unsigned long long)value);
+                    if (off == 0x0070) {
+                        uint32_t fbp = (uint32_t)(value & 0x1FF);
+                        uint32_t fbw = (uint32_t)((value >> 9) & 0x3F);
+                        uint32_t psm = (uint32_t)((value >> 15) & 0x1F);
+                        printf("  DISPFB1 decoded: fbp=%u(base=0x%x) fbw=%u psm=%u\n",
+                               fbp, fbp * 2048, fbw, psm);
+                    }
+                    if (off == 0x0080) {
+                        uint32_t dx = (uint32_t)(value & 0xFFF);
+                        uint32_t dy = (uint32_t)((value >> 12) & 0x7FF);
+                        uint32_t magh = (uint32_t)((value >> 23) & 0xF);
+                        uint32_t dw = (uint32_t)((value >> 32) & 0xFFF);
+                        uint32_t dh = (uint32_t)((value >> 44) & 0x7FF);
+                        printf("  DISPLAY1 decoded: dx=%u dy=%u magh=%u dw=%u dh=%u\n",
+                               dx, dy, magh, dw, dh);
+                    }
+                }
+            }
             *reg = value;
         }
         return;
@@ -579,6 +642,10 @@ void PS2Memory::write64(uint32_t address, uint64_t value)
     if (scratch)
     {
         storeScalar<uint64_t>(m_scratchpad, physAddr, PS2_SCRATCHPAD_SIZE, value, "write64 scratchpad", address);
+    }
+    else if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 8))
+    {
+        std::memcpy(p, &value, 8);
     }
     else if (physAddr < PS2_RAM_SIZE)
     {
@@ -606,6 +673,10 @@ void PS2Memory::write128(uint32_t address, __m128i value)
         inRange(physAddr, sizeof(__m128i), PS2_SCRATCHPAD_SIZE, "write128 scratchpad", address);
         _mm_storeu_si128(reinterpret_cast<__m128i *>(&m_scratchpad[physAddr]), value);
     }
+    else if (uint8_t *p = vu1MemPtr(m_vu1Code, m_vu1Data, physAddr, 16))
+    {
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(p), value);
+    }
     else if (physAddr < PS2_RAM_SIZE)
     {
         inRange(physAddr, sizeof(__m128i), PS2_RAM_SIZE, "write128 rdram", address);
@@ -613,10 +684,8 @@ void PS2Memory::write128(uint32_t address, __m128i value)
     }
     else
     {
-        // Non-RAM 128-bit stores are modeled as two 64-bit stores.
         uint64_t lo = _mm_extract_epi64(value, 0);
         uint64_t hi = _mm_extract_epi64(value, 1);
-
         write64(address, lo);
         write64(address + 8, hi);
     }
@@ -652,14 +721,15 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                                      (channelBase == 0x10008000) ? "VIF0" : "???";
                 uint32_t tadr = m_ioRegisters[channelBase + 0x30];
                 uint32_t mode = (value >> 2) & 0x3;
-                std::cerr << "[DMA START] ch=" << chName
-                          << " CHCR=0x" << std::hex << value
-                          << " MADR=0x" << madr
-                          << " QWC=0x" << qwc
-                          << " TADR=0x" << tadr
-                          << " mode=" << std::dec << mode
-                          << (mode == 1 ? "(chain)" : mode == 0 ? "(normal)" : "(?)") << std::endl;
+                static int _dmaLogCnt = 0;
+                if (_dmaLogCnt++ < 40 || (_dmaLogCnt % 500) == 0)
+                    printf("[DMA START #%d] ch=%s CHCR=0x%x MADR=0x%x QWC=0x%x TADR=0x%x mode=%u(%s)\n",
+                           _dmaLogCnt, chName, value, madr, qwc, tadr, mode,
+                           mode == 1 ? "chain" : mode == 0 ? "normal" : "?");
             }
+
+            bool dmaProcessingOk = true;
+            try {
 
             if ((channelBase == 0x1000A000 || channelBase == 0x10009000) && m_gsVRAM)
             {
@@ -690,6 +760,13 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
 
                 // VIF1 data contains VIF commands, not raw GIF data.
                 // Parse VIF commands and only feed DIRECT/DIRECTHL payload to the GIF.
+                // VIF1 local state persists across DMA tags within a single chain
+                uint8_t vif1_cl = 1, vif1_wl = 1;
+                static int _vif1DbgFrame = 0;
+                ++_vif1DbgFrame;
+                bool _vif1Log = (_vif1DbgFrame <= 30 || (_vif1DbgFrame % 300) < 3);
+                int _vif1DirectCount = 0, _vif1UnpackCount = 0, _vif1MscalCount = 0;
+
                 auto feedVIF1 = [&](uint32_t srcAddr, uint32_t qwCount)
                 {
                     const uint32_t totalBytes = qwCount * 16;
@@ -702,6 +779,9 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                                      ? (PS2_RAM_SIZE - src) : totalBytes;
                     if (avail < 4)
                         return;
+
+                    if (_vif1Log)
+                        printf("[VIF1] feedVIF1 src=0x%x qwc=%u avail=%u\n", srcAddr, qwCount, avail);
 
                     const uint8_t *base = m_rdram + src;
                     uint32_t off = 0;
@@ -719,6 +799,10 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         }
                         else if (cmd == 0x01) // STCYCL
                         {
+                            vif1_cl = static_cast<uint8_t>(imm & 0xFF);
+                            vif1_wl = static_cast<uint8_t>((imm >> 8) & 0xFF);
+                            if (vif1_cl == 0) vif1_cl = 1;
+                            if (vif1_wl == 0) vif1_wl = 1;
                             off += 4;
                         }
                         else if (cmd == 0x02) // OFFSET
@@ -731,6 +815,7 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         }
                         else if (cmd == 0x04) // ITOP
                         {
+                            m_vif1Itop = imm;
                             off += 4;
                         }
                         else if (cmd == 0x05) // STMOD
@@ -759,33 +844,62 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         }
                         else if (cmd == 0x14) // MSCAL
                         {
+                            uint32_t startPC = static_cast<uint32_t>(imm) * 8u;
+                            if (_vif1Log)
+                                printf("[VIF1] MSCAL pc=0x%x itop=%u\n", startPC, m_vif1Itop);
+                            m_vu1.execute(m_vu1Code, PS2_VU1_CODE_SIZE,
+                                          m_vu1Data, PS2_VU1_DATA_SIZE,
+                                          m_gsEmu, startPC, m_vif1Itop);
+                            m_seenGifCopy = true;
+                            ++_vif1MscalCount;
                             off += 4;
                         }
                         else if (cmd == 0x15) // MSCALF
                         {
+                            uint32_t startPC = static_cast<uint32_t>(imm) * 8u;
+                            if (_vif1Log)
+                                printf("[VIF1] MSCALF pc=0x%x itop=%u\n", startPC, m_vif1Itop);
+                            m_vu1.execute(m_vu1Code, PS2_VU1_CODE_SIZE,
+                                          m_vu1Data, PS2_VU1_DATA_SIZE,
+                                          m_gsEmu, startPC, m_vif1Itop);
+                            m_seenGifCopy = true;
                             off += 4;
                         }
                         else if (cmd == 0x17) // MSCNT
                         {
+                            if (_vif1Log)
+                                printf("[VIF1] MSCNT itop=%u\n", m_vif1Itop);
+                            m_vu1.resume(m_vu1Code, PS2_VU1_CODE_SIZE,
+                                         m_vu1Data, PS2_VU1_DATA_SIZE,
+                                         m_gsEmu, m_vif1Itop);
+                            m_seenGifCopy = true;
                             off += 4;
                         }
                         else if (cmd == 0x20) // STMASK
                         {
-                            off += 8; // command + 1 word of data
+                            off += 8;
                         }
                         else if (cmd == 0x30) // STROW
                         {
-                            off += 20; // command + 4 words
+                            off += 20;
                         }
                         else if (cmd == 0x31) // STCOL
                         {
                             off += 20;
                         }
-                        else if (cmd == 0x4A) // MPG
+                        else if (cmd == 0x4A) // MPG — load VU1 microcode
                         {
                             uint32_t mpgBytes = static_cast<uint32_t>(num) * 8;
-                            off += 4 + mpgBytes;
-                            // Align to 128-bit
+                            off += 4;
+                            off = (off + 15) & ~15u;
+                            uint32_t vuAddr = static_cast<uint32_t>(imm) * 8u;
+                            if (off + mpgBytes <= avail && vuAddr + mpgBytes <= PS2_VU1_CODE_SIZE)
+                            {
+                                std::memcpy(m_vu1Code + vuAddr, base + off, mpgBytes);
+                                if (_vif1Log)
+                                    printf("[VIF1] MPG addr=0x%x bytes=%u\n", vuAddr, mpgBytes);
+                            }
+                            off += mpgBytes;
                             off = (off + 15) & ~15u;
                         }
                         else if (cmd == 0x50 || cmd == 0x51) // DIRECT / DIRECTHL
@@ -793,36 +907,113 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                             uint32_t gifQwc = imm;
                             uint32_t gifBytes = gifQwc * 16;
                             off += 4;
-                            // DIRECT data is 128-bit aligned
                             off = (off + 15) & ~15u;
                             if (off + gifBytes <= avail)
                             {
+                                if (_vif1Log)
+                                    printf("[VIF1] DIRECT%s qwc=%u bytes=%u off=%u avail=%u\n", cmd == 0x51 ? "HL" : "", gifQwc, gifBytes, off, avail);
                                 m_gsEmu.processGIFPacket(base + off, gifBytes);
                                 m_seenGifCopy = true;
                                 m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+                                ++_vif1DirectCount;
+                            }
+                            else if (_vif1Log)
+                            {
+                                printf("[VIF1] DIRECT%s SKIP (overflow) qwc=%u gifBytes=%u off=%u avail=%u\n", cmd == 0x51 ? "HL" : "", gifQwc, gifBytes, off, avail);
                             }
                             off += gifBytes;
                         }
                         else if ((cmd & 0x60) == 0x60) // UNPACK variants
                         {
-                            // Decode UNPACK format to compute data size
                             uint8_t vn = (cmd >> 2) & 0x3;  // 0=S,1=V2,2=V3,3=V4
                             uint8_t vl = cmd & 0x3;          // 0=32,1=16,2=8,3=5
+                            if (_vif1Log)
+                                printf("[VIF1] UNPACK V%d-%d num=%d addr=0x%x\n", vn+1, (int[]){32,16,8,5}[vl], num, (imm&0x3FF)*16);
+                            ++_vif1UnpackCount;
                             bool usn = ((vifWord >> 14) & 1) != 0;
-                            (void)usn;
+                            bool flg = ((vifWord >> 15) & 1) != 0;
+                            (void)flg;
+                            uint32_t vuAddr = (imm & 0x3FF) * 16u; // addr field in QW units
 
                             static const int componentBits[4] = {32, 16, 8, 5};
                             int bitsPerElement = componentBits[vl] * (vn + 1);
                             uint32_t dataBytes = (static_cast<uint32_t>(num) * bitsPerElement + 7) / 8;
                             off += 4;
-                            // Align payload to 32-bit
                             uint32_t padded = (dataBytes + 3) & ~3u;
+
+                            // Decode and write into VU1 data memory
+                            const uint8_t *payload = base + off;
+                            uint32_t payloadAvail = (off + padded <= avail) ? padded : 0;
+                            uint32_t srcOff = 0;
+                            uint32_t dstOff = vuAddr;
+                            int components = vn + 1; // 1..4
+
+                            for (int i = 0; i < num && srcOff < payloadAvail; ++i)
+                            {
+                                // With STCYCL, if WL > CL, we fill CL vectors then skip (WL-CL)
+                                // For now handle the common CL==WL case (no fill/skip)
+                                uint32_t vec[4] = {0, 0, 0, 0};
+                                for (int c = 0; c < components && srcOff < payloadAvail; ++c)
+                                {
+                                    if (vl == 0) // 32-bit
+                                    {
+                                        if (srcOff + 4 <= payloadAvail)
+                                        {
+                                            std::memcpy(&vec[c], payload + srcOff, 4);
+                                            srcOff += 4;
+                                        }
+                                    }
+                                    else if (vl == 1) // 16-bit
+                                    {
+                                        if (srcOff + 2 <= payloadAvail)
+                                        {
+                                            uint16_t h;
+                                            std::memcpy(&h, payload + srcOff, 2);
+                                            srcOff += 2;
+                                            if (usn)
+                                                vec[c] = static_cast<uint32_t>(h);
+                                            else
+                                                vec[c] = static_cast<uint32_t>(static_cast<int32_t>(static_cast<int16_t>(h)));
+                                        }
+                                    }
+                                    else if (vl == 2) // 8-bit
+                                    {
+                                        if (srcOff + 1 <= payloadAvail)
+                                        {
+                                            uint8_t b = payload[srcOff];
+                                            srcOff += 1;
+                                            if (usn)
+                                                vec[c] = static_cast<uint32_t>(b);
+                                            else
+                                                vec[c] = static_cast<uint32_t>(static_cast<int32_t>(static_cast<int8_t>(b)));
+                                        }
+                                    }
+                                    else // vl==3, V4-5 (rarely used)
+                                    {
+                                        srcOff += 2; // skip; not properly handled
+                                    }
+                                }
+                                // For S (scalar) mode, replicate to all 4 components
+                                if (vn == 0)
+                                {
+                                    vec[1] = vec[0];
+                                    vec[2] = vec[0];
+                                    vec[3] = vec[0];
+                                }
+                                // Write 128-bit vector to VU1 data memory
+                                if (dstOff + 16 <= PS2_VU1_DATA_SIZE)
+                                {
+                                    std::memcpy(m_vu1Data + dstOff, vec, 16);
+                                }
+                                dstOff += 16;
+                            }
+
                             off += padded;
-                            // VIF commands are processed until next 128-bit aligned DMA tag
                         }
                         else
                         {
-                            // Unknown VIF command - skip 1 word
+                            if (_vif1Log)
+                                printf("[VIF1] UNKNOWN cmd=0x%02x num=%d imm=0x%04x word=0x%08x\n", cmd, num, imm, vifWord);
                             off += 4;
                         }
                     }
@@ -846,6 +1037,7 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                 {
                     uint32_t tadr = m_ioRegisters[channelBase + 0x30];
                     constexpr int kMaxChainLinks = 4096;
+                    int chainLinkCount = 0;
                     for (int link = 0; link < kMaxChainLinks; ++link)
                     {
                         uint32_t physTag = 0;
@@ -860,6 +1052,13 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         uint32_t id = static_cast<uint32_t>((tag >> 28) & 0x7);
                         uint32_t addr = static_cast<uint32_t>((tag >> 32) & 0x7FFFFFFF);
                         bool irq = ((tag >> 31) & 1) != 0;
+
+                        if (_vif1Log && channelBase == 0x10009000) {
+                            static const char *idNames[] = {"REFE","CNT","NEXT","REF","REFS","CALL","RET","END"};
+                            printf("[VIF1_CHAIN #%d] link=%d tadr=0x%x id=%s(%d) qwc=%u addr=0x%x irq=%d tag=0x%016llx\n",
+                                   _vif1DbgFrame, link, tadr, idNames[id < 8 ? id : 7], id, tagQwc, addr, irq, (unsigned long long)tag);
+                        }
+                        ++chainLinkCount;
 
                         uint32_t dataAddr = 0;
                         uint32_t nextTagAddr = 0;
@@ -905,7 +1104,23 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
 
                         tadr = nextTagAddr;
                     }
+                    if (_vif1Log && channelBase == 0x10009000) {
+                        printf("[VIF1_CHAIN #%d] DONE links=%d direct=%d unpack=%d mscal=%d\n",
+                               _vif1DbgFrame, chainLinkCount, _vif1DirectCount, _vif1UnpackCount, _vif1MscalCount);
+                    }
                 }
+            }
+
+            } catch (const std::exception &ex) {
+                static int _dmaExcCnt = 0;
+                if (++_dmaExcCnt <= 30)
+                    printf("[DMA EXCEPTION #%d] ch=0x%x: %s\n", _dmaExcCnt, channelBase, ex.what());
+                dmaProcessingOk = false;
+            } catch (...) {
+                static int _dmaExcCnt2 = 0;
+                if (++_dmaExcCnt2 <= 10)
+                    printf("[DMA EXCEPTION(unknown) #%d] ch=0x%x\n", _dmaExcCnt2, channelBase);
+                dmaProcessingOk = false;
             }
 
             // DMA completes instantly: clear STR and raise D_STAT flag
@@ -914,6 +1129,10 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
             if (chIdx >= 0)
             {
                 m_ioRegisters[0x1000E010] |= (1u << chIdx);
+                m_lastDmaCompleteChannel = chIdx;
+                static int _dmaSetCnt = 0;
+                if (++_dmaSetCnt <= 30 || (_dmaSetCnt % 500) == 0)
+                    printf("[DMA COMPLETE #%d] ch=%d set m_lastDmaCompleteChannel ok=%d\n", _dmaSetCnt, chIdx, (int)dmaProcessingOk);
             }
         }
 
@@ -984,6 +1203,17 @@ uint32_t PS2Memory::readIORegister(uint32_t address)
     }
 
     return 0;
+}
+
+void PS2Memory::triggerVU1(uint32_t startPC)
+{
+    static bool _vu1Log = true;
+    if (_vu1Log)
+        printf("[VU1] CTC2 CMSAR1 trigger pc=0x%x itop=%u\n", startPC, m_vif1Itop);
+    m_vu1.execute(m_vu1Code, PS2_VU1_CODE_SIZE,
+                  m_vu1Data, PS2_VU1_DATA_SIZE,
+                  m_gsEmu, startPC, m_vif1Itop);
+    m_seenGifCopy = true;
 }
 
 void PS2Memory::registerCodeRegion(uint32_t start, uint32_t end)

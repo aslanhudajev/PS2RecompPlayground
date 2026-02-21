@@ -394,3 +394,49 @@ void DisableDmac(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     }
     setReturnS32(ctx, KE_OK);
 }
+
+void dispatchDmacHandlers(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime, int channel)
+{
+    static int s_dispatchCnt = 0;
+    ++s_dispatchCnt;
+
+    std::vector<IrqHandlerInfo> toCall;
+    {
+        std::lock_guard<std::mutex> lock(g_irq_handler_mutex);
+        if (channel < 32 && (g_enabled_dmac_mask & (1u << channel)) == 0u)
+        {
+            if (s_dispatchCnt <= 10)
+                printf("[DMAC dispatch #%d] ch=%d MASKED (mask=0x%x)\n", s_dispatchCnt, channel, g_enabled_dmac_mask);
+            return;
+        }
+        for (auto &[id, info] : g_dmacHandlers)
+        {
+            if (info.enabled && static_cast<int>(info.cause) == channel)
+                toCall.push_back(info);
+        }
+    }
+
+    if (s_dispatchCnt <= 20 || (s_dispatchCnt % 500) == 0)
+        printf("[DMAC dispatch #%d] ch=%d handlers=%zu\n", s_dispatchCnt, channel, toCall.size());
+
+    for (auto &info : toCall)
+    {
+        auto func = runtime->lookupFunction(info.handler);
+        if (!func)
+        {
+            static int s_missCnt = 0;
+            if (s_missCnt++ < 5)
+                printf("[DMAC] handler 0x%x for ch=%d not found\n", info.handler, channel);
+            continue;
+        }
+
+        R5900Context saved = *ctx;
+
+        SET_GPR_U32(ctx, 4, info.cause);
+        SET_GPR_U32(ctx, 28, info.gp);
+
+        func(rdram, ctx, runtime);
+
+        *ctx = saved;
+    }
+}

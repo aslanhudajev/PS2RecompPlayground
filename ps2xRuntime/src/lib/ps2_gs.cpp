@@ -2,6 +2,7 @@
 #include "ps2_memory.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 
 // ---------------------------------------------------------------------------
@@ -119,6 +120,11 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
 {
     if (!data || sizeBytes < 16 || !m_vram)
         return;
+
+    static int s_gifPktCount = 0;
+    ++s_gifPktCount;
+    if (s_gifPktCount <= 20 || (s_gifPktCount % 500) == 0)
+        printf("[GS::processGIFPacket #%d] sizeBytes=%u\n", s_gifPktCount, sizeBytes);
 
     uint32_t offset = 0;
     while (offset + 16 <= sizeBytes)
@@ -317,6 +323,13 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         m_prim.fix = ((value >> 10) & 1) != 0;
         m_vtxCount = 0;
         m_vtxIndex = 0;
+        {
+            static int s_primLog = 0;
+            if (++s_primLog <= 20 || (s_primLog % 1000) == 0)
+                printf("[GS_REG_PRIM #%d] type=%d tme=%d fst=%d ctxt=%d abe=%d val=0x%llx\n",
+                       s_primLog, (int)m_prim.type, m_prim.tme, m_prim.fst, m_prim.ctxt, m_prim.abe,
+                       (unsigned long long)value);
+        }
         break;
     }
     case GS_REG_RGBAQ:
@@ -466,6 +479,14 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         m_ctx[ci].frame.fbw = static_cast<uint32_t>((value >> 16) & 0x3F);
         m_ctx[ci].frame.psm = static_cast<uint8_t>((value >> 24) & 0x3F);
         m_ctx[ci].frame.fbmsk = static_cast<uint32_t>((value >> 32) & 0xFFFFFFFF);
+        {
+            static int s_frameRegLog = 0;
+            if (++s_frameRegLog <= 20 || (s_frameRegLog % 500) == 0)
+                printf("[GS_REG_FRAME #%d] ctx=%d fbp=%u(base=0x%x) fbw=%u psm=%u fbmsk=0x%08x val=0x%016llx\n",
+                       s_frameRegLog, ci, m_ctx[ci].frame.fbp, m_ctx[ci].frame.fbp * 2048,
+                       m_ctx[ci].frame.fbw, m_ctx[ci].frame.psm, m_ctx[ci].frame.fbmsk,
+                       (unsigned long long)value);
+        }
         break;
     }
     case GS_REG_ZBUF_1:
@@ -592,6 +613,17 @@ void GS::vertexKick(bool drawing)
     ++m_vtxCount;
     ++m_vtxIndex;
 
+    static int s_kickTotal = 0;
+    static int s_kickDraw = 0;
+    ++s_kickTotal;
+    if (drawing) ++s_kickDraw;
+    if (s_kickTotal <= 5 || (s_kickTotal % 2000) == 0)
+        printf("[GS::vertexKick #%d] drawing=%d/%d  primType=%d  ctxt=%d  frame.fbp=%u  frame.fbw=%u  scissor=[%d,%d,%d,%d]\n",
+               s_kickTotal, s_kickDraw, s_kickTotal, m_prim.type, m_prim.ctxt,
+               activeContext().frame.fbp, activeContext().frame.fbw,
+               activeContext().scissor.x0, activeContext().scissor.x1,
+               activeContext().scissor.y0, activeContext().scissor.y1);
+
     if (!drawing)
         return;
 
@@ -686,6 +718,13 @@ void GS::writePixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     uint32_t stride = fbStride(ctx.frame.fbw, ctx.frame.psm);
     if (stride == 0) return;
 
+    static int s_pixWriteCount = 0;
+    ++s_pixWriteCount;
+    if (s_pixWriteCount <= 5 || (s_pixWriteCount % 10000) == 0) {
+        printf("[GS::writePixel #%d] (%d,%d) rgba=(%d,%d,%d,%d) fbp=%u off=0x%x stride=%u\n",
+               s_pixWriteCount, x, y, r, g, b, a, ctx.frame.fbp, fbBase, stride);
+    }
+
     uint32_t off = fbBase + static_cast<uint32_t>(y) * stride + static_cast<uint32_t>(x) * 4u;
     if (off + 4 > m_vramSize)
         return;
@@ -772,6 +811,17 @@ void GS::drawSprite()
     int y0 = static_cast<int>(v0.y) - ofy;
     int x1 = static_cast<int>(v1.x) - ofx;
     int y1 = static_cast<int>(v1.y) - ofy;
+
+    static int s_spriteCount = 0;
+    ++s_spriteCount;
+    if (s_spriteCount <= 20 || (s_spriteCount % 1000) == 0) {
+        printf("[GS::drawSprite #%d] raw=(%.1f,%.1f)-(%.1f,%.1f) off=(%d,%d) => (%d,%d)-(%d,%d) "
+               "scissor=(%d,%d,%d,%d) frame.fbp=%u frame.fbw=%u frame.psm=%u tme=%d\n",
+               s_spriteCount, v0.x, v0.y, v1.x, v1.y, ofx, ofy,
+               x0, y0, x1, y1,
+               ctx.scissor.x0, ctx.scissor.y0, ctx.scissor.x1, ctx.scissor.y1,
+               ctx.frame.fbp, ctx.frame.fbw, ctx.frame.psm, m_prim.tme);
+    }
 
     if (x0 > x1) std::swap(x0, x1);
     if (y0 > y1) std::swap(y0, y1);
@@ -891,6 +941,15 @@ void GS::drawTriangle()
     float fy1 = v1.y - static_cast<float>(ofy);
     float fx2 = v2.x - static_cast<float>(ofx);
     float fy2 = v2.y - static_cast<float>(ofy);
+
+    static int s_triCount = 0;
+    ++s_triCount;
+    if (s_triCount <= 10 || (s_triCount % 1000) == 0) {
+        printf("[GS::drawTriangle #%d] (%.1f,%.1f)(%.1f,%.1f)(%.1f,%.1f) frame.fbp=%u fbw=%u scissor=[%d,%d,%d,%d]\n",
+               s_triCount, fx0, fy0, fx1, fy1, fx2, fy2,
+               ctx.frame.fbp, ctx.frame.fbw,
+               ctx.scissor.x0, ctx.scissor.x1, ctx.scissor.y0, ctx.scissor.y1);
+    }
 
     // Bounding box
     int minX = static_cast<int>(std::floor(std::min({fx0, fx1, fx2})));

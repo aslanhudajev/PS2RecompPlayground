@@ -36,6 +36,7 @@ add_library(ps2_runtime STATIC
     src/lib/ps2_runtime.cpp
     src/lib/ps2_stubs.cpp
     src/lib/ps2_syscalls.cpp
+    src/lib/ps2_vu1.cpp
 )
 
 file(GLOB RUNNER_SRC_FILES CONFIGURE_DEPENDS

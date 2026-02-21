@@ -1150,32 +1150,44 @@ void sceOpen(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void scePadEnd(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadEnd", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadEnterPressMode(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadEnterPressMode", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadExitPressMode(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadExitPressMode", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadGetButtonMask(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadGetButtonMask", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnU32(ctx, 0xFFFFu);
 }
 
 void scePadGetDmaStr(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadGetDmaStr", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnU32(ctx, 0u);
 }
 
 void scePadGetFrameCount(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadGetFrameCount", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnU32(ctx, 0u);
 }
 
 void scePadGetModVersion(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1227,7 +1239,9 @@ void scePadInfoAct(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void scePadInfoComb(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadInfoComb", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 0);
 }
 
 void scePadInfoMode(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1302,8 +1316,20 @@ void scePadPortClose(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void scePadPortOpen(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    (void)rdram;
     (void)runtime;
+    uint32_t port = getRegU32(ctx, 4);
+    uint32_t slot = getRegU32(ctx, 5);
+
+    constexpr uint32_t kPadDataBase = 0x3e02d0u;
+    uint32_t padAddr = kPadDataBase + port * 0x180u + slot * 0x60u;
+
+    uint8_t *ptr = getMemPtr(rdram, padAddr);
+    if (ptr && padAddr + 0x60 <= 0x2000000) {
+        std::memset(ptr, 0, 0x60);
+        uint32_t openFlag = 1;
+        std::memcpy(ptr, &openFlag, 4);
+    }
+
     setReturnS32(ctx, 1);
 }
 
@@ -1334,7 +1360,9 @@ void scePadRead(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void scePadReqIntToStr(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadReqIntToStr", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnU32(ctx, 0u);
 }
 
 void scePadSetActAlign(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1347,37 +1375,51 @@ void scePadSetActAlign(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void scePadSetActDirect(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadSetActDirect", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadSetButtonInfo(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadSetButtonInfo", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadSetMainMode(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadSetMainMode", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadSetReqState(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadSetReqState", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadSetVrefParam(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadSetVrefParam", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 1);
 }
 
 void scePadSetWarningLevel(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadSetWarningLevel", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnS32(ctx, 0);
 }
 
 void scePadStateIntToStr(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("scePadStateIntToStr", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    setReturnU32(ctx, 0u);
 }
 
 void scePrintf(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)

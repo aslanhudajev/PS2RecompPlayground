@@ -8,6 +8,7 @@
 #include <atomic>
 #include "ps2_gs.h"
 #include "ps2_iop.h"
+#include "ps2_vu1.h"
 #if defined(_MSC_VER)
     #include <intrin.h>
 #elif defined(USE_SSE2NEON)
@@ -285,6 +286,9 @@ public:
     const uint8_t *getGSVRAM() const { return m_gsVRAM; }
     bool hasSeenGifCopy() const { return m_seenGifCopy; }
 
+    // Trigger VU1 execution from EE side (CTC2 CMSAR1 equivalent).
+    void triggerVU1(uint32_t startPC);
+
     GS &gsEmulator() { return m_gsEmu; }
     const GS &gsEmulator() const { return m_gsEmu; }
 
@@ -343,6 +347,26 @@ public:
 
     GS m_gsEmu;
     IOP m_iop;
+
+    // VU1 memory (mapped at 0x11008000-0x1100FFFF from EE side)
+    uint8_t m_vu1Code[PS2_VU1_CODE_SIZE]; // 16KB micro memory
+    uint8_t m_vu1Data[PS2_VU1_DATA_SIZE]; // 16KB data memory
+
+    uint8_t *getVU1Code() { return m_vu1Code; }
+    uint8_t *getVU1Data() { return m_vu1Data; }
+    const uint8_t *getVU1Code() const { return m_vu1Code; }
+    const uint8_t *getVU1Data() const { return m_vu1Data; }
+
+    // DMA completion channel tracking for DMAC interrupt dispatch.
+    // Set to the channel index after a DMA transfer completes; -1 otherwise.
+    int m_lastDmaCompleteChannel = -1;
+    int consumeLastDmaCompleteChannel() { int ch = m_lastDmaCompleteChannel; m_lastDmaCompleteChannel = -1; return ch; }
+
+    // VIF1 state for UNPACK
+    uint32_t m_vif1Itop = 0;
+
+    // VU1 interpreter
+    VU1Interpreter m_vu1;
 };
 
 #endif // PS2_MEMORY_H

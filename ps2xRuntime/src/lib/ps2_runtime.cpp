@@ -205,6 +205,28 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     if (height > FB_HEIGHT)
         height = FB_HEIGHT;
 
+    static int _ufDbg = 0;
+    ++_ufDbg;
+    if (_ufDbg <= 20 || (_ufDbg % 60) == 0) {
+        uint8_t *vr = rt->memory().getGSVRAM();
+        uint32_t nonZero = 0;
+        uint32_t fbNonZero = 0;
+        uint32_t baseBytesDbg = fbp * 2048;
+        uint32_t fbStrideDbg = (fbw ? fbw : (FB_WIDTH / 64)) * 64 * 4;
+        if (vr) {
+            for (uint32_t i = 0; i < 4u*1024u*1024u; i += 4) { uint32_t px; std::memcpy(&px, vr+i, 4); if (px) nonZero++; }
+            for (uint32_t y = 0; y < 32 && y < height; ++y) {
+                uint32_t off = baseBytesDbg + y * fbStrideDbg;
+                for (uint32_t x = 0; x < 64 && x < width; ++x, off += 4) {
+                    if (off + 4 <= 4u*1024u*1024u) { uint32_t px; std::memcpy(&px, vr+off, 4); if (px) fbNonZero++; }
+                }
+            }
+        }
+        printf("[UploadFrame #%d] dispfb1=0x%llx display1=0x%llx fbp=%u fbw=%u psm=%u dw=%u dh=%u w=%u h=%u base=0x%x stride=%u vram_nonzero=%u fb_sample=%u\n",
+               _ufDbg, (unsigned long long)gs.dispfb1, (unsigned long long)gs.display1,
+               fbp, fbw, psm, dw, dh, width, height, baseBytesDbg, fbStrideDbg, nonZero, fbNonZero);
+    }
+
     // Only handle PSMCT32 (0).
     if (psm != 0)
     {
@@ -1294,9 +1316,22 @@ void PS2Runtime::Store32(uint8_t *rdram, R5900Context *ctx, uint32_t vaddr, uint
     {
         m_memory.write32(vaddr, value);
     }
-    catch (const std::exception &)
+    catch (const std::exception &ex)
     {
+        static int _s32exc = 0;
+        if (++_s32exc <= 20)
+            printf("[Store32 EXCEPTION #%d] addr=0x%x val=0x%x: %s\n", _s32exc, vaddr, value, ex.what());
         SignalException(ctx, EXCEPTION_ADDRESS_ERROR_STORE);
+        return;
+    }
+
+    int ch = m_memory.consumeLastDmaCompleteChannel();
+    if (ch >= 0)
+    {
+        static int s_dmaDone = 0;
+        if (++s_dmaDone <= 20 || (s_dmaDone % 500) == 0)
+            printf("[Store32] DMA complete ch=%d, dispatching handlers (total=%d)\n", ch, s_dmaDone);
+        ps2_syscalls::dispatchDmacHandlers(rdram, ctx, this, ch);
     }
 }
 
