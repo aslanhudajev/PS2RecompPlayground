@@ -5,6 +5,10 @@
 #include "ps2_call_list.h"
 #include <mutex>
 #include <atomic>
+#include <string>
+
+// Implemented in ps2_syscalls.cpp; used by runners that need to resolve PS2 paths (e.g. sceeLoadFile).
+std::string translatePs2Path(const char* ps2Path);
 
 // Number of active host threads spawned for PS2 thread emulation
 extern std::atomic<int> g_activeThreads;

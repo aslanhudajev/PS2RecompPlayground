@@ -2,11 +2,10 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
-void sceMpegDelete_0x11f538(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
-    const uint32_t __entryPc = ctx->pc;
-    ps2_stubs::sceMpegDelete(rdram, ctx, runtime); 
-    if (ctx->pc == __entryPc)
-    {
-        ctx->pc = getRegU32(ctx, 31);
-    }
+// sceMpegDelete(): return 1
+void sceMpegDelete_0x11f538(uint8_t* rdram, R5900Context* ctx, PS2Runtime* runtime) {
+    (void)rdram;
+    (void)runtime;
+    setReturnU32(ctx, 1u);
+    ctx->pc = getRegU32(ctx, 31);
 }

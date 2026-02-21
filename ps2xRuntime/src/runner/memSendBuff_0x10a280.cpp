@@ -2,11 +2,9 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
-void memSendBuff_0x10a280(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
-    const uint32_t __entryPc = ctx->pc;
-    ps2_stubs::TODO_NAMED("memSendBuff", rdram, ctx, runtime); 
-    if (ctx->pc == __entryPc)
-    {
-        ctx->pc = getRegU32(ctx, 31);
-    }
+// No-op: sends current buffer to GS/VIF. For recomp we don't emulate the path.
+void memSendBuff_0x10a280(uint8_t* rdram, R5900Context* ctx, PS2Runtime* runtime) {
+    (void)rdram;
+    (void)runtime;
+    ctx->pc = getRegU32(ctx, 31);
 }
