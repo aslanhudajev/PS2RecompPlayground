@@ -379,6 +379,10 @@ bool PS2Runtime::initialize(const char *title)
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(FB_WIDTH, FB_HEIGHT, title);
+    InitAudioDevice();
+    const bool audioReady = IsAudioDeviceReady();
+    m_audioBackend.setAudioReady(audioReady);
+    std::cout << "[PS2Audio] InitAudioDevice: " << (audioReady ? "OK" : "FAILED") << std::endl;
     SetTargetFPS(60);
 
     return true;
@@ -1488,15 +1492,7 @@ void PS2Runtime::run()
         const uint32_t sp = m_debugSp.load(std::memory_order_relaxed);
         const uint32_t gp = m_debugGp.load(std::memory_order_relaxed);
 
-        if ((tick++ % 120) == 0)
-        {
-            std::cout << "[run] activeThreads=" << g_activeThreads.load(std::memory_order_relaxed);
-            std::cout << " pc=0x" << std::hex << pc
-                      << " ra=0x" << ra
-                      << " sp=0x" << sp
-                      << " gp=0x" << gp
-                      << std::dec << std::endl;
-        }
+        tick++;
         if ((tick % 600) == 0)
         {
             static uint64_t lastDma = 0, lastGif = 0, lastGs = 0, lastVif = 0;
@@ -1506,30 +1502,11 @@ void PS2Runtime::run()
             uint64_t curVif = m_memory.vifWriteCount();
             if (curDma != lastDma || curGif != lastGif || curGs != lastGs || curVif != lastVif)
             {
-                std::cout << "[hw] dma_starts=" << curDma
-                          << " gif_copies=" << curGif
-                          << " gs_writes=" << curGs
-                          << " vif_writes=" << curVif << std::endl;
                 lastDma = curDma;
                 lastGif = curGif;
                 lastGs = curGs;
                 lastVif = curVif;
             }
-        }
-        if ((tick % 60) == 0)
-        {
-            const GSRegisters &gs = m_memory.gs();
-            uint32_t dispfb = static_cast<uint32_t>(gs.dispfb1 & 0xFFFFFFFFULL);
-            uint64_t display64 = gs.display1;
-            uint32_t fbp = dispfb & 0x1FF;
-            uint32_t fbw = (dispfb >> 9) & 0x3F;
-            uint32_t psm = (dispfb >> 15) & 0x1F;
-            uint32_t dw = static_cast<uint32_t>((display64 >> 32) & 0xFFF);
-            uint32_t dh = static_cast<uint32_t>((display64 >> 44) & 0x7FF);
-            std::cout << "[GS] frame=" << tick
-                      << " dispfb=0x" << std::hex << dispfb << std::dec
-                      << " fbp=" << fbp << " fbw=" << fbw << " psm=" << psm
-                      << " dw=" << (dw + 1) << " dh=" << (dh + 1) << std::endl;
         }
         UploadFrame(frameTex, this);
 
@@ -1537,12 +1514,6 @@ void PS2Runtime::run()
         ClearBackground(BLACK);
         DrawTexture(frameTex, 0, 0, WHITE);
         EndDrawing();
-
-        if ((tick % 60) == 0)
-        {
-            std::cout << "[raylib] frame=" << tick
-                      << " DrawTexture(tex 640x448 @ 0,0) done" << std::endl;
-        }
 
         if (WindowShouldClose())
         {
@@ -1582,6 +1553,7 @@ void PS2Runtime::run()
     }
 
     UnloadTexture(frameTex);
+    CloseAudioDevice();
     CloseWindow();
 
     const int remainingThreads = g_activeThreads.load(std::memory_order_relaxed);

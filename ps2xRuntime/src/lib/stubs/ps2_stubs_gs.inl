@@ -34,20 +34,6 @@ void sceGsExecLoadImage(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         return;
     }
 
-    static int logCount = 0;
-    if (logCount < 8)
-    {
-        std::cout << "ps2_stub sceGsExecLoadImage: x=" << img.x
-                  << " y=" << img.y
-                  << " w=" << img.width
-                  << " h=" << img.height
-                  << " vram=0x" << std::hex << img.vram_addr
-                  << " fbw=" << std::dec << static_cast<int>(fbw)
-                  << " psm=" << static_cast<int>(img.psm)
-                  << " src=0x" << std::hex << srcAddr << std::dec << std::endl;
-        ++logCount;
-    }
-
     for (uint32_t row = 0; row < img.height; ++row)
     {
         uint32_t dstOff = base + (static_cast<uint32_t>(img.y) + row) * stride + bytesForPixels(img.psm, static_cast<uint32_t>(img.x));
@@ -106,20 +92,6 @@ void sceGsExecStoreImage(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         return;
     }
 
-    static int logCount = 0;
-    if (logCount < 8)
-    {
-        std::cout << "ps2_stub sceGsExecStoreImage: x=" << img.x
-                  << " y=" << img.y
-                  << " w=" << img.width
-                  << " h=" << img.height
-                  << " vram=0x" << std::hex << img.vram_addr
-                  << " fbw=" << std::dec << static_cast<int>(fbw)
-                  << " psm=" << static_cast<int>(img.psm)
-                  << " dst=0x" << std::hex << dstAddr << std::dec << std::endl;
-        ++logCount;
-    }
-
     for (uint32_t row = 0; row < img.height; ++row)
     {
         uint32_t srcOff = base + (static_cast<uint32_t>(img.y) + row) * stride + bytesForPixels(img.psm, static_cast<uint32_t>(img.x));
@@ -157,24 +129,6 @@ void sceGsPutDispEnv(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         if (env.bgcolor)
             gs.bgcolor = env.bgcolor;
 
-        static int logCount = 0;
-        if (logCount < 4)
-        {
-            uint32_t fbp = static_cast<uint32_t>(env.dispfb & 0x1FF);
-            uint32_t fbw = static_cast<uint32_t>((env.dispfb >> 9) & 0x3F);
-            uint32_t psm = static_cast<uint32_t>((env.dispfb >> 15) & 0x1F);
-            uint32_t dw = static_cast<uint32_t>((env.display >> 32) & 0xFFF);
-            uint32_t dh = static_cast<uint32_t>((env.display >> 44) & 0x7FF);
-            std::cout << "[sceGsPutDispEnv] addr=0x" << std::hex << envAddr
-                      << " dispfb=0x" << env.dispfb
-                      << " fbp=" << std::dec << fbp
-                      << " fbw=" << fbw
-                      << " psm=" << psm
-                      << " display=0x" << std::hex << env.display
-                      << " dw=" << std::dec << dw
-                      << " dh=" << dh << std::endl;
-            ++logCount;
-        }
     }
     setReturnS32(ctx, 0);
 }

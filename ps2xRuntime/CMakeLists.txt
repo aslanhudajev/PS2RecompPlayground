@@ -20,6 +20,8 @@ FetchContent_MakeAvailable(raylib)
 
 add_library(ps2_runtime STATIC
     src/lib/game_overrides.cpp
+    src/lib/ps2_audio.cpp
+    src/lib/ps2_audio_vag.cpp
     src/lib/ps2_gs.cpp
     src/lib/ps2_iop.cpp
     src/lib/ps2_memory.cpp

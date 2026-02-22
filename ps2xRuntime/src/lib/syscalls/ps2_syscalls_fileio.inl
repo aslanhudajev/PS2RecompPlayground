@@ -26,6 +26,16 @@ static void releasePs2Fd(int ps2Fd)
     g_fileDescriptors.erase(ps2Fd);
 }
 
+// VAG stream: accumulate reads per fd, feed full stream to audio backend on close
+struct VagAccumEntry
+{
+    std::vector<uint8_t> data;
+    uint32_t firstBufAddr = 0;
+};
+static std::unordered_map<int, VagAccumEntry> g_vagAccum;
+static std::mutex g_vagAccumMutex;
+static constexpr size_t kVagAccumMaxBytes = 16 * 1024 * 1024; // 16MB cap
+
 static const char *translateFioMode(int ps2Flags)
 {
     bool read = (ps2Flags & PS2_FIO_O_RDONLY) || (ps2Flags & PS2_FIO_O_RDWR);
@@ -107,7 +117,6 @@ void fioOpen(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 void fioClose(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
     int ps2Fd = (int)getRegU32(ctx, 4); // $a0
-    std::cout << "fioClose: fd=" << ps2Fd << std::endl;
 
     FILE *fp = getHostFile(ps2Fd);
     if (!fp)
@@ -119,6 +128,35 @@ void fioClose(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
     int ret = ::fclose(fp);
     releasePs2Fd(ps2Fd);
+
+    // Feed accumulated VAG stream to audio backend if valid
+    {
+        std::lock_guard<std::mutex> lock(g_vagAccumMutex);
+        auto it = g_vagAccum.find(ps2Fd);
+        if (it != g_vagAccum.end())
+        {
+            VagAccumEntry& e = it->second;
+            if (e.data.size() >= 48)
+            {
+                const uint32_t magic = (static_cast<uint32_t>(e.data[0]) << 24) |
+                                       (static_cast<uint32_t>(e.data[1]) << 16) |
+                                       (static_cast<uint32_t>(e.data[2]) << 8) |
+                                       static_cast<uint32_t>(e.data[3]);
+                const uint32_t magicLE = (static_cast<uint32_t>(e.data[3]) << 24) |
+                                        (static_cast<uint32_t>(e.data[2]) << 16) |
+                                        (static_cast<uint32_t>(e.data[1]) << 8) |
+                                        static_cast<uint32_t>(e.data[0]);
+                if (magic == 0x56414770u || magicLE == 0x56414770u) // "VAGp"
+                {
+                    if (runtime)
+                        runtime->audioBackend().onVagTransferFromBuffer(
+                            e.data.data(), static_cast<uint32_t>(e.data.size()),
+                            e.firstBufAddr ? e.firstBufAddr : 0u);
+                }
+            }
+            g_vagAccum.erase(it);
+        }
+    }
 
     // returns 0 on success, -1 on error
     setReturnS32(ctx, ret == 0 ? 0 : -1);
@@ -163,6 +201,38 @@ void fioRead(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         clearerr(fp);
         setReturnS32(ctx, -1); // -EIO or other appropriate error
         return;
+    }
+
+    // Accumulate reads for VAG stream (feed full file on fioClose)
+    {
+        std::lock_guard<std::mutex> lock(g_vagAccumMutex);
+        auto it = g_vagAccum.find(ps2Fd);
+        if (it != g_vagAccum.end())
+        {
+            // Already accumulating for this fd
+            VagAccumEntry& e = it->second;
+            if (e.data.size() + bytesRead <= kVagAccumMaxBytes)
+                e.data.insert(e.data.end(), hostBuf, hostBuf + bytesRead);
+        }
+        else if (bytesRead >= 4)
+        {
+            // Start accumulation only if first read looks like VAG header
+            const uint32_t magic = (static_cast<uint32_t>(hostBuf[0]) << 24) |
+                                   (static_cast<uint32_t>(hostBuf[1]) << 16) |
+                                   (static_cast<uint32_t>(hostBuf[2]) << 8) |
+                                   static_cast<uint32_t>(hostBuf[3]);
+            const uint32_t magicLE = (static_cast<uint32_t>(hostBuf[3]) << 24) |
+                                    (static_cast<uint32_t>(hostBuf[2]) << 16) |
+                                    (static_cast<uint32_t>(hostBuf[1]) << 8) |
+                                    static_cast<uint32_t>(hostBuf[0]);
+            if (magic == 0x56414770u || magicLE == 0x56414770u) // "VAGp"
+            {
+                VagAccumEntry& e = g_vagAccum[ps2Fd];
+                e.firstBufAddr = bufAddr;
+                if (bytesRead <= kVagAccumMaxBytes)
+                    e.data.assign(hostBuf, hostBuf + bytesRead);
+            }
+        }
     }
 
     // returns number of bytes read (can be 0 for EOF)

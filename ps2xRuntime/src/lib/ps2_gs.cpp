@@ -1461,25 +1461,6 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
         uint32_t rowBytes = (rrw + 1u) / 2u;
         uint32_t offset = 0;
 
-        static int s_img4Count = 0;
-        ++s_img4Count;
-        if (s_img4Count <= 5) {
-            printf("[processImageData PSMT4 #%d] dbp=0x%x dbw=%u dpsm=%u base=0x%x "
-                   "stridePixels=%u strideBytes=%u rrw=%u rrh=%u dsax=%u dsay=%u "
-                   "sizeBytes=%u rowBytes=%u\n",
-                   s_img4Count, dbp, dbw, dpsm, base,
-                   stridePixels, strideBytes, rrw, rrh, dsax, dsay,
-                   sizeBytes, rowBytes);
-            if (sizeBytes >= 16) {
-                printf("[processImageData PSMT4 #%d] first 16 src bytes: "
-                       "%02x %02x %02x %02x %02x %02x %02x %02x "
-                       "%02x %02x %02x %02x %02x %02x %02x %02x\n",
-                       s_img4Count,
-                       data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],
-                       data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15]);
-            }
-        }
-
         while (offset < sizeBytes && m_hwregY < rrh)
         {
             uint32_t dstY = dsay + m_hwregY;
@@ -1504,25 +1485,6 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
         uint32_t storageBpp = 4;
         uint32_t transferBpp = 3;
         uint32_t storageStride = stridePixels * storageBpp;
-
-        static int s_imgNon4Count = 0;
-        ++s_imgNon4Count;
-        if (s_imgNon4Count <= 100 || (s_imgNon4Count % 200) == 0) {
-            std::fprintf(stderr, "[processImageData #%d] dbp=0x%x dbw=%u dpsm=%u bpp=24(xfer) base=0x%x "
-                   "stride=%u rrw=%u rrh=%u dsax=%u dsay=%u size=%u trxdir=%u\n",
-                   s_imgNon4Count, dbp, dbw, dpsm, base,
-                   storageStride, rrw, rrh, dsax, dsay, sizeBytes, m_trxdir);
-            if (sizeBytes >= 16) {
-                uint32_t nonZero = 0;
-                uint32_t checkLen = sizeBytes < 1024 ? sizeBytes : 1024;
-                for (uint32_t i = 0; i < checkLen; ++i)
-                    if (data[i] != 0) ++nonZero;
-                std::fprintf(stderr, "[processImageData #%d] first16: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  nonZero=%u/%u\n",
-                       s_imgNon4Count, data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],
-                       data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],
-                       nonZero, checkLen);
-            }
-        }
 
         uint32_t offset = 0;
         while (offset < sizeBytes && m_hwregY < rrh)
@@ -1559,22 +1521,6 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
             }
         }
 
-        static int s_ct24DiagCount = 0;
-        if (m_hwregY >= rrh && s_ct24DiagCount < 3) {
-            ++s_ct24DiagCount;
-            uint32_t probeRow = (rrh > 200) ? 200 : rrh / 2;
-            uint32_t probeCol = (rrw > 160) ? 160 : rrw / 2;
-            uint32_t probeOff = base + probeRow * storageStride + probeCol * storageBpp;
-            uint32_t probeVal = 0;
-            if (probeOff + 4 <= m_vramSize)
-                std::memcpy(&probeVal, m_vram + probeOff, 4);
-            uint32_t probeOff0 = base;
-            uint32_t probeVal0 = 0;
-            if (probeOff0 + 4 <= m_vramSize)
-                std::memcpy(&probeVal0, m_vram + probeOff0, 4);
-            std::fprintf(stderr, "[CT24-DONE #%d] dbp=0x%x hwregY=%u/%u VRAM@(0,0)=0x%08x VRAM@(%u,%u)=0x%08x\n",
-                   s_ct24DiagCount, dbp, m_hwregY, rrh, probeVal0, probeCol, probeRow, probeVal);
-        }
     }
     else
     {
@@ -1582,25 +1528,6 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
         if (bytesPerPixel == 0) bytesPerPixel = 4;
         uint32_t strideBytes = stridePixels * bytesPerPixel;
         uint32_t rowBytes = rrw * bytesPerPixel;
-
-        static int s_imgNon4Count2 = 0;
-        ++s_imgNon4Count2;
-        if (s_imgNon4Count2 <= 100 || (s_imgNon4Count2 % 200) == 0) {
-            std::fprintf(stderr, "[processImageData #%d] dbp=0x%x dbw=%u dpsm=%u bpp=%u base=0x%x "
-                   "stride=%u rrw=%u rrh=%u dsax=%u dsay=%u size=%u trxdir=%u\n",
-                   s_imgNon4Count2, dbp, dbw, dpsm, bpp, base,
-                   strideBytes, rrw, rrh, dsax, dsay, sizeBytes, m_trxdir);
-            if (sizeBytes >= 16) {
-                uint32_t nonZero = 0;
-                uint32_t checkLen = sizeBytes < 1024 ? sizeBytes : 1024;
-                for (uint32_t i = 0; i < checkLen; ++i)
-                    if (data[i] != 0) ++nonZero;
-                std::fprintf(stderr, "[processImageData #%d] first16: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  nonZero=%u/%u\n",
-                       s_imgNon4Count2, data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],
-                       data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],
-                       nonZero, checkLen);
-            }
-        }
 
         uint32_t offset = 0;
         while (offset < sizeBytes && m_hwregY < rrh)

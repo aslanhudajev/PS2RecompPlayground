@@ -6,7 +6,8 @@
 #include <unordered_map>
 
 // Known IOP module server IDs (SIF RPC)
-constexpr uint32_t IOP_SID_DCS = 0x0DC50DC5u; // DCS audio streamer
+constexpr uint32_t IOP_SID_DCS = 0x0DC50DC5u;   // DCS audio streamer
+constexpr uint32_t IOP_SID_LIBSD = 0x80000701u;  // libsd (sceSdRemote)
 
 // DCS RPC command numbers (passed as rpcNum to sceSifCallRpc)
 constexpr uint32_t DCS_CMD_RESET       = 0x01u;

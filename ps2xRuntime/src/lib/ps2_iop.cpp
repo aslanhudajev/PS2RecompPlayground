@@ -1,5 +1,4 @@
 #include "ps2_iop.h"
-#include <iostream>
 
 IOP::IOP()
 {
@@ -128,8 +127,6 @@ bool IOP::handleDCS(uint32_t rpcNum,
         m_sifRegs[SIF_SREG_STREAM] = cur & ~1u;
         syncRegToMemory(SIF_SREG_STREAM);
 
-        std::cout << "[IOP:DCS] STOP_STREAM -> sreg[0x1f] "
-                  << cur << " -> " << m_sifRegs[SIF_SREG_STREAM] << std::endl;
         break;
     }
     case DCS_CMD_LOAD_BANK:
@@ -186,13 +183,6 @@ bool IOP::handleDCS(uint32_t rpcNum,
             writeU32(recvBufAddr + 4, bankId);
         }
 
-        static int logCount = 0;
-        if (++logCount <= 20)
-            std::cout << "[IOP:DCS] LOAD_BANK #" << bankId
-                      << " file=\"" << filename << "\""
-                      << " offset=0x" << std::hex << fileOffset
-                      << " size=0x" << fileSize << std::dec
-                      << " -> sreg[29]=" << bankId << std::endl;
         break;
     }
     case DCS_CMD_BANK_INFO:
@@ -225,11 +215,6 @@ bool IOP::handleDCS(uint32_t rpcNum,
             writeU16(recvBufAddr + 8, numStreams);
         }
 
-        static int logCount = 0;
-        if (++logCount <= 20)
-            std::cout << "[IOP:DCS] BANK_INFO id=" << bankId
-                      << " -> sounds=" << numSounds
-                      << " streams=" << numStreams << std::endl;
         break;
     }
     case DCS_CMD_UNLOAD_BANK:
@@ -240,60 +225,33 @@ bool IOP::handleDCS(uint32_t rpcNum,
 
         m_loadedBanks.erase(static_cast<uint32_t>(bankId));
 
-        static int logCount = 0;
-        if (++logCount <= 10)
-            std::cout << "[IOP:DCS] UNLOAD_BANK id=" << bankId << std::endl;
         break;
     }
     case DCS_CMD_FLUSH_BANKS:
     {
-        size_t count = m_loadedBanks.size();
         m_loadedBanks.clear();
-        std::cout << "[IOP:DCS] FLUSH_BANKS (cleared " << count << " banks)" << std::endl;
         break;
     }
     case DCS_CMD_INIT:
     {
         m_nextBankId = 1;
         m_loadedBanks.clear();
-        std::cout << "[IOP:DCS] INIT acknowledged (bank state reset)" << std::endl;
         break;
     }
     case DCS_CMD_SET_OUTPUT:
-    {
-        static bool once = false;
-        if (!once) { std::cout << "[IOP:DCS] SET_OUTPUT acknowledged" << std::endl; once = true; }
         break;
-    }
     case DCS_CMD_STOP_ALL:
     {
         m_sifRegs[SIF_SREG_STREAM] = 0;
         syncRegToMemory(SIF_SREG_STREAM);
         m_sifRegs[SIF_SREG_SOUND_DATA] = 0;
         syncRegToMemory(SIF_SREG_SOUND_DATA);
-
-        static bool once = false;
-        if (!once) { std::cout << "[IOP:DCS] STOP_ALL acknowledged" << std::endl; once = true; }
         break;
     }
     case DCS_CMD_MPUT:
-    {
-        static int mputCount = 0;
-        if (++mputCount <= 5)
-            std::cout << "[IOP:DCS] MPUT (" << sendSize << " bytes) -> recv zeroed" << std::endl;
         break;
-    }
     default:
-    {
-        static int logCount = 0;
-        if (logCount < 20)
-        {
-            std::cout << "[IOP:DCS] rpcNum=0x" << std::hex << rpcNum << std::dec
-                      << " (unhandled, returning success)" << std::endl;
-            ++logCount;
-        }
         break;
-    }
     }
 
     return true;

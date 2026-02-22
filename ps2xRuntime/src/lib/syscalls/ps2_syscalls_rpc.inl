@@ -81,7 +81,6 @@ void SifInitRpc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
             g_dtx_next_urpc_obj = kDtxUrpcObjBase;
         }
         g_rpc_initialized = true;
-        std::cout << "[SifInitRpc] Initialized" << std::endl;
     }
     setReturnS32(ctx, 0);
 }
@@ -287,6 +286,24 @@ void SifCallRpc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     {
         if (runtime->iop().handleRPC(sid, rpcNum, sendBuf, sendSize, recvBuf, recvSize))
         {
+            handled = true;
+            resultPtr = recvBuf;
+            if (sid == IOP_SID_DCS)
+            {
+                const uint8_t* sendPtr = sendBuf ? getConstMemPtr(rdram, sendBuf) : nullptr;
+                uint8_t* recvPtr = recvBuf ? getMemPtr(rdram, recvBuf) : nullptr;
+                runtime->audioBackend().onSoundCommand(sid, rpcNum,
+                    sendPtr, sendSize, recvPtr, recvSize);
+            }
+        }
+        else if (sid == IOP_SID_LIBSD)
+        {
+            const uint8_t* sendPtr = sendBuf ? getConstMemPtr(rdram, sendBuf) : nullptr;
+            uint8_t* recvPtr = recvBuf ? getMemPtr(rdram, recvBuf) : nullptr;
+            runtime->audioBackend().onSoundCommand(sid, rpcNum,
+                sendPtr, sendSize, recvPtr, recvSize);
+            if (recvPtr && recvSize > 0)
+                std::memset(recvPtr, 0, recvSize);
             handled = true;
             resultPtr = recvBuf;
         }
@@ -902,7 +919,7 @@ void SifCallRpc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     }
 
     static int logCount = 0;
-    if (logCount < 10)
+    if (logCount < 2)
     {
         std::cout << "[SifCallRpc] client=0x" << std::hex << clientPtr
                   << " sid=0x" << sid
@@ -1011,7 +1028,6 @@ void SifRegisterRpc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         }
     }
 
-    std::cout << "[SifRegisterRpc] sid=0x" << std::hex << sid << " sd=0x" << sdPtr << std::dec << std::endl;
     setReturnS32(ctx, 0);
 }
 
