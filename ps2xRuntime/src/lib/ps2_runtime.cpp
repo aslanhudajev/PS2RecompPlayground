@@ -210,19 +210,22 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     uint8_t *rdram = rt->memory().getRDRAM();
     uint8_t *gsvram = rt->memory().getGSVRAM();
 
+    // Use the GS display snapshot (double-buffered) to avoid tearing/flicker.
+    uint32_t snapSize = 0;
+    const uint8_t *snapVram = rt->gs().lockDisplaySnapshot(snapSize);
+    const uint8_t *vramSrc = (snapVram && snapSize > 0) ? snapVram : gsvram;
+
     if (psm == 0u)
     {
-        // PSMCT32: copy RGB from VRAM, force alpha to 255.
-        // PS2 display output ignores framebuffer alpha; it only affects
-        // blending during draw operations.
+        // PSMCT32: copy RGB from VRAM snapshot, force alpha to 255.
         for (uint32_t y = 0; y < height; ++y)
         {
             uint32_t srcOff = baseBytes + y * strideBytes;
             uint32_t dstOff = y * FB_WIDTH * 4;
             uint32_t copyW = width * 4;
             uint32_t srcIdx = srcOff;
-            if (srcIdx + copyW <= PS2_GS_VRAM_SIZE && gsvram)
-                std::memcpy(&scratch[dstOff], gsvram + srcIdx, copyW);
+            if (srcIdx + copyW <= PS2_GS_VRAM_SIZE && vramSrc)
+                std::memcpy(&scratch[dstOff], vramSrc + srcIdx, copyW);
             else
             {
                 uint32_t rdramIdx = srcOff & PS2_RAM_MASK;
@@ -244,8 +247,8 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
             uint32_t srcOff = baseBytes + y * strideBytes;
             uint32_t dstOff = y * FB_WIDTH * 4;
             const uint8_t *src = nullptr;
-            if (srcOff + srcLineBytes <= PS2_GS_VRAM_SIZE && gsvram)
-                src = gsvram + srcOff;
+            if (srcOff + srcLineBytes <= PS2_GS_VRAM_SIZE && vramSrc)
+                src = vramSrc + srcOff;
             else if ((srcOff & PS2_RAM_MASK) + srcLineBytes <= PS2_RAM_SIZE)
                 src = rdram + (srcOff & PS2_RAM_MASK);
             if (!src)
@@ -266,14 +269,14 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     }
     else
     {
-        // Unsupported PSM (e.g. 15): show magenta. Real display needs proper GS/GIF
-        // emulation; treating as 32-bit would read GS VRAM that is filled with
-        // raw GIF packet data (not pixels), giving black or garbage.
+        rt->gs().unlockDisplaySnapshot();
         Image blank = GenImageColor(FB_WIDTH, FB_HEIGHT, MAGENTA);
         UpdateTexture(tex, blank.data);
         UnloadImage(blank);
         return;
     }
+
+    rt->gs().unlockDisplaySnapshot();
 
     static int s_uploadCount = 0;
     ++s_uploadCount;

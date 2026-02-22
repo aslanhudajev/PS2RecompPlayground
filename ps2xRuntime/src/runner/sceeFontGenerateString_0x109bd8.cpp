@@ -6,6 +6,7 @@
 #include "ps2_memory.h"
 #include <cstring>
 #include <cmath>
+#include <cstdio>
 
 static constexpr uint32_t kFontBase     = 0x176148u;
 static constexpr uint32_t kFontEntrySz  = 0x24u;
@@ -30,6 +31,17 @@ void sceeFontGenerateString_0x109bd8(uint8_t* rdram, R5900Context* ctx, PS2Runti
         setReturnS32(ctx, 0);
         ctx->pc = getRegU32(ctx, 31);
         return;
+    }
+
+    static int s_genStrCount = 0;
+    ++s_genStrCount;
+    {
+        const char* hostStr = reinterpret_cast<const char*>(getConstMemPtr(rdram, strAddr));
+        if (s_genStrCount <= 5) {
+            std::fprintf(stderr, "[sceeFontGenStr #%d] str=\"%s\" fontId=%d bufAddr=0x%x paramX=%lld paramY=%lld paramW=%d paramH=%d colour=0x%x align='%c' param14=%u\n",
+                   s_genStrCount, hostStr ? hostStr : "(null)", fontId, bufAddr,
+                   (long long)paramX, (long long)paramY, paramW, paramH, colour, (char)alignCh, param14);
+        }
     }
 
     const uint32_t gp = getRegU32(ctx, 28);
@@ -156,6 +168,22 @@ label_check_printable:
                 iVar22_qw += 2;
                 iStack_dc += 1;
 
+                if (s_genStrCount <= 3) {
+                    uint16_t uv0u = FAST_READ16(fontPtr + iVar19_off + 0);
+                    uint16_t uv0v = FAST_READ16(fontPtr + iVar19_off + 2);
+                    uint16_t uv1u = FAST_READ16(fontPtr + iVar19_off + 4);
+                    uint16_t uv1v = FAST_READ16(fontPtr + iVar19_off + 6);
+                    int16_t dx0 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 8);
+                    int16_t dy0 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 10);
+                    int16_t dx1 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 12);
+                    int16_t dy1 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 14);
+                    std::fprintf(stderr, "[sceeFontGenStr #%d] char='%c'(0x%02x) glyphIdx=%d glyphOff=0x%x fontPtr=0x%x "
+                           "UV0=(%u,%u) UV1=(%u,%u) dx0=%d dy0=%d dx1=%d dy1=%d baseX=%d sVar7=%d\n",
+                           s_genStrCount, (bVar1 >= 0x21 && bVar1 < 0x7f) ? bVar1 : '?', bVar1,
+                           glyphIdx, iVar19_off, fontPtr,
+                           uv0u, uv0v, uv1u, uv1v, dx0, dy0, dx1, dy1, baseX, sVar7);
+                }
+
                 FAST_WRITE16(s2 + 0x00, FAST_READ16(fontPtr + iVar19_off + 0));
                 FAST_WRITE16(s2 + 0x02, FAST_READ16(fontPtr + iVar19_off + 2));
 
@@ -207,7 +235,7 @@ label_next:
                 int shift = paramW * 16 - iVar15;
                 if (alignCh == 'C') shift >>= 1;
                 if (iStack_dc > 0) {
-                    uint32_t adj = bufAddr + (uint32_t)(iVar21 * 16) + 0x20u + 8u;
+                    uint32_t adj = bufAddr + (uint32_t)(iVar21 * 16) + 0x20u;
                     for (int k = 0; k < iStack_dc; k++) {
                         int16_t oldX0 = (int16_t)FAST_READ16(adj - 8u);
                         int16_t oldX1 = (int16_t)FAST_READ16(adj + 8u);
@@ -220,7 +248,7 @@ label_next:
                 int iVar19_div = (int)sLen - 1;
                 if (iVar19_div == 0) iVar19_div = 1;
                 int spacePer = (paramW * 16 - iVar15) / iVar19_div;
-                uint32_t adj = bufAddr + (uint32_t)(iVar21 * 16) + 0x20u + 8u;
+                uint32_t adj = bufAddr + (uint32_t)(iVar21 * 16) + 0x20u;
                 int accum = 0;
                 for (uint32_t jj = 0; jj < sLen; jj++) {
                     int8_t jch = (int8_t)FAST_READ8(strAddr + jj);

@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <cstring>
+#include <mutex>
+#include <vector>
 
 constexpr uint32_t GS_VRAM_SIZE = 4u * 1024u * 1024u;
 
@@ -208,7 +210,13 @@ public:
     void processGIFPacket(const uint8_t *data, uint32_t sizeBytes);
     void writeRegister(uint8_t regAddr, uint64_t value);
 
+    // Thread-safe snapshot of VRAM for display (avoids tearing/flicker).
+    // Call from render thread to get stable frame data.
+    const uint8_t *lockDisplaySnapshot(uint32_t &outSize);
+    void unlockDisplaySnapshot();
+
 private:
+    void snapshotVRAM();
     void writeRegisterPacked(uint8_t regDesc, uint64_t lo, uint64_t hi);
     void vertexKick(bool drawing);
     void drawPrimitive();
@@ -220,6 +228,8 @@ private:
     void writePixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
     uint32_t sampleTexture(float s, float t, uint16_t u, uint16_t v);
     uint32_t readTexelPSMCT32(uint32_t tbp0, uint32_t tbw, int texU, int texV);
+    uint32_t readTexelPSMT4(uint32_t tbp0, uint32_t tbw, int texU, int texV);
+    uint32_t lookupCLUT(uint8_t index, uint32_t cbp, uint8_t cpsm, uint8_t csa);
 
     void processImageData(const uint8_t *data, uint32_t sizeBytes);
 
@@ -251,6 +261,10 @@ private:
     GSVertex m_vtxQueue[kMaxVerts];
     int m_vtxCount = 0;
     int m_vtxIndex = 0;
+
+    std::vector<uint8_t> m_displaySnapshot;
+    std::mutex m_snapshotMutex;
+    int m_framesSinceInit = 0;
 };
 
 #endif // PS2_GS_H

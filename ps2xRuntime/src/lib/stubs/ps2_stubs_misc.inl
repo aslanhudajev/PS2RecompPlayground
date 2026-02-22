@@ -1070,6 +1070,34 @@ void sceeFontInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     writeU32AtGp(rdram, gp, -0x7b50, 0x3f800000);  // default_scly 1.0f
     writeU32AtGp(rdram, gp, -0x7b54, 0x3f800000);  // default_sclx 1.0f
     writeU32AtGp(rdram, gp, -0x7b58, 0);           // default_fontid
+
+    if (runtime && a0 != 0u)
+    {
+        uint8_t *vram = runtime->memory().getGSVRAM();
+        if (vram)
+        {
+            uint32_t clutOff = a0 * 256u;
+            if (clutOff + 64u <= PS2_GS_VRAM_SIZE)
+            {
+                for (uint32_t i = 0; i < 16u; ++i)
+                {
+                    uint8_t alpha = static_cast<uint8_t>((i * 0x80u) / 15u);
+                    uint32_t entry = (i == 0)
+                        ? 0x00000000u
+                        : (0x80u | (0x80u << 8) | (0x80u << 16) | (static_cast<uint32_t>(alpha) << 24));
+                    std::memcpy(vram + clutOff + i * 4u, &entry, 4);
+                }
+                std::fprintf(stderr, "[sceeFontInit] CLUT at cbp=0x%x (byteOff=0x%x):\n", a0, clutOff);
+                for (uint32_t i = 0; i < 16u; ++i)
+                {
+                    uint32_t v; std::memcpy(&v, vram + clutOff + i * 4u, 4);
+                    std::fprintf(stderr, "  CLUT[%2u] = 0x%08x (r=%u g=%u b=%u a=%u)\n",
+                           i, v, v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF);
+                }
+            }
+        }
+    }
+
     setReturnS32(ctx, static_cast<int32_t>(a0 + 4));
 }
 
@@ -1238,6 +1266,24 @@ void sceeFontLoadFont(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
             std::memcpy(packet.data() + headerQWs * 16u, imgSrc, imageBytes);
 
         runtime->gs().processGIFPacket(packet.data(), totalBytes);
+
+        {
+            uint8_t *vram = runtime->memory().getGSVRAM();
+            if (vram) {
+                uint32_t texBase = (uint32_t)tbp0 * 256u;
+                uint32_t texStride = (uint32_t)tw * 64u / 2u;
+                std::fprintf(stderr, "[sceeFontLoadFont] VRAM verify: texBase=0x%x texStride=%u\n", texBase, texStride);
+                for (int row = 0; row < 4; row++) {
+                    uint32_t rowOff = texBase + (uint32_t)row * texStride;
+                    std::fprintf(stderr, "  VRAM row %d (off=0x%x): %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                           row, rowOff,
+                           vram[rowOff+0], vram[rowOff+1], vram[rowOff+2], vram[rowOff+3],
+                           vram[rowOff+4], vram[rowOff+5], vram[rowOff+6], vram[rowOff+7],
+                           vram[rowOff+8], vram[rowOff+9], vram[rowOff+10], vram[rowOff+11],
+                           vram[rowOff+12], vram[rowOff+13], vram[rowOff+14], vram[rowOff+15]);
+                }
+            }
+        }
     }
 
     int retTbp = tbp0;

@@ -112,6 +112,31 @@ GSContext &GS::activeContext()
     return m_ctx[m_prim.ctxt ? 1 : 0];
 }
 
+void GS::snapshotVRAM()
+{
+    if (!m_vram || m_vramSize == 0) return;
+    std::lock_guard<std::mutex> lock(m_snapshotMutex);
+    m_displaySnapshot.resize(m_vramSize);
+    std::memcpy(m_displaySnapshot.data(), m_vram, m_vramSize);
+}
+
+const uint8_t *GS::lockDisplaySnapshot(uint32_t &outSize)
+{
+    m_snapshotMutex.lock();
+    if (m_displaySnapshot.empty())
+    {
+        outSize = 0;
+        return nullptr;
+    }
+    outSize = static_cast<uint32_t>(m_displaySnapshot.size());
+    return m_displaySnapshot.data();
+}
+
+void GS::unlockDisplaySnapshot()
+{
+    m_snapshotMutex.unlock();
+}
+
 // ---------------------------------------------------------------------------
 // GIF packet parser
 // ---------------------------------------------------------------------------
@@ -173,6 +198,14 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
         }
         else if (flg == GIF_FMT_REGLIST)
         {
+            static int s_reglistTagCount = 0;
+            ++s_reglistTagCount;
+            if (s_reglistTagCount <= 5 || (s_reglistTagCount % 2000) == 0) {
+                printf("[GIF REGLIST tag #%d] nloop=%u nreg=%u regs=[", s_reglistTagCount, nloop, nreg);
+                for (uint32_t i = 0; i < nreg; ++i) printf("0x%x%s", regs[i], i+1<nreg?",":"");
+                printf("] tagHi=0x%016llx\n", (unsigned long long)tagHi);
+            }
+
             for (uint32_t loop = 0; loop < nloop; ++loop)
             {
                 for (uint32_t r = 0; r < nreg; ++r)
@@ -181,6 +214,12 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
                         return;
                     uint64_t val = loadLE64(data + offset);
                     offset += 8;
+
+                    if (s_reglistTagCount <= 3 && loop < 2) {
+                        printf("[GIF REGLIST tag #%d loop=%u reg=%u] reg_id=0x%x val=0x%016llx\n",
+                               s_reglistTagCount, loop, r, regs[r], (unsigned long long)val);
+                    }
+
                     writeRegister(regs[r], val);
                 }
             }
@@ -403,6 +442,13 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         t.csm = static_cast<uint8_t>((value >> 55) & 0x1);
         t.csa = static_cast<uint8_t>((value >> 56) & 0x1F);
         t.cld = static_cast<uint8_t>((value >> 61) & 0x7);
+        {
+            static int s_tex0Log = 0;
+            if (++s_tex0Log <= 10 || (s_tex0Log % 2000) == 0)
+                printf("[GS_REG_TEX0 #%d] ctx=%d tbp0=0x%x tbw=%u psm=%u tw=%u(%d) th=%u(%d) tcc=%u tfx=%u cbp=0x%x cpsm=%u csm=%u csa=%u cld=%u val=0x%016llx\n",
+                       s_tex0Log, ci, t.tbp0, t.tbw, t.psm, t.tw, 1<<t.tw, t.th, 1<<t.th,
+                       t.tcc, t.tfx, t.cbp, t.cpsm, t.csm, t.csa, t.cld, (unsigned long long)value);
+        }
         break;
     }
     case GS_REG_CLAMP_1:
@@ -484,6 +530,11 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
     case GS_REG_FRAME_1:
     case GS_REG_FRAME_2:
     {
+        // Snapshot VRAM before the new frame starts rendering (previous frame is complete)
+        ++m_framesSinceInit;
+        if (m_framesSinceInit > 1)
+            snapshotVRAM();
+
         int ci = (regAddr == GS_REG_FRAME_2) ? 1 : 0;
         m_ctx[ci].frame.fbp = static_cast<uint32_t>(value & 0x1FF);
         m_ctx[ci].frame.fbw = static_cast<uint32_t>((value >> 16) & 0x3F);
@@ -730,7 +781,7 @@ void GS::writePixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 
     static int s_pixWriteCount = 0;
     ++s_pixWriteCount;
-    if (s_pixWriteCount <= 5 || (s_pixWriteCount % 10000) == 0) {
+    if (s_pixWriteCount <= 2 || (s_pixWriteCount % 100000) == 0) {
         printf("[GS::writePixel #%d] (%d,%d) rgba=(%d,%d,%d,%d) fbp=%u off=0x%x stride=%u\n",
                s_pixWriteCount, x, y, r, g, b, a, ctx.frame.fbp, fbBase, stride);
     }
@@ -738,6 +789,34 @@ void GS::writePixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     uint32_t off = fbBase + static_cast<uint32_t>(y) * stride + static_cast<uint32_t>(x) * 4u;
     if (off + 4 > m_vramSize)
         return;
+
+    if (m_prim.abe)
+    {
+        uint32_t existing;
+        std::memcpy(&existing, m_vram + off, 4);
+        uint8_t dr = existing & 0xFF;
+        uint8_t dg = (existing >> 8) & 0xFF;
+        uint8_t db = (existing >> 16) & 0xFF;
+        uint8_t da = (existing >> 24) & 0xFF;
+
+        uint64_t alphaReg = ctx.alpha;
+        uint8_t asel = alphaReg & 3;
+        uint8_t bsel = (alphaReg >> 2) & 3;
+        uint8_t csel = (alphaReg >> 4) & 3;
+        uint8_t dsel = (alphaReg >> 6) & 3;
+        uint8_t fix  = static_cast<uint8_t>((alphaReg >> 32) & 0xFF);
+
+        auto pickRGB = [&](uint8_t sel, int cs, int cd) -> int {
+            if (sel == 0) return cs;
+            if (sel == 1) return cd;
+            return 0;
+        };
+        int cAlpha = (csel == 0) ? a : (csel == 1) ? da : fix;
+
+        r = clampU8(((pickRGB(asel, r, dr) - pickRGB(bsel, r, dr)) * cAlpha >> 7) + pickRGB(dsel, r, dr));
+        g = clampU8(((pickRGB(asel, g, dg) - pickRGB(bsel, g, dg)) * cAlpha >> 7) + pickRGB(dsel, g, dg));
+        b = clampU8(((pickRGB(asel, b, db) - pickRGB(bsel, b, db)) * cAlpha >> 7) + pickRGB(dsel, b, db));
+    }
 
     uint32_t pixel = static_cast<uint32_t>(r)
                    | (static_cast<uint32_t>(g) << 8)
@@ -766,10 +845,68 @@ uint32_t GS::readTexelPSMCT32(uint32_t tbp0, uint32_t tbw, int texU, int texV)
     uint32_t stride = tbw * 64u * 4u;
     uint32_t off = base + static_cast<uint32_t>(texV) * stride + static_cast<uint32_t>(texU) * 4u;
     if (off + 4 > m_vramSize)
-        return 0xFF00FFFFu; // magenta fallback
+        return 0xFFFF00FFu;
     uint32_t texel;
     std::memcpy(&texel, m_vram + off, 4);
     return texel;
+}
+
+uint32_t GS::readTexelPSMT4(uint32_t tbp0, uint32_t tbw, int texU, int texV)
+{
+    if (tbw == 0) tbw = 1;
+    uint32_t base = tbp0 * 256u;
+    uint32_t stride = tbw * 64u / 2u;
+    uint32_t byteOff = base + static_cast<uint32_t>(texV) * stride + static_cast<uint32_t>(texU) / 2u;
+    if (byteOff >= m_vramSize)
+        return 0;
+    uint8_t packed = m_vram[byteOff];
+    uint32_t result = (texU & 1) ? ((packed >> 4) & 0xFu) : (packed & 0xFu);
+
+    static int s_t4ReadCount = 0;
+    ++s_t4ReadCount;
+    if (s_t4ReadCount <= 32 || (s_t4ReadCount % 50000) == 0) {
+        printf("[readTexelPSMT4 #%d] tbp0=0x%x tbw=%u texU=%d texV=%d base=0x%x stride=%u byteOff=0x%x packed=0x%02x idx=%u\n",
+               s_t4ReadCount, tbp0, tbw, texU, texV, base, stride, byteOff, packed, result);
+    }
+    return result;
+}
+
+uint32_t GS::lookupCLUT(uint8_t index, uint32_t cbp, uint8_t cpsm, uint8_t csa)
+{
+    uint32_t clutBase = cbp * 256u;
+
+    if (cpsm == GS_PSM_CT32 || cpsm == GS_PSM_CT24)
+    {
+        uint32_t off = clutBase + (static_cast<uint32_t>(csa) * 16u + index) * 4u;
+        if (off + 4 > m_vramSize)
+            return 0xFFFF00FFu;
+        uint32_t color;
+        std::memcpy(&color, m_vram + off, 4);
+
+        static int s_clutLookCount = 0;
+        ++s_clutLookCount;
+        if (s_clutLookCount <= 32 || (s_clutLookCount % 50000) == 0) {
+            printf("[lookupCLUT #%d] idx=%u cbp=0x%x cpsm=%u csa=%u clutBase=0x%x off=0x%x color=0x%08x\n",
+                   s_clutLookCount, index, cbp, cpsm, csa, clutBase, off, color);
+        }
+        return color;
+    }
+
+    if (cpsm == GS_PSM_CT16 || cpsm == GS_PSM_CT16S)
+    {
+        uint32_t off = clutBase + (static_cast<uint32_t>(csa) * 16u + index) * 2u;
+        if (off + 2 > m_vramSize)
+            return 0xFFFF00FFu;
+        uint16_t c16;
+        std::memcpy(&c16, m_vram + off, 2);
+        uint32_t r = ((c16 >> 0) & 0x1Fu) << 3;
+        uint32_t g = ((c16 >> 5) & 0x1Fu) << 3;
+        uint32_t b = ((c16 >> 10) & 0x1Fu) << 3;
+        uint32_t a = (c16 & 0x8000u) ? 0x80u : 0u;
+        return r | (g << 8) | (b << 16) | (a << 24);
+    }
+
+    return 0xFFFF00FFu;
 }
 
 uint32_t GS::sampleTexture(float s, float t, uint16_t u, uint16_t v)
@@ -801,7 +938,24 @@ uint32_t GS::sampleTexture(float s, float t, uint16_t u, uint16_t v)
     if (tex.psm == GS_PSM_CT32 || tex.psm == GS_PSM_CT24)
         return readTexelPSMCT32(tex.tbp0, tex.tbw, texU, texV);
 
-    return 0xFF00FFFFu; // magenta for unsupported formats
+    if (tex.psm == GS_PSM_T4)
+    {
+        uint32_t idx = readTexelPSMT4(tex.tbp0, tex.tbw, texU, texV);
+        return lookupCLUT(static_cast<uint8_t>(idx), tex.cbp, tex.cpsm, tex.csa);
+    }
+
+    if (tex.psm == GS_PSM_T8)
+    {
+        if (tex.tbw == 0) return 0xFFFF00FFu;
+        uint32_t base = tex.tbp0 * 256u;
+        uint32_t stride = static_cast<uint32_t>(tex.tbw) * 64u;
+        uint32_t off = base + static_cast<uint32_t>(texV) * stride + static_cast<uint32_t>(texU);
+        if (off >= m_vramSize) return 0xFFFF00FFu;
+        uint8_t idx = m_vram[off];
+        return lookupCLUT(idx, tex.cbp, tex.cpsm, tex.csa);
+    }
+
+    return 0xFFFF00FFu; // magenta for unsupported formats
 }
 
 // ---------------------------------------------------------------------------
@@ -846,12 +1000,22 @@ void GS::drawSprite()
 
     if (m_prim.tme)
     {
-        // Textured sprite
         const auto &tex = ctx.tex0;
         int texW = 1 << tex.tw;
         int texH = 1 << tex.th;
         if (texW == 0) texW = 1;
         if (texH == 0) texH = 1;
+
+        if (s_spriteCount <= 10 || (s_spriteCount % 1000) == 0) {
+            printf("[drawSprite TEX #%d] psm=%u tbp0=0x%x tbw=%u tw=%u(%d) th=%u(%d) "
+                   "tcc=%u tfx=%u cbp=0x%x cpsm=%u csa=%u cld=%u fst=%d abe=%d\n",
+                   s_spriteCount, tex.psm, tex.tbp0, tex.tbw, tex.tw, texW, tex.th, texH,
+                   tex.tcc, tex.tfx, tex.cbp, tex.cpsm, tex.csa, tex.cld, m_prim.fst, m_prim.abe);
+            printf("[drawSprite UV #%d] v0.u=0x%04x v0.v=0x%04x v1.u=0x%04x v1.v=0x%04x "
+                   "v0.rgba=(%d,%d,%d,%d) v1.rgba=(%d,%d,%d,%d)\n",
+                   s_spriteCount, v0.u, v0.v, v1.u, v1.v,
+                   v0.r, v0.g, v0.b, v0.a, v1.r, v1.g, v1.b, v1.a);
+        }
 
         float u0f, v0f, u1f, v1f;
         if (m_prim.fst)
@@ -889,8 +1053,22 @@ void GS::drawSprite()
                 uint32_t texel;
                 if (tex.psm == GS_PSM_CT32 || tex.psm == GS_PSM_CT24)
                     texel = readTexelPSMCT32(tex.tbp0, tex.tbw, tu, tv);
+                else if (tex.psm == GS_PSM_T4)
+                {
+                    uint32_t idx = readTexelPSMT4(tex.tbp0, tex.tbw, tu, tv);
+                    texel = lookupCLUT(static_cast<uint8_t>(idx), tex.cbp, tex.cpsm, tex.csa);
+                }
+                else if (tex.psm == GS_PSM_T8)
+                {
+                    uint32_t base = tex.tbp0 * 256u;
+                    uint32_t tbw = tex.tbw ? tex.tbw : 1u;
+                    uint32_t stride = tbw * 64u;
+                    uint32_t off = base + static_cast<uint32_t>(tv) * stride + static_cast<uint32_t>(tu);
+                    uint8_t idx = (off < m_vramSize) ? m_vram[off] : 0;
+                    texel = lookupCLUT(idx, tex.cbp, tex.cpsm, tex.csa);
+                }
                 else
-                    texel = 0xFF00FFFFu;
+                    texel = 0xFFFF00FFu;
 
                 uint8_t tr = static_cast<uint8_t>(texel & 0xFF);
                 uint8_t tg = static_cast<uint8_t>((texel >> 8) & 0xFF);
@@ -1126,38 +1304,85 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
     uint32_t base = dbp * 256u;
     uint32_t bpp = bitsPerPixel(dpsm);
     uint32_t stridePixels = static_cast<uint32_t>(dbw) * 64u;
-    uint32_t strideBytes = stridePixels * (bpp / 8u);
-    if (strideBytes == 0) strideBytes = stridePixels * 4u;
 
     uint32_t rrw = m_trxreg.rrw;
     uint32_t rrh = m_trxreg.rrh;
     uint32_t dsax = m_trxpos.dsax;
     uint32_t dsay = m_trxpos.dsay;
 
-    uint32_t bytesPerPixel = bpp / 8u;
-    if (bytesPerPixel == 0) bytesPerPixel = 1;
-
-    uint32_t offset = 0;
-    while (offset < sizeBytes)
+    if (bpp == 4)
     {
-        if (m_hwregY >= rrh)
-            break;
+        uint32_t strideBytes = stridePixels / 2u;
+        if (strideBytes == 0) strideBytes = 1;
+        uint32_t rowBytes = (rrw + 1u) / 2u;
+        uint32_t offset = 0;
 
-        uint32_t dstX = dsax + m_hwregX;
-        uint32_t dstY = dsay + m_hwregY;
-        uint32_t dstOff = base + dstY * strideBytes + dstX * bytesPerPixel;
-
-        if (dstOff + bytesPerPixel <= m_vramSize && offset + bytesPerPixel <= sizeBytes)
-        {
-            std::memcpy(m_vram + dstOff, data + offset, bytesPerPixel);
+        static int s_img4Count = 0;
+        ++s_img4Count;
+        if (s_img4Count <= 5) {
+            printf("[processImageData PSMT4 #%d] dbp=0x%x dbw=%u dpsm=%u base=0x%x "
+                   "stridePixels=%u strideBytes=%u rrw=%u rrh=%u dsax=%u dsay=%u "
+                   "sizeBytes=%u rowBytes=%u\n",
+                   s_img4Count, dbp, dbw, dpsm, base,
+                   stridePixels, strideBytes, rrw, rrh, dsax, dsay,
+                   sizeBytes, rowBytes);
+            if (sizeBytes >= 16) {
+                printf("[processImageData PSMT4 #%d] first 16 src bytes: "
+                       "%02x %02x %02x %02x %02x %02x %02x %02x "
+                       "%02x %02x %02x %02x %02x %02x %02x %02x\n",
+                       s_img4Count,
+                       data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],
+                       data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15]);
+            }
         }
 
-        offset += bytesPerPixel;
-        ++m_hwregX;
-        if (m_hwregX >= rrw)
+        while (offset < sizeBytes && m_hwregY < rrh)
         {
+            uint32_t dstY = dsay + m_hwregY;
+            uint32_t rowStart = base + dstY * strideBytes + (dsax / 2u);
+            uint32_t bytesThisRow = rowBytes - (m_hwregX / 2u);
+            uint32_t bytesAvail = sizeBytes - offset;
+            if (bytesThisRow > bytesAvail)
+                bytesThisRow = bytesAvail;
+
+            if (rowStart + (m_hwregX / 2u) + bytesThisRow <= m_vramSize)
+            {
+                std::memcpy(m_vram + rowStart + (m_hwregX / 2u), data + offset, bytesThisRow);
+            }
+
+            offset += bytesThisRow;
             m_hwregX = 0;
             ++m_hwregY;
+        }
+    }
+    else
+    {
+        uint32_t bytesPerPixel = bpp / 8u;
+        if (bytesPerPixel == 0) bytesPerPixel = 4;
+        uint32_t strideBytes = stridePixels * bytesPerPixel;
+
+        uint32_t offset = 0;
+        while (offset < sizeBytes)
+        {
+            if (m_hwregY >= rrh)
+                break;
+
+            uint32_t dstX = dsax + m_hwregX;
+            uint32_t dstY = dsay + m_hwregY;
+            uint32_t dstOff = base + dstY * strideBytes + dstX * bytesPerPixel;
+
+            if (dstOff + bytesPerPixel <= m_vramSize && offset + bytesPerPixel <= sizeBytes)
+            {
+                std::memcpy(m_vram + dstOff, data + offset, bytesPerPixel);
+            }
+
+            offset += bytesPerPixel;
+            ++m_hwregX;
+            if (m_hwregX >= rrw)
+            {
+                m_hwregX = 0;
+                ++m_hwregY;
+            }
         }
     }
 }
