@@ -1,0 +1,29 @@
+#include "ps2_runtime_macros.h"
+#include "ps2_runtime.h"
+#include "ps2_recompiled_functions.h"
+#include "ps2_recompiled_stubs.h"
+
+#include "ps2_syscalls.h"
+#include "ps2_stubs.h"
+
+// Function: ExitThread
+// Address: 0x10e0d0 - 0x10e0e0
+void ExitThread_0x10e0d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+
+    ctx->pc = 0x10e0d0u;
+
+    // 0x10e0d0: 0x24030023  addiu       $v1, $zero, 0x23
+    ctx->pc = 0x10e0d0u;
+    SET_GPR_S32(ctx, 3, (int32_t)ADD32(GPR_U32(ctx, 0), 35));
+    // 0x10e0d4: 0xc  syscall     0
+    ctx->pc = 0x10e0d4u;
+    runtime->handleSyscall(rdram, ctx, 0x0u);
+    // 0x10e0d8: 0x3e00008  jr          $ra
+    ctx->pc = 0x10E0D8u;
+    {
+        uint32_t jumpTarget = GPR_U32(ctx, 31);
+        ctx->pc = jumpTarget;
+        return;
+    }
+    ctx->pc = 0x10E0E0u;
+}

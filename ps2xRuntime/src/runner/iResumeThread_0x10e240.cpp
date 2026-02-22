@@ -1,0 +1,29 @@
+#include "ps2_runtime_macros.h"
+#include "ps2_runtime.h"
+#include "ps2_recompiled_functions.h"
+#include "ps2_recompiled_stubs.h"
+
+#include "ps2_syscalls.h"
+#include "ps2_stubs.h"
+
+// Function: iResumeThread
+// Address: 0x10e240 - 0x10e250
+void iResumeThread_0x10e240(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+
+    ctx->pc = 0x10e240u;
+
+    // 0x10e240: 0x2403ffc6  addiu       $v1, $zero, -0x3A
+    ctx->pc = 0x10e240u;
+    SET_GPR_S32(ctx, 3, (int32_t)ADD32(GPR_U32(ctx, 0), 4294967238));
+    // 0x10e244: 0xc  syscall     0
+    ctx->pc = 0x10e244u;
+    runtime->handleSyscall(rdram, ctx, 0x0u);
+    // 0x10e248: 0x3e00008  jr          $ra
+    ctx->pc = 0x10E248u;
+    {
+        uint32_t jumpTarget = GPR_U32(ctx, 31);
+        ctx->pc = jumpTarget;
+        return;
+    }
+    ctx->pc = 0x10E250u;
+}
