@@ -290,16 +290,16 @@ void SifCallRpc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
             resultPtr = recvBuf;
             if (sid == IOP_SID_DCS)
             {
-                const uint8_t* sendPtr = sendBuf ? getConstMemPtr(rdram, sendBuf) : nullptr;
-                uint8_t* recvPtr = recvBuf ? getMemPtr(rdram, recvBuf) : nullptr;
+                const uint8_t *sendPtr = sendBuf ? getConstMemPtr(rdram, sendBuf) : nullptr;
+                uint8_t *recvPtr = recvBuf ? getMemPtr(rdram, recvBuf) : nullptr;
                 runtime->audioBackend().onSoundCommand(sid, rpcNum,
                     sendPtr, sendSize, recvPtr, recvSize);
             }
         }
         else if (sid == IOP_SID_LIBSD)
         {
-            const uint8_t* sendPtr = sendBuf ? getConstMemPtr(rdram, sendBuf) : nullptr;
-            uint8_t* recvPtr = recvBuf ? getMemPtr(rdram, recvBuf) : nullptr;
+            const uint8_t *sendPtr = sendBuf ? getConstMemPtr(rdram, sendBuf) : nullptr;
+            uint8_t *recvPtr = recvBuf ? getMemPtr(rdram, recvBuf) : nullptr;
             runtime->audioBackend().onSoundCommand(sid, rpcNum,
                 sendPtr, sendSize, recvPtr, recvSize);
             if (recvPtr && recvSize > 0)

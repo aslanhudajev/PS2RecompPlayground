@@ -18,11 +18,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(raylib)
 
-add_library(ps2_runtime STATIC
+# Use OBJECT library so object files are linked directly; avoids LLD not pulling
+# ps2_iop.obj from a static archive.
+add_library(ps2_runtime_obj OBJECT
     src/lib/game_overrides.cpp
     src/lib/ps2_audio.cpp
     src/lib/ps2_audio_vag.cpp
-    src/lib/ps2_gs.cpp
+    src/lib/ps2_gs_gpu.cpp
+    src/lib/ps2_gs_rasterizer.cpp
     src/lib/ps2_iop.cpp
     src/lib/ps2_memory.cpp
     src/lib/ps2_runtime.cpp
@@ -30,6 +33,7 @@ add_library(ps2_runtime STATIC
     src/lib/ps2_syscalls.cpp
     src/lib/ps2_vu1.cpp
 )
+add_library(ps2_runtime ALIAS ps2_runtime_obj)
 
 file(GLOB RUNNER_SRC_FILES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/runner/*.cpp"
@@ -52,11 +56,10 @@ if(MSVC)
     target_compile_options(ps2EntryRunner PRIVATE /FS)
 endif()
 
-target_include_directories(ps2_runtime PUBLIC
+target_include_directories(ps2_runtime_obj PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
-target_link_libraries(ps2_runtime PRIVATE raylib)
+target_link_libraries(ps2_runtime_obj PUBLIC raylib)
 target_link_libraries(ps2EntryRunner
     PRIVATE
     ps2_runtime
@@ -68,9 +71,8 @@ if(MSVC)
     target_link_options(ps2EntryRunner PRIVATE "/FORCE:MULTIPLE")
 endif()
 
-install(TARGETS ps2_runtime
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+install(TARGETS ps2_runtime_obj
+    OBJECTS DESTINATION lib
 )
 
 install(DIRECTORY include/

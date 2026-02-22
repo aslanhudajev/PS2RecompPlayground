@@ -614,13 +614,6 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
             const uint32_t qwc = m_ioRegisters[channelBase + 0x20];
             m_dmaStartCount.fetch_add(1, std::memory_order_relaxed);
 
-            static int s_dmaHitCount = 0;
-            ++s_dmaHitCount;
-            if (s_dmaHitCount <= 50 || (s_dmaHitCount % 500) == 0)
-                printf("[DMA-writeIO #%d] ch=0x%08x madr=0x%x qwc=0x%x val=0x%x gifCh=%s\n",
-                       s_dmaHitCount, channelBase, madr, qwc, value,
-                       (channelBase == 0x1000A000 || channelBase == 0x10009000) ? "yes" : "no");
-
             if ((channelBase == 0x1000A000 || channelBase == 0x10009000) && m_gsVRAM)
             {
                 auto doCopy = [&](uint32_t srcAddr, uint32_t qwCount)
@@ -671,7 +664,6 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                 else if (mode == 1)
                 {
                     uint32_t tagAddr = m_ioRegisters[channelBase + 0x30];
-                    static int s_chainLogCount = 0;
                     const int kMaxChainTags = 4096;
                     int tagsProcessed = 0;
 
@@ -686,26 +678,13 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         const bool scratch = isScratchpad(srcAddr);
                         uint32_t src = 0;
                         try { src = translateAddress(srcAddr); }
-                        catch (...)
-                        {
-                            static int s_failLog = 0;
-                            if (++s_failLog <= 20)
-                                std::fprintf(stderr, "[DMA chain appendData] FAIL translateAddress srcAddr=0x%x qwc=%u tagId=%u\n",
-                                             srcAddr, qwCount, tagId);
-                            return;
-                        }
+                        catch (...) { return; }
                         const uint8_t *base2;
                         uint32_t maxSz2;
                         if (scratch) { base2 = m_scratchpad; maxSz2 = PS2_SCRATCHPAD_SIZE; }
                         else         { base2 = m_rdram;       maxSz2 = PS2_RAM_SIZE; }
                         if (src >= maxSz2)
-                        {
-                            static int s_oobLog = 0;
-                            if (++s_oobLog <= 20)
-                                std::fprintf(stderr, "[DMA chain appendData] OOB src=0x%x >= maxSz=0x%x srcAddr=0x%x qwc=%u tagId=%u spr=%d\n",
-                                             src, maxSz2, srcAddr, qwCount, tagId, (int)scratch);
                             return;
-                        }
                         if (src + bytes > maxSz2) bytes = maxSz2 - src;
                         if (bytes == 0) return;
                         chainBuf.insert(chainBuf.end(), base2 + src, base2 + src + bytes);
@@ -739,11 +718,6 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         uint32_t addr = static_cast<uint32_t>((tag >> 32) & 0x7FFFFFFF);
                         ++tagsProcessed;
 
-                        ++s_chainLogCount;
-                        if (s_chainLogCount <= 100 || (s_chainLogCount % 200) == 0)
-                            std::fprintf(stderr, "[DMA chain #%d] tagAddr=0x%x id=%u qwc=%u addr=0x%x spr=%d\n",
-                                   s_chainLogCount, tagAddr, id, tagQwc, addr, (int)tagInSPR);
-
                         switch (id)
                         {
                         case 0: // refe: data from addr, then end
@@ -770,9 +744,6 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         }
                     }
                 chain_done:
-                    if (s_chainLogCount <= 100 || (s_chainLogCount % 200) == 0)
-                        std::fprintf(stderr, "[DMA chain] done, %d tags, %zu bytes\n", tagsProcessed, chainBuf.size());
-
                     if (!chainBuf.empty())
                     {
                         m_seenGifCopy = true;

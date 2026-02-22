@@ -22,7 +22,7 @@
 #include <iomanip>
 
 #include "ps2_memory.h"
-#include "ps2_gs.h"
+#include "ps2_gs_gpu.h"
 #include "ps2_iop.h"
 #include "ps2_vu1.h"
 #include "ps2_audio.h"

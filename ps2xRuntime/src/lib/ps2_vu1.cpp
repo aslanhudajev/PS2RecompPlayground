@@ -1,5 +1,5 @@
 #include "ps2_vu1.h"
-#include "ps2_gs.h"
+#include "ps2_gs_gpu.h"
 #include <cmath>
 #include <cstring>
 #include <limits>
