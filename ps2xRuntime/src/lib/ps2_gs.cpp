@@ -137,6 +137,11 @@ void GS::unlockDisplaySnapshot()
     m_snapshotMutex.unlock();
 }
 
+uint32_t GS::getLastDisplayBaseBytes() const
+{
+    return m_lastDisplayBaseBytes;
+}
+
 // ---------------------------------------------------------------------------
 // GIF packet parser
 // ---------------------------------------------------------------------------
@@ -291,9 +296,9 @@ void GS::writeRegisterPacked(uint8_t regDesc, uint64_t lo, uint64_t hi)
         if (m_curQ == 0.0f) m_curQ = 1.0f;
         break;
     }
-    case 0x03: // UV
-        m_curU = static_cast<uint16_t>(lo & 0x3FFF);
-        m_curV = static_cast<uint16_t>((lo >> 16) & 0x3FFF);
+    case 0x03: // UV - PACKED layout: U=bits 0-15, V=bits 32-47 (differs from A+D which uses 16-31)
+        m_curU = static_cast<uint16_t>(lo & 0xFFFFu);
+        m_curV = static_cast<uint16_t>((lo >> 32) & 0xFFFFu);
         break;
     case 0x04: // XYZF2
     {
@@ -415,8 +420,9 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
     }
     case GS_REG_UV:
     {
-        m_curU = static_cast<uint16_t>(value & 0x3FFF);
-        m_curV = static_cast<uint16_t>((value >> 16) & 0x3FFF);
+        // UV in low 32 bits: U=bits 0-15, V=bits 16-31 (not U=low32, V=high32)
+        m_curU = static_cast<uint16_t>(value & 0xFFFFu);
+        m_curV = static_cast<uint16_t>((value >> 16) & 0xFFFFu);
         break;
     }
     case GS_REG_XYZF2:
@@ -551,10 +557,9 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
     case GS_REG_FRAME_1:
     case GS_REG_FRAME_2:
     {
-        // Snapshot VRAM before the new frame starts rendering (previous frame is complete)
+        // Do NOT snapshot here - it captured too early and broke intro text.
+        // Snapshot happens at TRXDIR (after frame copy) for correct timing.
         ++m_framesSinceInit;
-        if (m_framesSinceInit > 1)
-            snapshotVRAM();
 
         int ci = (regAddr == GS_REG_FRAME_2) ? 1 : 0;
         m_ctx[ci].frame.fbp = static_cast<uint32_t>(value & 0x1FF);
@@ -677,7 +682,13 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
                 }
             }
 
-            snapshotVRAM();
+            // Snapshot on framebuffer flip (full 640x512). Captures at frame-complete
+            // moment, avoiding flicker from clear/fade triangles vs text draw ordering.
+            // 0->0x20: menu double buffer; 0->0: intro single buffer.
+            if (sbp == 0u && (dbp == 0u || dbp == 0x20u) && rrw >= 640u && rrh >= 512u) {
+                m_lastDisplayBaseBytes = (dbp == 0x20u) ? 8192u : 0u;
+                snapshotVRAM();
+            }
         }
         break;
     }
@@ -944,13 +955,6 @@ uint32_t GS::readTexelPSMT4(uint32_t tbp0, uint32_t tbw, int texU, int texV)
         return 0;
     uint8_t packed = m_vram[byteOff];
     uint32_t result = (texU & 1) ? ((packed >> 4) & 0xFu) : (packed & 0xFu);
-
-    static int s_t4ReadCount = 0;
-    ++s_t4ReadCount;
-    if (s_t4ReadCount <= 32 || (s_t4ReadCount % 50000000) == 0) {
-        printf("[readTexelPSMT4 #%d] tbp0=0x%x tbw=%u texU=%d texV=%d base=0x%x stride=%u byteOff=0x%x packed=0x%02x idx=%u\n",
-               s_t4ReadCount, tbp0, tbw, texU, texV, base, stride, byteOff, packed, result);
-    }
     return result;
 }
 
@@ -965,13 +969,6 @@ uint32_t GS::lookupCLUT(uint8_t index, uint32_t cbp, uint8_t cpsm, uint8_t csa)
             return 0xFFFF00FFu;
         uint32_t color;
         std::memcpy(&color, m_vram + off, 4);
-
-        static int s_clutLookCount = 0;
-        ++s_clutLookCount;
-        if (s_clutLookCount <= 32 || (s_clutLookCount % 50000000) == 0) {
-            printf("[lookupCLUT #%d] idx=%u cbp=0x%x cpsm=%u csa=%u clutBase=0x%x off=0x%x color=0x%08x\n",
-                   s_clutLookCount, index, cbp, cpsm, csa, clutBase, off, color);
-        }
         return color;
     }
 
@@ -1237,6 +1234,10 @@ void GS::drawTriangle()
                ctx.frame.fbp, m_prim.tme, ctx.tex0.tbp0, ctx.tex0.psm, ctx.tex0.tfx);
     }
 
+    static int s_menuTriDiag = 0;
+    bool diagThis = (m_prim.tme && ctx.tex0.tbp0 >= 0x2000 && s_menuTriDiag < 2);
+    if (diagThis) ++s_menuTriDiag;
+
     // Bounding box
     int minX = static_cast<int>(std::floor(std::min({fx0, fx1, fx2})));
     int maxX = static_cast<int>(std::ceil(std::max({fx0, fx1, fx2})));
@@ -1248,11 +1249,34 @@ void GS::drawTriangle()
     minY = clampInt(minY, ctx.scissor.y0, ctx.scissor.y1);
     maxY = clampInt(maxY, ctx.scissor.y0, ctx.scissor.y1);
 
+    if (diagThis) {
+        std::fprintf(stderr, "[drawTri-DIAG #%d] bbox=(%d,%d)-(%d,%d) scissor=(%d,%d)-(%d,%d) tme=%d fst=%d\n",
+               s_menuTriDiag, minX, minY, maxX, maxY,
+               ctx.scissor.x0, ctx.scissor.y0, ctx.scissor.x1, ctx.scissor.y1,
+               m_prim.tme, m_prim.fst);
+        std::fprintf(stderr, "[drawTri-DIAG #%d] v0: xy=(%.1f,%.1f) uv=(%u,%u) st=(%.3f,%.3f) rgba=(%u,%u,%u,%u)\n",
+               s_menuTriDiag, fx0, fy0, v0.u, v0.v, v0.s, v0.t, v0.r, v0.g, v0.b, v0.a);
+        std::fprintf(stderr, "[drawTri-DIAG #%d] v1: xy=(%.1f,%.1f) uv=(%u,%u) st=(%.3f,%.3f) rgba=(%u,%u,%u,%u)\n",
+               s_menuTriDiag, fx1, fy1, v1.u, v1.v, v1.s, v1.t, v1.r, v1.g, v1.b, v1.a);
+        std::fprintf(stderr, "[drawTri-DIAG #%d] v2: xy=(%.1f,%.1f) uv=(%u,%u) st=(%.3f,%.3f) rgba=(%u,%u,%u,%u)\n",
+               s_menuTriDiag, fx2, fy2, v2.u, v2.v, v2.s, v2.t, v2.r, v2.g, v2.b, v2.a);
+        uint32_t vramProbe = 0;
+        uint32_t probeOff = ctx.tex0.tbp0 * 256u + 200u * (ctx.tex0.tbw * 64u * 4u) + 160u * 4u;
+        if (probeOff + 4 <= m_vramSize)
+            std::memcpy(&vramProbe, m_vram + probeOff, 4);
+        std::fprintf(stderr, "[drawTri-DIAG #%d] VRAM texel probe @(160,200) off=0x%x val=0x%08x\n",
+               s_menuTriDiag, probeOff, vramProbe);
+    }
+
     float denom = (fy1 - fy2) * (fx0 - fx2) + (fx2 - fx1) * (fy0 - fy2);
     if (std::fabs(denom) < 0.001f)
         return; // degenerate
 
     float invDenom = 1.0f / denom;
+
+    int diagPixelCount = 0;
+    int diagNonBlackCount = 0;
+    bool diagSampled = false;
 
     for (int y = minY; y <= maxY; ++y)
     {
@@ -1303,6 +1327,12 @@ void GS::drawTriangle()
                 uint8_t tb = static_cast<uint8_t>((texel >> 16) & 0xFF);
                 uint8_t ta = static_cast<uint8_t>((texel >> 24) & 0xFF);
 
+                if (diagThis && !diagSampled && x == 100 && y == 400) {
+                    diagSampled = true;
+                    std::fprintf(stderr, "[drawTri-DIAG #%d] sample@(%d,%d) w=(%.3f,%.3f,%.3f) iu=%u iv=%u texU=%d texV=%d texel=0x%08x tr=%u tg=%u tb=%u ta=%u\n",
+                           s_menuTriDiag, x, y, w0, w1, w2, iu, iv, iu>>4, iv>>4, texel, tr, tg, tb, ta);
+                }
+
                 const auto &tex = ctx.tex0;
                 if (tex.tfx == 0)
                 {
@@ -1324,7 +1354,23 @@ void GS::drawTriangle()
                 }
             }
 
+            if (diagThis) {
+                ++diagPixelCount;
+                if (r | g | b) ++diagNonBlackCount;
+            }
             writePixel(x, y, r, g, b, a);
+        }
+    }
+
+    if (diagThis) {
+        std::fprintf(stderr, "[drawTri-DIAG #%d] DONE: %d pixels drawn, %d non-black\n",
+               s_menuTriDiag, diagPixelCount, diagNonBlackCount);
+        uint32_t fbOff = ctx.frame.fbp * 8192u + 400u * fbStride(ctx.frame.fbw, ctx.frame.psm) + 100u * 4u;
+        if (fbOff + 4 <= m_vramSize) {
+            uint32_t fbVal;
+            std::memcpy(&fbVal, m_vram + fbOff, 4);
+            std::fprintf(stderr, "[drawTri-DIAG #%d] FB probe @(100,400) off=0x%x val=0x%08x\n",
+                   s_menuTriDiag, fbOff, fbVal);
         }
     }
 }
@@ -1511,6 +1557,23 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
                 m_hwregX = 0;
                 ++m_hwregY;
             }
+        }
+
+        static int s_ct24DiagCount = 0;
+        if (m_hwregY >= rrh && s_ct24DiagCount < 3) {
+            ++s_ct24DiagCount;
+            uint32_t probeRow = (rrh > 200) ? 200 : rrh / 2;
+            uint32_t probeCol = (rrw > 160) ? 160 : rrw / 2;
+            uint32_t probeOff = base + probeRow * storageStride + probeCol * storageBpp;
+            uint32_t probeVal = 0;
+            if (probeOff + 4 <= m_vramSize)
+                std::memcpy(&probeVal, m_vram + probeOff, 4);
+            uint32_t probeOff0 = base;
+            uint32_t probeVal0 = 0;
+            if (probeOff0 + 4 <= m_vramSize)
+                std::memcpy(&probeVal0, m_vram + probeOff0, 4);
+            std::fprintf(stderr, "[CT24-DONE #%d] dbp=0x%x hwregY=%u/%u VRAM@(0,0)=0x%08x VRAM@(%u,%u)=0x%08x\n",
+                   s_ct24DiagCount, dbp, m_hwregY, rrh, probeVal0, probeCol, probeRow, probeVal);
         }
     }
     else

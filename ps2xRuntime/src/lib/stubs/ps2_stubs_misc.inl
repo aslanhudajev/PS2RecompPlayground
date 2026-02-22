@@ -1267,20 +1267,29 @@ void sceeFontLoadFont(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
         runtime->gs().processGIFPacket(packet.data(), totalBytes);
 
+        // Ensure font texture is in linear layout (GIF/processImageData may use different timing
+        // or the real GS uses block layout). We always do a direct linear copy to match readTexelPSMT4.
         {
             uint8_t *vram = runtime->memory().getGSVRAM();
-            if (vram) {
+            const uint8_t *imgSrc = getConstMemPtr(rdram, fontDataAddr + 0x10u);
+            if (vram && imgSrc && imageBytes > 0) {
                 uint32_t texBase = (uint32_t)tbp0 * 256u;
                 uint32_t texStride = (uint32_t)tw * 64u / 2u;
-                std::fprintf(stderr, "[sceeFontLoadFont] VRAM verify: texBase=0x%x texStride=%u\n", texBase, texStride);
-                for (int row = 0; row < 4; row++) {
+                uint32_t rowBytes = (width + 1u) / 2u;
+                for (uint32_t row = 0; row < height && (row + 1u) * rowBytes <= imageBytes; ++row) {
+                    uint32_t dstOff = texBase + row * texStride;
+                    uint32_t srcOff = row * rowBytes;
+                    if (dstOff + rowBytes <= PS2_GS_VRAM_SIZE)
+                        std::memcpy(vram + dstOff, imgSrc + srcOff, rowBytes);
+                }
+                std::fprintf(stderr, "[sceeFontLoadFont] direct linear copy: texBase=0x%x stride=%u w=%d h=%d rowBytes=%u\n",
+                       texBase, texStride, width, height, rowBytes);
+                for (int row = 0; row < 4 && row < height; row++) {
                     uint32_t rowOff = texBase + (uint32_t)row * texStride;
-                    std::fprintf(stderr, "  VRAM row %d (off=0x%x): %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                    std::fprintf(stderr, "  VRAM row %d (off=0x%x): %02x %02x %02x %02x %02x %02x %02x %02x\n",
                            row, rowOff,
                            vram[rowOff+0], vram[rowOff+1], vram[rowOff+2], vram[rowOff+3],
-                           vram[rowOff+4], vram[rowOff+5], vram[rowOff+6], vram[rowOff+7],
-                           vram[rowOff+8], vram[rowOff+9], vram[rowOff+10], vram[rowOff+11],
-                           vram[rowOff+12], vram[rowOff+13], vram[rowOff+14], vram[rowOff+15]);
+                           vram[rowOff+4], vram[rowOff+5], vram[rowOff+6], vram[rowOff+7]);
                 }
             }
         }

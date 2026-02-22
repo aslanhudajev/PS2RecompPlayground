@@ -201,11 +201,9 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     if (height > FB_HEIGHT)
         height = FB_HEIGHT;
 
-    // Linear VRAM model: buffers at different FBP values overlap, so always
-    // display from buffer 0 where all rendering targets.  The snapshot
-    // mechanism prevents tearing.
-    uint32_t baseBytes = 0;
-    (void)fbp;
+    // Use dispfb's FBP to select which double-buffered frame to display.
+    // FBP block size is 8192 bytes (matches GS::writePixel fbBase = fbp*8192).
+    uint32_t baseBytes = fbp * 8192u;
     const uint32_t bytesPerPixel = (psm == 2u || psm == 0x0Au) ? 2u : 4u;
     uint32_t strideBytes = (fbw ? fbw : (FB_WIDTH / 64)) * 64 * bytesPerPixel;
 
@@ -218,6 +216,13 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     uint32_t snapSize = 0;
     const uint8_t *snapVram = rt->gs().lockDisplaySnapshot(snapSize);
     const uint8_t *vramSrc = (snapVram && snapSize > 0) ? snapVram : gsvram;
+
+    // When we have a snapshot (taken at frame flip): use the base captured then.
+    // Avoids flicker from clear/fade vs text draw ordering and ensures we read
+    // a complete frame (0 for intro TRX 0->0, 8192 for menu TRX 0->0x20).
+    if (snapVram) {
+        baseBytes = rt->gs().getLastDisplayBaseBytes();
+    }
 
     if (psm == 0u)
     {

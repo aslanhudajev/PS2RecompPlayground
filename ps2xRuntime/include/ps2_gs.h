@@ -214,6 +214,7 @@ public:
     // Call from render thread to get stable frame data.
     const uint8_t *lockDisplaySnapshot(uint32_t &outSize);
     void unlockDisplaySnapshot();
+    uint32_t getLastDisplayBaseBytes() const;
 
 private:
     void snapshotVRAM();
@@ -265,6 +266,7 @@ private:
     std::vector<uint8_t> m_displaySnapshot;
     std::mutex m_snapshotMutex;
     int m_framesSinceInit = 0;
+    uint32_t m_lastDisplayBaseBytes = 0;  // Set when snapshot taken (0 or 8192)
 };
 
 #endif // PS2_GS_H
