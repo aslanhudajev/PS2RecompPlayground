@@ -6,9 +6,16 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // Function: updateScreen
 // Address: 0x101f80 - 0x102264
 void updateScreen_0x101f80(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    static int s_updateScreenCallCount = 0;
+    ++s_updateScreenCallCount;
+    if (s_updateScreenCallCount <= 10 || (s_updateScreenCallCount % 500) == 0) {
+        std::fprintf(stderr, "[updateScreen] ENTER #%d\n", s_updateScreenCallCount);
+    }
 
     ctx->pc = 0x101f80u;
 
@@ -43,6 +50,9 @@ void updateScreen_0x101f80(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     // 0x101f9c: 0x24030001
     ctx->pc = 0x101f9cu;
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 0), 1));
+    if (s_updateScreenCallCount <= 10 || (s_updateScreenCallCount % 500) == 0) {
+        std::fprintf(stderr, "[updateScreen] sceCdStatus returned %d\n", (int)GPR_S32(ctx, 2));
+    }
     // 0x101fa0: 0x1443000e
     ctx->pc = 0x101FA0u;
     {
@@ -118,6 +128,10 @@ label_101fdc:
     // 0x101fe0: 0x8622dfc0
     ctx->pc = 0x101fe0u;
     SET_GPR_S32(ctx, 2, (int16_t)READ16(ADD32(GPR_U32(ctx, 17), 4294959040)));
+    if (s_updateScreenCallCount <= 10 || (s_updateScreenCallCount % 500) == 0) {
+        std::fprintf(stderr, "[updateScreen] state=*(0x%08x)=%d  (4=movie)\n",
+                     ADD32(GPR_U32(ctx, 17), 4294959040u), (int)GPR_S32(ctx, 2));
+    }
     // 0x101fe4: 0x220982d
     ctx->pc = 0x101fe4u;
     SET_GPR_U64(ctx, 19, (uint64_t)GPR_U64(ctx, 17) + (uint64_t)GPR_U64(ctx, 0));
@@ -169,13 +183,15 @@ label_101fdc:
     SET_GPR_U32(ctx, 31, 0x102014u);
     ctx->pc = 0x102010u;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 4), 11144));
+    std::fprintf(stderr, "[updateScreen] calling moviePlay (state=4 path) filename=0x%08x\n", GPR_U32(ctx, 4));
     ctx->pc = 0x10C438u;
     {
         const uint32_t __entryPc = ctx->pc;
         moviePlay_0x10c438(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x102014u; }
     }
-    if (ctx->pc != 0x102014u) { return; }
+    if (ctx->pc != 0x102014u) { std::fprintf(stderr, "[updateScreen] moviePlay did not return normally, pc=0x%08x\n", ctx->pc); return; }
+    std::fprintf(stderr, "[updateScreen] moviePlay returned, continuing to initialiseSound\n");
     ctx->pc = 0x102014u;
     // 0x102014: 0xc0408d2
     ctx->pc = 0x102014u;
@@ -189,11 +205,15 @@ label_101fdc:
         if (ctx->pc == __entryPc) { ctx->pc = 0x10201Cu; }
     }
     if (ctx->pc != 0x10201Cu) { return; }
+    std::fprintf(stderr, "[updateScreen] initialiseSound returned\n");
     ctx->pc = 0x10201Cu;
     // 0x10201c: 0x9624dfc0
     ctx->pc = 0x10201cu;
     SET_GPR_U32(ctx, 4, (uint16_t)READ16(ADD32(GPR_U32(ctx, 17), 4294959040)));
 label_102020:
+    if (s_updateScreenCallCount <= 10 || (s_updateScreenCallCount % 500) == 0) {
+        std::fprintf(stderr, "[updateScreen] @label_102020 r4(state)=%d\n", (int)GPR_S32(ctx, 4));
+    }
     // 0x102020: 0x1480004d
     ctx->pc = 0x102020u;
     {
@@ -568,6 +588,9 @@ label_102154:
     ctx->pc = 0x102154u;
     SET_GPR_S32(ctx, 3, (int16_t)READ16(ADD32(GPR_U32(ctx, 19), 4294959040)));
 label_102158:
+    if (s_updateScreenCallCount <= 10 || (s_updateScreenCallCount % 500) == 0) {
+        std::fprintf(stderr, "[updateScreen] @label_102158 r3(state2)=%d\n", (int)GPR_S32(ctx, 3));
+    }
     // 0x102158: 0x24020001
     ctx->pc = 0x102158u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));
@@ -608,13 +631,15 @@ label_102158:
     // 0x102174: 0xc0402f2
     ctx->pc = 0x102174u;
     SET_GPR_U32(ctx, 31, 0x10217Cu);
+    std::fprintf(stderr, "[updateScreen] calling playQuiz\n");
     ctx->pc = 0x100BC8u;
     {
         const uint32_t __entryPc = ctx->pc;
         playQuiz_0x100bc8(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x10217Cu; }
     }
-    if (ctx->pc != 0x10217Cu) { return; }
+    if (ctx->pc != 0x10217Cu) { std::fprintf(stderr, "[updateScreen] playQuiz did not return normally, pc=0x%08x\n", ctx->pc); return; }
+    std::fprintf(stderr, "[updateScreen] playQuiz returned\n");
     ctx->pc = 0x10217Cu;
     // 0x10217c: 0xc0404e6
     ctx->pc = 0x10217Cu;
@@ -833,6 +858,7 @@ label_10220c:
     if (ctx->pc != 0x10222Cu) { return; }
     ctx->pc = 0x10222Cu;
 label_10222c:
+    std::fprintf(stderr, "[updateScreen] @label_10222c (post-movie path)\n");
     // 0x10222c: 0xc0408d2
     ctx->pc = 0x10222Cu;
     SET_GPR_U32(ctx, 31, 0x102234u);
@@ -867,6 +893,9 @@ label_10223c:
     }
     ctx->pc = 0x102248u;
 label_102248:
+    if (s_updateScreenCallCount <= 10 || (s_updateScreenCallCount % 500) == 0) {
+        std::fprintf(stderr, "[updateScreen] EXIT @label_102248 #%d\n", s_updateScreenCallCount);
+    }
     // 0x102248: 0xdfbf0040
     ctx->pc = 0x102248u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 64)));

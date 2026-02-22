@@ -3,6 +3,8 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // gp = 0x17daf0: argc_copy at gp-0x7b24, argv_copy at gp-0x7b28
 static constexpr uint32_t kArgcCopyAddr = 0x17daf0u - 0x7b24u;  // 0x175fcc
 static constexpr uint32_t kArgvCopyAddr = 0x17daf0u - 0x7b28u;  // 0x175fc8
@@ -28,6 +30,9 @@ void sceeDemoStart_0x11cf88(uint8_t* rdram, R5900Context* ctx, PS2Runtime* runti
     const uint32_t out4 = getRegU32(ctx, 9);   // t1 param_6
     const uint32_t out5 = getRegU32(ctx, 10);  // t2 param_7
 
+    std::fprintf(stderr, "[sceeDemoStart] argc=%u argv=0x%08x out1=0x%08x out2=0x%08x\n",
+                 argc, argv, out1, out2);
+
     WRITE32(kArgcCopyAddr, argc);
     WRITE32(kArgvCopyAddr, argv);
 
@@ -37,6 +42,8 @@ void sceeDemoStart_0x11cf88(uint8_t* rdram, R5900Context* ctx, PS2Runtime* runti
         uint32_t a3 = READ32(argv + 12u);
         uint32_t a4 = READ32(argv + 16u);
         uint32_t a5 = READ32(argv + 20u);
+        std::fprintf(stderr, "[sceeDemoStart] parsing args: a1=0x%08x a2=0x%08x a3=0x%08x a4=0x%08x a5=0x%08x\n",
+                     a1, a2, a3, a4, a5);
         simpleAtoiToShort(rdram, ctx, runtime, a1, out1);
         simpleAtoiToShort(rdram, ctx, runtime, a2, out2);
         simpleAtoiToShort(rdram, ctx, runtime, a3, out3);

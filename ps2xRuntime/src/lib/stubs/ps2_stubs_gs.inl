@@ -181,12 +181,54 @@ void sceGsPutDispEnv(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceGsPutDrawEnv(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
+    static int s_callCount = 0;
+    ++s_callCount;
     uint32_t envAddr = getRegU32(ctx, 4);
     uint8_t *ptr = getMemPtr(rdram, envAddr);
     if (!ptr)
     {
+        std::fprintf(stderr, "[sceGsPutDrawEnv #%d] FAILED: null ptr for envAddr=0x%08x\n", s_callCount, envAddr);
         setReturnS32(ctx, -1);
         return;
+    }
+
+    if (s_callCount <= 10 || (s_callCount % 200) == 0) {
+        uint64_t gifTag0 = 0, gifTag1 = 0;
+        std::memcpy(&gifTag0, ptr, 8);
+        std::memcpy(&gifTag1, ptr + 8, 8);
+        uint32_t nloop = (uint32_t)(gifTag0 & 0x7FFF);
+        uint32_t flg = (uint32_t)((gifTag0 >> 26) & 0x3);
+        uint32_t nreg = (uint32_t)((gifTag0 >> 60) & 0xF);
+        if (nreg == 0) nreg = 16;
+        std::fprintf(stderr, "[sceGsPutDrawEnv #%d] envAddr=0x%08x nloop=%u flg=%u nreg=%u\n",
+                     s_callCount, envAddr, nloop, flg, nreg);
+        uint32_t numQW = (flg == 0) ? nloop * nreg : nloop;
+        if (numQW > 8) numQW = 8;
+        for (uint32_t i = 0; i < numQW; ++i) {
+            uint64_t data = 0, addr = 0;
+            std::memcpy(&data, ptr + 16 + i * 16, 8);
+            std::memcpy(&addr, ptr + 16 + i * 16 + 8, 8);
+            uint32_t regId = (uint32_t)(addr & 0xFF);
+            const char *regName = "?";
+            if (regId == 0x4C) regName = "FRAME_1";
+            else if (regId == 0x4D) regName = "FRAME_2";
+            else if (regId == 0x40) regName = "SCISSOR_1";
+            else if (regId == 0x18) regName = "XYOFFSET_1";
+            else if (regId == 0x19) regName = "XYOFFSET_2";
+            else if (regId == 0x47) regName = "TEST_1";
+            else if (regId == 0x42) regName = "ALPHA_1";
+            else if (regId == 0x4E) regName = "ZBUF_1";
+            std::fprintf(stderr, "  [DrawEnv %u] reg=0x%02x(%s) data=0x%016llx",
+                         i, regId, regName, (unsigned long long)data);
+            if (regId == 0x4C || regId == 0x4D) {
+                uint32_t fbp = (uint32_t)(data & 0x1FF);
+                uint32_t fbw = (uint32_t)((data >> 16) & 0x3F);
+                uint32_t psm = (uint32_t)((data >> 24) & 0x3F);
+                uint32_t fbmsk = (uint32_t)(data >> 32);
+                std::fprintf(stderr, " fbp=%u(base=0x%x) fbw=%u psm=%u fbmsk=0x%08x", fbp, fbp * 8192, fbw, psm, fbmsk);
+            }
+            std::fprintf(stderr, "\n");
+        }
     }
 
     runtime->gs().processGIFPacket(ptr, 144);

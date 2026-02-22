@@ -6,9 +6,13 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // Function: menuDisplay
 // Address: 0x1059b0 - 0x105bc4
 void menuDisplay_0x1059b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    static int s_callCount = 0;
+    ++s_callCount;
 
     ctx->pc = 0x1059b0u;
 
@@ -92,6 +96,12 @@ void menuDisplay_0x1059b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     SET_GPR_U32(ctx, 31, 0x105A1Cu);
     ctx->pc = 0x105A18u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 16), 1400)));
+    if (s_callCount <= 5 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[menuDisplay #%d] draw24bitImage: imgId=0x%x w=%d h=%d r6=%d r7=%d r8=0x%x r9=%d r10=%d r11=%d\n",
+                     s_callCount, GPR_U32(ctx, 4), GPR_S32(ctx, 5), GPR_S32(ctx, 6),
+                     GPR_S32(ctx, 7), GPR_S32(ctx, 8), GPR_U32(ctx, 8),
+                     GPR_S32(ctx, 9), GPR_S32(ctx, 10), GPR_S32(ctx, 11));
+    }
     ctx->pc = 0x103E00u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -109,6 +119,10 @@ void menuDisplay_0x1059b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     // 0x105a24: 0x84620002
     ctx->pc = 0x105a24u;
     SET_GPR_S32(ctx, 2, (int16_t)READ16(ADD32(GPR_U32(ctx, 3), 2)));
+    if (s_callCount <= 5 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[menuDisplay #%d] subState=*(0x%08x+2)=%d  (1=draw32bit-A, else=draw32bit-B)\n",
+                     s_callCount, ADD32(GPR_U32(ctx, 18), 4294959040u), GPR_S32(ctx, 2));
+    }
     // 0x105a28: 0x14440018
     ctx->pc = 0x105A28u;
     {

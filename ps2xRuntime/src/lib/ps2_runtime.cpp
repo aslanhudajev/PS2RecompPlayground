@@ -201,7 +201,11 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     if (height > FB_HEIGHT)
         height = FB_HEIGHT;
 
-    uint32_t baseBytes = fbp * 2048;
+    // Linear VRAM model: buffers at different FBP values overlap, so always
+    // display from buffer 0 where all rendering targets.  The snapshot
+    // mechanism prevents tearing.
+    uint32_t baseBytes = 0;
+    (void)fbp;
     const uint32_t bytesPerPixel = (psm == 2u || psm == 0x0Au) ? 2u : 4u;
     uint32_t strideBytes = (fbw ? fbw : (FB_WIDTH / 64)) * 64 * bytesPerPixel;
 
@@ -282,27 +286,38 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     ++s_uploadCount;
     if (s_uploadCount <= 10 || (s_uploadCount % 120) == 0)
     {
-        int nonBlack = 0;
+        int totalNonBlack = 0;
         uint8_t sampleR = 0, sampleG = 0, sampleB = 0, sampleA = 0;
         int sampleX = -1, sampleY = -1;
-        for (uint32_t i = 0; i < width * height && nonBlack == 0; ++i)
+        uint8_t centerR = 0, centerG = 0, centerB = 0, centerA = 0;
+        for (uint32_t i = 0; i < width * height; ++i)
         {
             uint8_t r = scratch[i * 4 + 0];
             uint8_t g = scratch[i * 4 + 1];
             uint8_t b = scratch[i * 4 + 2];
             if (r | g | b)
             {
-                nonBlack = 1;
-                sampleR = r; sampleG = g; sampleB = b;
-                sampleA = scratch[i * 4 + 3];
-                sampleX = static_cast<int>(i % width);
-                sampleY = static_cast<int>(i / width);
+                ++totalNonBlack;
+                if (sampleX < 0)
+                {
+                    sampleR = r; sampleG = g; sampleB = b;
+                    sampleA = scratch[i * 4 + 3];
+                    sampleX = static_cast<int>(i % width);
+                    sampleY = static_cast<int>(i / width);
+                }
             }
         }
-        printf("[UploadFrame #%d] %ux%u psm=%u fbp=%u fbw=%u stride=%u nonBlack=%d",
-               s_uploadCount, width, height, psm, fbp, fbw, strideBytes, nonBlack);
-        if (nonBlack)
+        uint32_t cx = width / 2, cy = height / 2;
+        uint32_t ci = cy * width + cx;
+        if (ci < width * height) {
+            centerR = scratch[ci * 4 + 0]; centerG = scratch[ci * 4 + 1];
+            centerB = scratch[ci * 4 + 2]; centerA = scratch[ci * 4 + 3];
+        }
+        printf("[UploadFrame #%d] %ux%u psm=%u fbp=%u fbw=%u stride=%u totalNonBlack=%d",
+               s_uploadCount, width, height, psm, fbp, fbw, strideBytes, totalNonBlack);
+        if (sampleX >= 0)
             printf(" first@(%d,%d) rgba=(%d,%d,%d,%d)", sampleX, sampleY, sampleR, sampleG, sampleB, sampleA);
+        printf(" center(%u,%u)=(%d,%d,%d,%d)", cx, cy, centerR, centerG, centerB, centerA);
         printf("\n");
     }
 

@@ -6,9 +6,19 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // Function: draw32bitImage
 // Address: 0x105580 - 0x105810
 void draw32bitImage_0x105580(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    static int s_callCount = 0;
+    ++s_callCount;
+    if (s_callCount <= 5 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[draw32bitImage #%d] imgId(r4)=0x%x w(r5)=%d h(r6)=%d r7=%d r8=0x%x scaleX(r9)=%d scaleY(r10)=%d r11=%d\n",
+                     s_callCount, GPR_U32(ctx, 4), GPR_S32(ctx, 5), GPR_S32(ctx, 6),
+                     GPR_S32(ctx, 7), GPR_U32(ctx, 8), GPR_S32(ctx, 9),
+                     GPR_S32(ctx, 10), GPR_S32(ctx, 11));
+    }
 
     ctx->pc = 0x105580u;
 

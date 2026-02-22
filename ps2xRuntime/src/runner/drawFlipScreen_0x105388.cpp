@@ -6,9 +6,13 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // Function: drawFlipScreen
 // Address: 0x105388 - 0x105558
 void drawFlipScreen_0x105388(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    static int s_callCount = 0;
+    ++s_callCount;
 
     ctx->pc = 0x105388u;
 
@@ -70,6 +74,10 @@ void drawFlipScreen_0x105388(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     // 0x1053c8: 0xa7828494
     ctx->pc = 0x1053c8u;
     WRITE16(ADD32(GPR_U32(ctx, 28), 4294935700), (uint16_t)GPR_U32(ctx, 2));
+    if (s_callCount <= 10 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[drawFlipScreen #%d] oldIdx=%d newIdx=%d\n",
+                     s_callCount, GPR_U32(ctx, 4), GPR_U32(ctx, 2));
+    }
     // 0x1053cc: 0x24631600
     ctx->pc = 0x1053ccu;
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 5632));
@@ -169,6 +177,9 @@ void drawFlipScreen_0x105388(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     // 0x10544c: 0xfce30000
     ctx->pc = 0x10544cu;
     WRITE64(ADD32(GPR_U32(ctx, 7), 0), GPR_U64(ctx, 3));
+    if (s_callCount <= 10 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[drawFlipScreen #%d] wrote 7 dispEnv regs to GS priv (0x12000020..0x120000e0)\n", s_callCount);
+    }
     // 0x105450: 0x97848496
     ctx->pc = 0x105450u;
     SET_GPR_U32(ctx, 4, (uint16_t)READ16(ADD32(GPR_U32(ctx, 28), 4294935702)));
@@ -180,6 +191,11 @@ void drawFlipScreen_0x105388(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     SET_GPR_U32(ctx, 31, 0x105460u);
     ctx->pc = 0x10545Cu;
     SET_GPR_U32(ctx, 4, ADD32(GPR_U32(ctx, 4), GPR_U32(ctx, 5)));
+    if (s_callCount <= 10 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[drawFlipScreen #%d] calling sceGsPutDrawEnv(0x%08x) drawIdx=%d\n",
+                     s_callCount, GPR_U32(ctx, 4),
+                     (uint16_t)READ16(ADD32(GPR_U32(ctx, 28), 4294935702)));
+    }
     ctx->pc = 0x10CB08u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -363,6 +379,10 @@ void drawFlipScreen_0x105388(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     SET_GPR_U32(ctx, 31, 0x105540u);
     ctx->pc = 0x10553Cu;
     SET_GPR_S32(ctx, 6, ADD32(GPR_U32(ctx, 0), 5));
+    if (s_callCount <= 10 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[drawFlipScreen #%d] sceDmaSendN ch=0x%08x madr=0x%08x qwc=%d\n",
+                     s_callCount, GPR_U32(ctx, 4), GPR_U32(ctx, 5), GPR_S32(ctx, 6));
+    }
     ctx->pc = 0x10D830u;
     {
         const uint32_t __entryPc = ctx->pc;

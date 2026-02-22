@@ -149,9 +149,16 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
     static int s_gifCallCount = 0;
     static int s_gifTagCount = 0;
     ++s_gifCallCount;
-    if (s_gifCallCount <= 8 || (s_gifCallCount % 5000) == 0)
-        printf("[GS::processGIFPacket #%d] size=%u (0x%x) tags_so_far=%d\n",
+    if (s_gifCallCount <= 20 || (s_gifCallCount % 500) == 0)
+        std::fprintf(stderr, "[GS::processGIFPacket #%d] size=%u (0x%x) tags_so_far=%d\n",
                s_gifCallCount, sizeBytes, sizeBytes, s_gifTagCount);
+
+    static int s_dumpCount = 0;
+    bool dumpThis = (sizeBytes >= 260 && sizeBytes <= 290 && s_dumpCount < 3);
+    if (dumpThis) {
+        ++s_dumpCount;
+        std::fprintf(stderr, "[GIF DUMP #%d] packet size=%u dumping all tags/registers:\n", s_dumpCount, sizeBytes);
+    }
 
     uint32_t offset = 0;
     while (offset + 16 <= sizeBytes)
@@ -166,14 +173,17 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
         if (nreg == 0) nreg = 16;
 
         ++s_gifTagCount;
-        if (s_gifTagCount <= 20 || (s_gifTagCount % 5000) == 0)
-            printf("[GIF tag #%d] flg=%d nloop=%u nreg=%u tagLo=0x%016llx tagHi=0x%016llx\n",
-                   s_gifTagCount, flg, nloop, nreg, (unsigned long long)tagLo, (unsigned long long)tagHi);
+        if (s_gifTagCount <= 30 || (s_gifTagCount % 500) == 0 || dumpThis)
+            std::fprintf(stderr, "[GIF tag #%d] flg=%d nloop=%u nreg=%u tagLo=0x%016llx tagHi=0x%016llx pre=%d\n",
+                   s_gifTagCount, flg, nloop, nreg, (unsigned long long)tagLo, (unsigned long long)tagHi,
+                   (int)((tagLo >> 46) & 1));
 
         bool pre = ((tagLo >> 46) & 1) != 0;
         if (pre)
         {
             uint64_t primVal = (tagLo >> 47) & 0x7FF;
+            if (dumpThis)
+                std::fprintf(stderr, "  [PRE] PRIM=0x%03llx\n", (unsigned long long)primVal);
             writeRegister(GS_REG_PRIM, primVal);
         }
 
@@ -192,6 +202,15 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
                     uint64_t lo = loadLE64(data + offset);
                     uint64_t hi = loadLE64(data + offset + 8);
                     offset += 16;
+                    if (dumpThis) {
+                        uint8_t reg = regs[r];
+                        if (reg == 0x0E) {
+                            uint8_t addr = static_cast<uint8_t>(hi & 0xFF);
+                            std::fprintf(stderr, "  [PACKED A+D] reg=0x%02x val=0x%016llx\n", addr, (unsigned long long)lo);
+                        } else {
+                            std::fprintf(stderr, "  [PACKED reg=0x%x] lo=0x%016llx hi=0x%016llx\n", reg, (unsigned long long)lo, (unsigned long long)hi);
+                        }
+                    }
                     writeRegisterPacked(regs[r], lo, hi);
                 }
             }
@@ -200,7 +219,7 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
         {
             static int s_reglistTagCount = 0;
             ++s_reglistTagCount;
-            if (s_reglistTagCount <= 5 || (s_reglistTagCount % 2000) == 0) {
+            if (s_reglistTagCount <= 5 || (s_reglistTagCount % 20000) == 0) {
                 printf("[GIF REGLIST tag #%d] nloop=%u nreg=%u regs=[", s_reglistTagCount, nloop, nreg);
                 for (uint32_t i = 0; i < nreg; ++i) printf("0x%x%s", regs[i], i+1<nreg?",":"");
                 printf("] tagHi=0x%016llx\n", (unsigned long long)tagHi);
@@ -215,9 +234,9 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
                     uint64_t val = loadLE64(data + offset);
                     offset += 8;
 
-                    if (s_reglistTagCount <= 3 && loop < 2) {
-                        printf("[GIF REGLIST tag #%d loop=%u reg=%u] reg_id=0x%x val=0x%016llx\n",
-                               s_reglistTagCount, loop, r, regs[r], (unsigned long long)val);
+                    if ((s_reglistTagCount <= 3 && loop < 2) || dumpThis) {
+                        std::fprintf(stderr, "[GIF REGLIST loop=%u reg=%u] reg_id=0x%x val=0x%016llx\n",
+                               loop, r, regs[r], (unsigned long long)val);
                     }
 
                     writeRegister(regs[r], val);
@@ -232,6 +251,8 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
             uint32_t imageBytes = nloop * 16;
             if (offset + imageBytes > sizeBytes)
                 imageBytes = sizeBytes - offset;
+            if (dumpThis)
+                std::fprintf(stderr, "  [IMAGE] nloop=%u imageBytes=%u\n", nloop, imageBytes);
             processImageData(data + offset, imageBytes);
             offset += imageBytes;
         }
@@ -444,10 +465,10 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         t.cld = static_cast<uint8_t>((value >> 61) & 0x7);
         {
             static int s_tex0Log = 0;
-            if (++s_tex0Log <= 10 || (s_tex0Log % 2000) == 0)
-                printf("[GS_REG_TEX0 #%d] ctx=%d tbp0=0x%x tbw=%u psm=%u tw=%u(%d) th=%u(%d) tcc=%u tfx=%u cbp=0x%x cpsm=%u csm=%u csa=%u cld=%u val=0x%016llx\n",
-                       s_tex0Log, ci, t.tbp0, t.tbw, t.psm, t.tw, 1<<t.tw, t.th, 1<<t.th,
-                       t.tcc, t.tfx, t.cbp, t.cpsm, t.csm, t.csa, t.cld, (unsigned long long)value);
+            if (++s_tex0Log <= 20 || (s_tex0Log % 2000) == 0)
+                std::fprintf(stderr, "[GS_REG_TEX0 #%d] ctx=%d tbp0=0x%x tbw=%u psm=%u tw=%u th=%u tfx=%u cbp=0x%x val=0x%016llx\n",
+                       s_tex0Log, ci, t.tbp0, t.tbw, t.psm, t.tw, t.th,
+                       t.tfx, t.cbp, (unsigned long long)value);
         }
         break;
     }
@@ -479,7 +500,7 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         m_ctx[ci].xyoffset.ofy = static_cast<uint16_t>((value >> 32) & 0xFFFF);
         static int s_xyoffCount = 0;
         ++s_xyoffCount;
-        if (s_xyoffCount <= 20 || (s_xyoffCount % 1000) == 0) {
+        if (s_xyoffCount <= 20 || (s_xyoffCount % 10000) == 0) {
             printf("[GS::writeRegister XYOFFSET_%d #%d] value=0x%016llx ofx=%u(%d) ofy=%u(%d)\n",
                    ci + 1, s_xyoffCount, (unsigned long long)value,
                    m_ctx[ci].xyoffset.ofx, m_ctx[ci].xyoffset.ofx >> 4,
@@ -542,9 +563,9 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         m_ctx[ci].frame.fbmsk = static_cast<uint32_t>((value >> 32) & 0xFFFFFFFF);
         {
             static int s_frameRegLog = 0;
-            if (++s_frameRegLog <= 20 || (s_frameRegLog % 500) == 0)
-                printf("[GS_REG_FRAME #%d] ctx=%d fbp=%u(base=0x%x) fbw=%u psm=%u fbmsk=0x%08x val=0x%016llx\n",
-                       s_frameRegLog, ci, m_ctx[ci].frame.fbp, m_ctx[ci].frame.fbp * 2048,
+            if (++s_frameRegLog <= 30 || (s_frameRegLog % 500) == 0)
+                std::fprintf(stderr, "[GS_REG_FRAME #%d] ctx=%d fbp=%u fbw=%u psm=%u fbmsk=0x%08x val=0x%016llx\n",
+                       s_frameRegLog, ci, m_ctx[ci].frame.fbp,
                        m_ctx[ci].frame.fbw, m_ctx[ci].frame.psm, m_ctx[ci].frame.fbmsk,
                        (unsigned long long)value);
         }
@@ -594,6 +615,70 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         m_trxdir = static_cast<uint32_t>(value & 0x3);
         m_hwregX = 0;
         m_hwregY = 0;
+
+        if (m_trxdir == 2 && m_vram)
+        {
+            uint32_t sbp  = m_bitbltbuf.sbp;
+            uint8_t  sbw  = m_bitbltbuf.sbw;
+            uint8_t  spsm = m_bitbltbuf.spsm;
+            uint32_t dbp  = m_bitbltbuf.dbp;
+            uint8_t  dbw  = m_bitbltbuf.dbw;
+            uint8_t  dpsm = m_bitbltbuf.dpsm;
+
+            if (sbw == 0) sbw = 1;
+            if (dbw == 0) dbw = 1;
+
+            uint32_t srcBase  = sbp * 256u;
+            uint32_t dstBase  = dbp * 256u;
+            uint32_t srcBpp   = bitsPerPixel(spsm) / 8u;
+            uint32_t dstBpp   = bitsPerPixel(dpsm) / 8u;
+            if (srcBpp == 0) srcBpp = 4;
+            if (dstBpp == 0) dstBpp = 4;
+            uint32_t srcStride = static_cast<uint32_t>(sbw) * 64u * srcBpp;
+            uint32_t dstStride = static_cast<uint32_t>(dbw) * 64u * dstBpp;
+            uint32_t rrw = m_trxreg.rrw;
+            uint32_t rrh = m_trxreg.rrh;
+            uint32_t ssax = m_trxpos.ssax;
+            uint32_t ssay = m_trxpos.ssay;
+            uint32_t dsax = m_trxpos.dsax;
+            uint32_t dsay = m_trxpos.dsay;
+            uint32_t copyBpp = (srcBpp < dstBpp) ? srcBpp : dstBpp;
+            uint32_t rowBytes = rrw * copyBpp;
+
+            static int s_llCount = 0;
+            ++s_llCount;
+            if (s_llCount <= 10 || (s_llCount % 500) == 0) {
+                std::fprintf(stderr, "[GS TRXDIR=2 local-local #%d] sbp=0x%x sbw=%u spsm=%u -> dbp=0x%x dbw=%u dpsm=%u  "
+                       "ssax=%u ssay=%u dsax=%u dsay=%u rrw=%u rrh=%u\n",
+                       s_llCount, sbp, sbw, spsm, dbp, dbw, dpsm,
+                       ssax, ssay, dsax, dsay, rrw, rrh);
+            }
+
+            // When src and dst regions overlap, copy in the correct direction
+            // to avoid reading from already-overwritten rows.
+            if (dstBase > srcBase)
+            {
+                for (int row = static_cast<int>(rrh) - 1; row >= 0; --row)
+                {
+                    uint32_t srcOff = srcBase + (ssay + row) * srcStride + ssax * srcBpp;
+                    uint32_t dstOff = dstBase + (dsay + row) * dstStride + dsax * dstBpp;
+                    if (srcOff + rowBytes <= m_vramSize && dstOff + rowBytes <= m_vramSize)
+                        std::memmove(m_vram + dstOff, m_vram + srcOff, rowBytes);
+                }
+            }
+            else
+            {
+                for (uint32_t row = 0; row < rrh; ++row)
+                {
+                    uint32_t srcOff = srcBase + (ssay + row) * srcStride + ssax * srcBpp;
+                    uint32_t dstOff = dstBase + (dsay + row) * dstStride + dsax * dstBpp;
+                    if (srcOff + rowBytes <= m_vramSize && dstOff + rowBytes <= m_vramSize)
+                        std::memmove(m_vram + dstOff, m_vram + srcOff, rowBytes);
+                }
+            }
+
+            snapshotVRAM();
+        }
         break;
     }
     case GS_REG_HWREG:
@@ -678,12 +763,10 @@ void GS::vertexKick(bool drawing)
     static int s_kickDraw = 0;
     ++s_kickTotal;
     if (drawing) ++s_kickDraw;
-    if (s_kickTotal <= 5 || (s_kickTotal % 2000) == 0)
-        printf("[GS::vertexKick #%d] drawing=%d/%d  primType=%d  ctxt=%d  frame.fbp=%u  frame.fbw=%u  scissor=[%d,%d,%d,%d]\n",
+    if (s_kickTotal <= 10 || (s_kickTotal % 500) == 0)
+        std::fprintf(stderr, "[GS::vertexKick #%d] draw=%d/%d prim=%d ctxt=%d fbp=%u fbw=%u\n",
                s_kickTotal, s_kickDraw, s_kickTotal, m_prim.type, m_prim.ctxt,
-               activeContext().frame.fbp, activeContext().frame.fbw,
-               activeContext().scissor.x0, activeContext().scissor.x1,
-               activeContext().scissor.y0, activeContext().scissor.y1);
+               activeContext().frame.fbp, activeContext().frame.fbw);
 
     if (!drawing)
         return;
@@ -775,13 +858,13 @@ void GS::writePixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
         y < ctx.scissor.y0 || y > ctx.scissor.y1)
         return;
 
-    uint32_t fbBase = ctx.frame.fbp * 2048u;
+    uint32_t fbBase = ctx.frame.fbp * 8192u;
     uint32_t stride = fbStride(ctx.frame.fbw, ctx.frame.psm);
     if (stride == 0) return;
 
     static int s_pixWriteCount = 0;
     ++s_pixWriteCount;
-    if (s_pixWriteCount <= 2 || (s_pixWriteCount % 100000) == 0) {
+    if (s_pixWriteCount <= 2 || (s_pixWriteCount % 50000000) == 0) {
         printf("[GS::writePixel #%d] (%d,%d) rgba=(%d,%d,%d,%d) fbp=%u off=0x%x stride=%u\n",
                s_pixWriteCount, x, y, r, g, b, a, ctx.frame.fbp, fbBase, stride);
     }
@@ -864,7 +947,7 @@ uint32_t GS::readTexelPSMT4(uint32_t tbp0, uint32_t tbw, int texU, int texV)
 
     static int s_t4ReadCount = 0;
     ++s_t4ReadCount;
-    if (s_t4ReadCount <= 32 || (s_t4ReadCount % 50000) == 0) {
+    if (s_t4ReadCount <= 32 || (s_t4ReadCount % 50000000) == 0) {
         printf("[readTexelPSMT4 #%d] tbp0=0x%x tbw=%u texU=%d texV=%d base=0x%x stride=%u byteOff=0x%x packed=0x%02x idx=%u\n",
                s_t4ReadCount, tbp0, tbw, texU, texV, base, stride, byteOff, packed, result);
     }
@@ -885,7 +968,7 @@ uint32_t GS::lookupCLUT(uint8_t index, uint32_t cbp, uint8_t cpsm, uint8_t csa)
 
         static int s_clutLookCount = 0;
         ++s_clutLookCount;
-        if (s_clutLookCount <= 32 || (s_clutLookCount % 50000) == 0) {
+        if (s_clutLookCount <= 32 || (s_clutLookCount % 50000000) == 0) {
             printf("[lookupCLUT #%d] idx=%u cbp=0x%x cpsm=%u csa=%u clutBase=0x%x off=0x%x color=0x%08x\n",
                    s_clutLookCount, index, cbp, cpsm, csa, clutBase, off, color);
         }
@@ -978,13 +1061,21 @@ void GS::drawSprite()
 
     static int s_spriteCount = 0;
     ++s_spriteCount;
-    if (s_spriteCount <= 20 || (s_spriteCount % 1000) == 0) {
-        printf("[GS::drawSprite #%d] raw=(%.1f,%.1f)-(%.1f,%.1f) off=(%d,%d) => (%d,%d)-(%d,%d) "
-               "scissor=(%d,%d,%d,%d) frame.fbp=%u frame.fbw=%u frame.psm=%u tme=%d\n",
-               s_spriteCount, v0.x, v0.y, v1.x, v1.y, ofx, ofy,
-               x0, y0, x1, y1,
-               ctx.scissor.x0, ctx.scissor.y0, ctx.scissor.x1, ctx.scissor.y1,
-               ctx.frame.fbp, ctx.frame.fbw, ctx.frame.psm, m_prim.tme);
+    if (s_spriteCount <= 20 || (s_spriteCount % 500) == 0) {
+        std::fprintf(stderr, "[GS::drawSprite #%d] (%d,%d)-(%d,%d) fbp=%u fbw=%u tme=%d abe=%d rgba=(%u,%u,%u,%u) tex.tbp0=0x%x tex.psm=%u\n",
+               s_spriteCount, x0, y0, x1, y1,
+               ctx.frame.fbp, ctx.frame.fbw, m_prim.tme, m_prim.abe,
+               v1.r, v1.g, v1.b, v1.a,
+               ctx.tex0.tbp0, ctx.tex0.psm);
+    }
+    static int s_menuSprLog = 0;
+    if (ctx.tex0.tbp0 >= 0x2000 && s_menuSprLog < 20) {
+        ++s_menuSprLog;
+        std::fprintf(stderr, "[drawSprite-MENU #%d] (%d,%d)-(%d,%d) fbp=%u fbw=%u tme=%d abe=%d rgba=(%u,%u,%u,%u) tbp0=0x%x tbw=%u psm=%u tfx=%u tw=%u th=%u\n",
+               s_menuSprLog, x0, y0, x1, y1,
+               ctx.frame.fbp, ctx.frame.fbw, m_prim.tme, m_prim.abe,
+               v1.r, v1.g, v1.b, v1.a,
+               ctx.tex0.tbp0, ctx.tex0.tbw, ctx.tex0.psm, ctx.tex0.tfx, ctx.tex0.tw, ctx.tex0.th);
     }
 
     if (x0 > x1) std::swap(x0, x1);
@@ -1006,7 +1097,7 @@ void GS::drawSprite()
         if (texW == 0) texW = 1;
         if (texH == 0) texH = 1;
 
-        if (s_spriteCount <= 10 || (s_spriteCount % 1000) == 0) {
+        if (s_spriteCount <= 10 || (s_spriteCount % 10000) == 0) {
             printf("[drawSprite TEX #%d] psm=%u tbp0=0x%x tbw=%u tw=%u(%d) th=%u(%d) "
                    "tcc=%u tfx=%u cbp=0x%x cpsm=%u csa=%u cld=%u fst=%d abe=%d\n",
                    s_spriteCount, tex.psm, tex.tbp0, tex.tbw, tex.tw, texW, tex.th, texH,
@@ -1132,11 +1223,18 @@ void GS::drawTriangle()
 
     static int s_triCount = 0;
     ++s_triCount;
-    if (s_triCount <= 10 || (s_triCount % 1000) == 0) {
-        printf("[GS::drawTriangle #%d] (%.1f,%.1f)(%.1f,%.1f)(%.1f,%.1f) frame.fbp=%u fbw=%u scissor=[%d,%d,%d,%d]\n",
+    if (s_triCount <= 10 || (s_triCount % 500) == 0) {
+        std::fprintf(stderr, "[GS::drawTriangle #%d] (%.0f,%.0f)(%.0f,%.0f)(%.0f,%.0f) fbp=%u fbw=%u abe=%d rgba=(%u,%u,%u,%u)\n",
                s_triCount, fx0, fy0, fx1, fy1, fx2, fy2,
-               ctx.frame.fbp, ctx.frame.fbw,
-               ctx.scissor.x0, ctx.scissor.x1, ctx.scissor.y0, ctx.scissor.y1);
+               ctx.frame.fbp, ctx.frame.fbw, m_prim.abe,
+               v0.r, v0.g, v0.b, v0.a);
+    }
+    static int s_menuTriLog = 0;
+    if (m_prim.tme && ctx.tex0.tbp0 >= 0x2000 && s_menuTriLog < 20) {
+        ++s_menuTriLog;
+        std::fprintf(stderr, "[drawTriangle-MENU #%d] (%.0f,%.0f)(%.0f,%.0f)(%.0f,%.0f) fbp=%u tme=%d tbp0=0x%x psm=%u tfx=%u\n",
+               s_menuTriLog, fx0, fy0, fx1, fy1, fx2, fy2,
+               ctx.frame.fbp, m_prim.tme, ctx.tex0.tbp0, ctx.tex0.psm, ctx.tex0.tfx);
     }
 
     // Bounding box
@@ -1355,29 +1453,109 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
             ++m_hwregY;
         }
     }
+    else if (dpsm == GS_PSM_CT24 || dpsm == GS_PSM_Z24)
+    {
+        uint32_t storageBpp = 4;
+        uint32_t transferBpp = 3;
+        uint32_t storageStride = stridePixels * storageBpp;
+
+        static int s_imgNon4Count = 0;
+        ++s_imgNon4Count;
+        if (s_imgNon4Count <= 100 || (s_imgNon4Count % 200) == 0) {
+            std::fprintf(stderr, "[processImageData #%d] dbp=0x%x dbw=%u dpsm=%u bpp=24(xfer) base=0x%x "
+                   "stride=%u rrw=%u rrh=%u dsax=%u dsay=%u size=%u trxdir=%u\n",
+                   s_imgNon4Count, dbp, dbw, dpsm, base,
+                   storageStride, rrw, rrh, dsax, dsay, sizeBytes, m_trxdir);
+            if (sizeBytes >= 16) {
+                uint32_t nonZero = 0;
+                uint32_t checkLen = sizeBytes < 1024 ? sizeBytes : 1024;
+                for (uint32_t i = 0; i < checkLen; ++i)
+                    if (data[i] != 0) ++nonZero;
+                std::fprintf(stderr, "[processImageData #%d] first16: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  nonZero=%u/%u\n",
+                       s_imgNon4Count, data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],
+                       data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],
+                       nonZero, checkLen);
+            }
+        }
+
+        uint32_t offset = 0;
+        while (offset < sizeBytes && m_hwregY < rrh)
+        {
+            uint32_t dstY = dsay + m_hwregY;
+            uint32_t pixelsLeft = rrw - m_hwregX;
+            uint32_t srcBytesLeft = pixelsLeft * transferBpp;
+            uint32_t bytesAvail = sizeBytes - offset;
+            uint32_t pixelsToCopy = pixelsLeft;
+            if (srcBytesLeft > bytesAvail)
+                pixelsToCopy = bytesAvail / transferBpp;
+
+            if (pixelsToCopy == 0)
+                break;
+
+            uint32_t dstOff = base + dstY * storageStride + (dsax + m_hwregX) * storageBpp;
+            if (dstOff + pixelsToCopy * storageBpp <= m_vramSize && pixelsToCopy > 0)
+            {
+                for (uint32_t p = 0; p < pixelsToCopy; ++p)
+                {
+                    m_vram[dstOff + p * 4 + 0] = data[offset + p * 3 + 0];
+                    m_vram[dstOff + p * 4 + 1] = data[offset + p * 3 + 1];
+                    m_vram[dstOff + p * 4 + 2] = data[offset + p * 3 + 2];
+                    m_vram[dstOff + p * 4 + 3] = 0x80;
+                }
+            }
+
+            offset += pixelsToCopy * transferBpp;
+            m_hwregX += pixelsToCopy;
+            if (m_hwregX >= rrw)
+            {
+                m_hwregX = 0;
+                ++m_hwregY;
+            }
+        }
+    }
     else
     {
         uint32_t bytesPerPixel = bpp / 8u;
         if (bytesPerPixel == 0) bytesPerPixel = 4;
         uint32_t strideBytes = stridePixels * bytesPerPixel;
+        uint32_t rowBytes = rrw * bytesPerPixel;
+
+        static int s_imgNon4Count2 = 0;
+        ++s_imgNon4Count2;
+        if (s_imgNon4Count2 <= 100 || (s_imgNon4Count2 % 200) == 0) {
+            std::fprintf(stderr, "[processImageData #%d] dbp=0x%x dbw=%u dpsm=%u bpp=%u base=0x%x "
+                   "stride=%u rrw=%u rrh=%u dsax=%u dsay=%u size=%u trxdir=%u\n",
+                   s_imgNon4Count2, dbp, dbw, dpsm, bpp, base,
+                   strideBytes, rrw, rrh, dsax, dsay, sizeBytes, m_trxdir);
+            if (sizeBytes >= 16) {
+                uint32_t nonZero = 0;
+                uint32_t checkLen = sizeBytes < 1024 ? sizeBytes : 1024;
+                for (uint32_t i = 0; i < checkLen; ++i)
+                    if (data[i] != 0) ++nonZero;
+                std::fprintf(stderr, "[processImageData #%d] first16: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  nonZero=%u/%u\n",
+                       s_imgNon4Count2, data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],
+                       data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],
+                       nonZero, checkLen);
+            }
+        }
 
         uint32_t offset = 0;
-        while (offset < sizeBytes)
+        while (offset < sizeBytes && m_hwregY < rrh)
         {
-            if (m_hwregY >= rrh)
-                break;
-
-            uint32_t dstX = dsax + m_hwregX;
             uint32_t dstY = dsay + m_hwregY;
-            uint32_t dstOff = base + dstY * strideBytes + dstX * bytesPerPixel;
+            uint32_t pixelsLeft = rrw - m_hwregX;
+            uint32_t bytesLeft = pixelsLeft * bytesPerPixel;
+            uint32_t bytesAvail = sizeBytes - offset;
+            if (bytesLeft > bytesAvail)
+                bytesLeft = (bytesAvail / bytesPerPixel) * bytesPerPixel;
 
-            if (dstOff + bytesPerPixel <= m_vramSize && offset + bytesPerPixel <= sizeBytes)
-            {
-                std::memcpy(m_vram + dstOff, data + offset, bytesPerPixel);
-            }
+            uint32_t dstOff = base + dstY * strideBytes + (dsax + m_hwregX) * bytesPerPixel;
+            if (dstOff + bytesLeft <= m_vramSize && bytesLeft > 0)
+                std::memcpy(m_vram + dstOff, data + offset, bytesLeft);
 
-            offset += bytesPerPixel;
-            ++m_hwregX;
+            uint32_t pixelsCopied = bytesLeft / bytesPerPixel;
+            offset += bytesLeft;
+            m_hwregX += pixelsCopied;
             if (m_hwregX >= rrw)
             {
                 m_hwregX = 0;

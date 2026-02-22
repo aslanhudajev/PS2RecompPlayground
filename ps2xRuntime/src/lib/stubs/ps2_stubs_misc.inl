@@ -1549,7 +1549,15 @@ void sceMpegInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceMpegIsEnd(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceMpegIsEnd", rdram, ctx, runtime);
+    // Real impl: return **(uint32_t **)(param_1 + 0x40)
+    // Since we have no MPEG decoder, write 1 into the struct field so both
+    // this function and any direct memory reads see "ended".
+    const uint32_t param_1 = getRegU32(ctx, 4);
+    uint32_t ptrAddr = FAST_READ32(param_1 + 0x40u);
+    if (ptrAddr != 0u) {
+        FAST_WRITE32(ptrAddr, 1u);
+    }
+    setReturnS32(ctx, 1);
 }
 
 void sceMpegIsRefBuffEmpty(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)

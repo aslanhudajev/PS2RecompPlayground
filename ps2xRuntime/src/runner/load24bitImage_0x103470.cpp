@@ -6,9 +6,33 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // Function: load24bitImage
 // Address: 0x103470 - 0x1036b4
 void load24bitImage_0x103470(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    static int s_loadCount = 0;
+    ++s_loadCount;
+    if (s_loadCount <= 5 || (s_loadCount % 500) == 0) {
+        uint32_t imgAddr = GPR_U32(ctx, 4);
+        uint32_t phys = imgAddr & 0x1FFFFFFF;
+        std::fprintf(stderr, "[load24bitImage #%d] imgId(r4)=0x%x target(r5)=0x%x w(r6)=%d h(r7)=%d\n",
+                     s_loadCount, imgAddr, GPR_U32(ctx, 5), GPR_S32(ctx, 6), GPR_S32(ctx, 7));
+        if (phys + 32 <= 0x02000000) {
+            uint32_t nonZero = 0;
+            uint32_t total = GPR_S32(ctx, 6) * GPR_S32(ctx, 7) * 3u;
+            if (total > 0x02000000 - phys) total = 0x02000000 - phys;
+            for (uint32_t i = 0; i < total && i < 65536; ++i)
+                if (rdram[phys + i] != 0) ++nonZero;
+            std::fprintf(stderr, "[load24bitImage #%d] imgData @0x%x first16: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  nonZero=%u/%u\n",
+                         s_loadCount, phys,
+                         rdram[phys+0], rdram[phys+1], rdram[phys+2], rdram[phys+3],
+                         rdram[phys+4], rdram[phys+5], rdram[phys+6], rdram[phys+7],
+                         rdram[phys+8], rdram[phys+9], rdram[phys+10], rdram[phys+11],
+                         rdram[phys+12], rdram[phys+13], rdram[phys+14], rdram[phys+15],
+                         nonZero, total < 65536 ? total : 65536u);
+        }
+    }
 
     ctx->pc = 0x103470u;
 
@@ -448,6 +472,37 @@ label_103614:
     SET_GPR_U32(ctx, 31, 0x10366Cu);
     ctx->pc = 0x103668u;
     SET_GPR_U32(ctx, 5, AND32(GPR_U32(ctx, 3), GPR_U32(ctx, 5)));
+    {
+        static int s_dmaSendCount = 0;
+        ++s_dmaSendCount;
+        if (s_dmaSendCount <= 20 || (s_dmaSendCount % 100) == 0) {
+            uint32_t chainAddr = GPR_U32(ctx, 5);
+            std::fprintf(stderr, "[load24bitImage DMA #%d] sceDmaSend ch=0x%08x payload=0x%08x (r3=0x%08x masked) r8(tagCount)=%d r16=%d r17=%d\n",
+                         s_dmaSendCount, GPR_U32(ctx, 4), chainAddr, GPR_U32(ctx, 3),
+                         GPR_S32(ctx, 8), GPR_S32(ctx, 16), GPR_S32(ctx, 17));
+            uint32_t phys = chainAddr & 0x1FFFFFFF;
+            const uint8_t *base = rdram;
+            if (phys + 64 <= 0x02000000) {
+                for (int t = 0; t < 8 && (phys + 16) <= 0x02000000; ++t) {
+                    const uint8_t *tp = base + phys;
+                    uint64_t lo = 0, hi = 0;
+                    std::memcpy(&lo, tp, 8);
+                    std::memcpy(&hi, tp + 8, 8);
+                    uint16_t tqwc = lo & 0xFFFF;
+                    uint32_t tid = (lo >> 28) & 0x7;
+                    uint32_t taddr = (lo >> 32) & 0x7FFFFFFF;
+                    std::fprintf(stderr, "  [chain tag %d] @0x%x: id=%u qwc=%u addr=0x%x lo=0x%llx hi=0x%llx\n",
+                                 t, phys, tid, tqwc, taddr,
+                                 (unsigned long long)lo, (unsigned long long)hi);
+                    if (tid == 0 || tid == 7) break;
+                    if (tid == 1) phys += 16 + tqwc * 16;
+                    else if (tid == 2) phys = taddr & 0x1FFFFFFF;
+                    else if (tid == 3 || tid == 4) phys += 16;
+                    else break;
+                }
+            }
+        }
+    }
     ctx->pc = 0x10D758u;
     {
         const uint32_t __entryPc = ctx->pc;

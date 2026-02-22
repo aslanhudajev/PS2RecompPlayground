@@ -1270,7 +1270,7 @@ namespace
     std::mutex g_dmaStubMutex;
     std::unordered_map<uint32_t, uint32_t> g_dmaPendingPolls;
     uint32_t g_dmaStubLogCount = 0;
-    constexpr uint32_t kMaxDmaStubLogs = 8;
+    constexpr uint32_t kMaxDmaStubLogs = 50;
 
     bool isKnownDmaChannelBase(uint32_t value)
     {
@@ -1279,6 +1279,19 @@ namespace
 
     uint32_t toDmaPhys(uint32_t addr)
     {
+        // PS2 DMA MADR bit 31 = SPR (scratchpad) flag.
+        // If SPR=1 and the lower 31 bits are the scratchpad virtual base,
+        // return the scratchpad virtual address so the DMA handler can
+        // detect it with isScratchpad().
+        if ((addr & 0x80000000u) != 0)
+        {
+            uint32_t lower = addr & 0x7FFFFFFFu;
+            if (lower >= PS2_SCRATCHPAD_BASE &&
+                lower < PS2_SCRATCHPAD_BASE + PS2_SCRATCHPAD_SIZE)
+            {
+                return lower; // 0x70000000 + offset
+            }
+        }
         return addr & 0x1FFFFFFFu;
     }
 
@@ -1379,6 +1392,8 @@ namespace
         const uint32_t channelBase = resolveDmaChannelBase(rdram, chanArg);
         if (channelBase == 0)
         {
+            std::fprintf(stderr, "[submitDmaSend] FAILED: channelBase=0 chanArg=0x%x payload=0x%x count=0x%x\n",
+                         chanArg, payloadArg, countArg);
             return -1;
         }
 
@@ -1395,28 +1410,11 @@ namespace
         }
         else
         {
-            const ParsedDmaTag tag = tryParseDmaTag(rdram, payloadPhys);
-            if (tag.valid && tag.qwc != 0)
-            {
-                qwc = tag.qwc;
-                switch (tag.id)
-                {
-                case 0: // REFE
-                case 3: // REF
-                case 4: // REFS
-                    madr = toDmaPhys(tag.addr);
-                    break;
-                default:
-                    // CNT/NEXT/CALL/RET-style tags carry payload inline after the tag.
-                    madr = toDmaPhys(payloadPhys + 0x10u);
-                    break;
-                }
-            }
-            else
-            {
-                // Fall back to chain mode so the runtime DMA path can walk TADR.
-                chcr = 0x00000185u; // MODE=1 chain, DIR=1, TIE=1, STR=1.
-            }
+            // sceDmaSend uses source-chain mode: the runtime DMA handler walks
+            // tags starting at TADR.  Previous code tried to extract a single
+            // transfer from the first tag, but that silently drops all subsequent
+            // tags in multi-tag chains (e.g. load24bitImage's setup+image+end).
+            chcr = 0x00000185u; // MODE=1 chain, DIR=1, TIE=1, STR=1.
         }
 
         PS2Memory &mem = runtime->memory();
@@ -1427,16 +1425,11 @@ namespace
 
         std::lock_guard<std::mutex> lock(g_dmaStubMutex);
         g_dmaPendingPolls[channelBase] = 1;
-        if (g_dmaStubLogCount < kMaxDmaStubLogs)
+        ++g_dmaStubLogCount;
+        if (g_dmaStubLogCount <= 80 || (g_dmaStubLogCount % 200) == 0)
         {
-            std::cout << "[sceDmaSend] ch=0x" << std::hex << channelBase
-                      << " madr=0x" << madr
-                      << " qwc=0x" << qwc
-                      << " tadr=0x" << tadr
-                      << " chcr=0x" << chcr << std::dec << std::endl;
-            ++g_dmaStubLogCount;
-            if (g_dmaStubLogCount == kMaxDmaStubLogs)
-                std::cout << "[sceDmaSend] logging suppressed after " << kMaxDmaStubLogs << " lines\n";
+            std::fprintf(stderr, "[sceDmaSend #%u] ch=0x%x madr=0x%x qwc=0x%x tadr=0x%x chcr=0x%x prefN=%d\n",
+                         g_dmaStubLogCount, channelBase, madr, qwc, tadr, chcr, (int)preferNormalCount);
         }
 
         return 0;

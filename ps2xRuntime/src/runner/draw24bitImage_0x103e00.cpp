@@ -6,9 +6,13 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // Function: draw24bitImage
 // Address: 0x103e00 - 0x1040a4
 void draw24bitImage_0x103e00(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    static int s_callCount = 0;
+    ++s_callCount;
 
     ctx->pc = 0x103e00u;
 
@@ -63,12 +67,25 @@ void draw24bitImage_0x103e00(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     // 0x103e40: 0xffb30030
     ctx->pc = 0x103e40u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
+    if (s_callCount <= 5 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[draw24bitImage #%d] imgId(r4)=0x%x cached(r2)=0x%x  w(r5/s20)=%d h(r6/s22)=%d  r7=%d r8=0x%x scaleX(r9/s17)=%d scaleY(r10/s18)=%d r11=%d\n",
+                     s_callCount, GPR_U32(ctx, 4), GPR_U32(ctx, 2),
+                     GPR_S32(ctx, 5), GPR_S32(ctx, 6),
+                     GPR_S32(ctx, 7), GPR_U32(ctx, 8),
+                     GPR_S32(ctx, 9), GPR_S32(ctx, 10), GPR_S32(ctx, 11));
+    }
     // 0x103e44: 0x10820005
     ctx->pc = 0x103E44u;
     {
         const bool branch_taken_0x103e44 = (GPR_U32(ctx, 4) == GPR_U32(ctx, 2));
         ctx->pc = 0x103E48u;
         WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
+        if (s_callCount <= 5 || (s_callCount % 200) == 0) {
+            std::fprintf(stderr, "[draw24bitImage #%d] %s image (imgId %s cached)\n",
+                         s_callCount,
+                         branch_taken_0x103e44 ? "REUSING" : "LOADING",
+                         branch_taken_0x103e44 ? "==" : "!=");
+        }
         if (branch_taken_0x103e44) {
             ctx->pc = 0x103E5Cu;
             goto label_103e5c;
@@ -513,6 +530,10 @@ label_103e5c:
     SET_GPR_U32(ctx, 31, 0x10405Cu);
     ctx->pc = 0x104058u;
     SET_GPR_U32(ctx, 5, AND32(GPR_U32(ctx, 3), GPR_U32(ctx, 5)));
+    if (s_callCount <= 10 || (s_callCount % 200) == 0) {
+        std::fprintf(stderr, "[draw24bitImage #%d] 2nd sceDmaSend: ch=0x%x payload=0x%x (r3=0x%x)\n",
+                     s_callCount, GPR_U32(ctx, 4), GPR_U32(ctx, 5), GPR_U32(ctx, 3));
+    }
     ctx->pc = 0x10D758u;
     {
         const uint32_t __entryPc = ctx->pc;

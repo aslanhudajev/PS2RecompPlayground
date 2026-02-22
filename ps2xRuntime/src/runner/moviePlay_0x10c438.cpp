@@ -6,9 +6,13 @@
 #include "ps2_syscalls.h"
 #include "ps2_stubs.h"
 
+#include <cstdio>
+
 // Function: moviePlay
 // Address: 0x10c438 - 0x10c4b0
 void moviePlay_0x10c438(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    std::fprintf(stderr, "[moviePlay] ENTER  a0(filename)=0x%08x  a1(flag)=0x%08x\n",
+                 GPR_U32(ctx, 4), GPR_U32(ctx, 5));
 
     ctx->pc = 0x10c438u;
 
@@ -69,7 +73,8 @@ void moviePlay_0x10c438(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
         playmovie_0x118b60(rdram, ctx, runtime);
         if (ctx->pc == __entryPc) { ctx->pc = 0x10C474u; }
     }
-    if (ctx->pc != 0x10C474u) { return; }
+    if (ctx->pc != 0x10C474u) { std::fprintf(stderr, "[moviePlay] playmovie did not return normally, pc=0x%08x\n", ctx->pc); return; }
+    std::fprintf(stderr, "[moviePlay] playmovie returned, calling memTest(1)\n");
     ctx->pc = 0x10C474u;
     // 0x10c474: 0xc0430fa
     ctx->pc = 0x10C474u;
@@ -83,6 +88,7 @@ void moviePlay_0x10c438(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
         if (ctx->pc == __entryPc) { ctx->pc = 0x10C47Cu; }
     }
     if (ctx->pc != 0x10C47Cu) { return; }
+    std::fprintf(stderr, "[moviePlay] memTest(1) returned, calling reInitialiseDrawDisplay\n");
     ctx->pc = 0x10C47Cu;
     // 0x10c47c: 0xc040b2e
     ctx->pc = 0x10C47Cu;
@@ -94,6 +100,7 @@ void moviePlay_0x10c438(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
         if (ctx->pc == __entryPc) { ctx->pc = 0x10C484u; }
     }
     if (ctx->pc != 0x10C484u) { return; }
+    std::fprintf(stderr, "[moviePlay] reInitialiseDrawDisplay returned, calling memTest(2)\n");
     ctx->pc = 0x10C484u;
     // 0x10c484: 0xc0430fa
     ctx->pc = 0x10C484u;
@@ -137,6 +144,7 @@ void moviePlay_0x10c438(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     ctx->pc = 0x10c4a4u;
     SET_GPR_U64(ctx, 16, READ64(ADD32(GPR_U32(ctx, 29), 0)));
     // 0x10c4a8: 0x80430fa
+    std::fprintf(stderr, "[moviePlay] EXIT (tail-calling memTest(3))\n");
     ctx->pc = 0x10C4A8u;
     ctx->pc = 0x10C4ACu;
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 32));
