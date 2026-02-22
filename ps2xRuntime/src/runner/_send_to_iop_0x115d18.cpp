@@ -47,7 +47,7 @@ void _send_to_iop_0x115d18(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE64(ADD32(GPR_U32(ctx, 29), 288), GPR_U64(ctx, 18));
     // 0x115d44: 0x3c150018
     ctx->pc = 0x115d44u;
-    SET_GPR_U32(ctx, 21, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 21, ((uint32_t)24 << 16));
     // 0x115d48: 0xffb00100
     ctx->pc = 0x115d48u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 256), GPR_U64(ctx, 16));
@@ -90,7 +90,7 @@ void _send_to_iop_0x115d18(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     {
         const bool branch_taken_0x115d70 = (GPR_S32(ctx, 2) < 0);
         ctx->pc = 0x115D74u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x115d70) {
             ctx->pc = 0x115D94u;
             goto label_115d94;
@@ -105,7 +105,7 @@ void _send_to_iop_0x115d18(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     {
         const bool branch_taken_0x115d7c = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x115D80u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x115d7c) {
             ctx->pc = 0x115E24u;
             goto label_115e24;
@@ -226,7 +226,7 @@ label_115d94:
     ctx->pc = 0x115DECu;
     // 0x115dec: 0x3c020017
     ctx->pc = 0x115decu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x115df0: 0x8c43fbf4
     ctx->pc = 0x115df0u;
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 2), 4294966260)));
@@ -235,7 +235,7 @@ label_115d94:
     {
         const bool branch_taken_0x115df4 = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x115DF8u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x115df4) {
             ctx->pc = 0x115E04u;
             goto label_115e04;

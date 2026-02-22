@@ -81,7 +81,7 @@ label_125f30:
     SET_GPR_S32(ctx, 5, ADD32(GPR_U32(ctx, 5), 1));
     // 0x125f50: 0x832025
     ctx->pc = 0x125f50u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | GPR_U64(ctx, 3));
     // 0x125f54: 0xa8102b
     ctx->pc = 0x125f54u;
     SET_GPR_U32(ctx, 2, SLTU32(GPR_U32(ctx, 5), GPR_U32(ctx, 8)));

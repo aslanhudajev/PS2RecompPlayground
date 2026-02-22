@@ -35,31 +35,31 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 21));
     // 0x1083dc: 0x3c061000
     ctx->pc = 0x1083dcu;
-    SET_GPR_U32(ctx, 6, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)4096 << 16));
     // 0x1083e0: 0xffb40040
     ctx->pc = 0x1083e0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 64), GPR_U64(ctx, 20));
     // 0x1083e4: 0x3c071000
     ctx->pc = 0x1083e4u;
-    SET_GPR_U32(ctx, 7, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 7, ((uint32_t)4096 << 16));
     // 0x1083e8: 0x7383c
     ctx->pc = 0x1083e8u;
     SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) << (32 + 0));
     // 0x1083ec: 0x34e78001
     ctx->pc = 0x1083ecu;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 7), 32769));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) | (uint64_t)32769);
     // 0x1083f0: 0xffb30030
     ctx->pc = 0x1083f0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
     // 0x1083f4: 0x3c0801ff
     ctx->pc = 0x1083f4u;
-    SET_GPR_U32(ctx, 8, ((uint32_t)511 << 16));
+    SET_GPR_S32(ctx, 8, ((uint32_t)511 << 16));
     // 0x1083f8: 0x84438
     ctx->pc = 0x1083f8u;
     SET_GPR_U64(ctx, 8, GPR_U64(ctx, 8) << 16);
     // 0x1083fc: 0x3508027f
     ctx->pc = 0x1083fcu;
-    SET_GPR_U32(ctx, 8, OR32(GPR_U32(ctx, 8), 639));
+    SET_GPR_U64(ctx, 8, GPR_U64(ctx, 8) | (uint64_t)639);
     // 0x108400: 0x84438
     ctx->pc = 0x108400u;
     SET_GPR_U64(ctx, 8, GPR_U64(ctx, 8) << 16);
@@ -80,13 +80,13 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x108418: 0x3c0a1000
     ctx->pc = 0x108418u;
-    SET_GPR_U32(ctx, 10, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 10, ((uint32_t)4096 << 16));
     // 0x10841c: 0xa503c
     ctx->pc = 0x10841cu;
     SET_GPR_U64(ctx, 10, GPR_U64(ctx, 10) << (32 + 0));
     // 0x108420: 0x354a0003
     ctx->pc = 0x108420u;
-    SET_GPR_U32(ctx, 10, OR32(GPR_U32(ctx, 10), 3));
+    SET_GPR_U64(ctx, 10, GPR_U64(ctx, 10) | (uint64_t)3);
     // 0x108424: 0xffbf0080
     ctx->pc = 0x108424u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 128), GPR_U64(ctx, 31));
@@ -98,10 +98,10 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE128(ADD32(GPR_U32(ctx, 25), 0), GPR_VEC(ctx, 2));
     // 0x108430: 0x3c0c7f00
     ctx->pc = 0x108430u;
-    SET_GPR_U32(ctx, 12, ((uint32_t)32512 << 16));
+    SET_GPR_S32(ctx, 12, ((uint32_t)32512 << 16));
     // 0x108434: 0x358c00ff
     ctx->pc = 0x108434u;
-    SET_GPR_U32(ctx, 12, OR32(GPR_U32(ctx, 12), 255));
+    SET_GPR_U64(ctx, 12, GPR_U64(ctx, 12) | (uint64_t)255);
     // 0x108438: 0x2402001e
     ctx->pc = 0x108438u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 30));
@@ -113,25 +113,25 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     { int64_t result = (int64_t)GPR_S32(ctx, 4) * (int64_t)GPR_S32(ctx, 2); ctx->lo = (uint32_t)result; ctx->hi = (uint32_t)(result >> 32); SET_GPR_S32(ctx, 14, (int32_t)(uint32_t)result); }
     // 0x108444: 0x3c130002
     ctx->pc = 0x108444u;
-    SET_GPR_U32(ctx, 19, ((uint32_t)2 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)2 << 16));
     // 0x108448: 0x24140047
     ctx->pc = 0x108448u;
     SET_GPR_S32(ctx, 20, ADD32(GPR_U32(ctx, 0), 71));
     // 0x10844c: 0x3c158000
     ctx->pc = 0x10844cu;
-    SET_GPR_U32(ctx, 21, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 21, ((uint32_t)32768 << 16));
     // 0x108450: 0x15a83c
     ctx->pc = 0x108450u;
     SET_GPR_U64(ctx, 21, GPR_U64(ctx, 21) << (32 + 0));
     // 0x108454: 0x36b58001
     ctx->pc = 0x108454u;
-    SET_GPR_U32(ctx, 21, OR32(GPR_U32(ctx, 21), 32769));
+    SET_GPR_U64(ctx, 21, GPR_U64(ctx, 21) | (uint64_t)32769);
     // 0x108458: 0x3c164141
     ctx->pc = 0x108458u;
-    SET_GPR_U32(ctx, 22, ((uint32_t)16705 << 16));
+    SET_GPR_S32(ctx, 22, ((uint32_t)16705 << 16));
     // 0x10845c: 0x36d64141
     ctx->pc = 0x10845cu;
-    SET_GPR_U32(ctx, 22, OR32(GPR_U32(ctx, 22), 16705));
+    SET_GPR_U64(ctx, 22, GPR_U64(ctx, 22) | (uint64_t)16705);
     // 0x108460: 0xaf260000
     ctx->pc = 0x108460u;
     WRITE32(ADD32(GPR_U32(ctx, 25), 0), GPR_U32(ctx, 6));
@@ -194,7 +194,7 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE64(ADD32(GPR_U32(ctx, 25), 104), GPR_U64(ctx, 20));
     // 0x1084b0: 0x3c0d0010
     ctx->pc = 0x1084b0u;
-    SET_GPR_U32(ctx, 13, ((uint32_t)16 << 16));
+    SET_GPR_S32(ctx, 13, ((uint32_t)16 << 16));
     // 0x1084b4: 0xff350070
     ctx->pc = 0x1084b4u;
     WRITE64(ADD32(GPR_U32(ctx, 25), 112), GPR_U64(ctx, 21));
@@ -254,7 +254,7 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE32(ADD32(GPR_U32(ctx, 2), 12), GPR_U32(ctx, 0));
     // 0x108500: 0x3c137000
     ctx->pc = 0x108500u;
-    SET_GPR_U32(ctx, 19, ((uint32_t)28672 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)28672 << 16));
     // 0x108504: 0xac4c0004
     ctx->pc = 0x108504u;
     WRITE32(ADD32(GPR_U32(ctx, 2), 4), GPR_U32(ctx, 12));
@@ -350,7 +350,7 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE32(ADD32(GPR_U32(ctx, 25), 256), GPR_U32(ctx, 19));
     // 0x108580: 0x3442000f
     ctx->pc = 0x108580u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 15));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)15);
     // 0x108584: 0xc043948
     ctx->pc = 0x108584u;
     SET_GPR_U32(ctx, 31, 0x10858Cu);
@@ -404,10 +404,10 @@ void drawExtender_0x1083c0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 28), 4294935224)));
     // 0x1085ac: 0x3c050fff
     ctx->pc = 0x1085acu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)4095 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)4095 << 16));
     // 0x1085b0: 0x34a5ffff
     ctx->pc = 0x1085b0u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), 65535));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | (uint64_t)65535);
     // 0x1085b4: 0x8f848490
     ctx->pc = 0x1085b4u;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 28), 4294935696)));

@@ -26,7 +26,7 @@ void setXYZ2_0x11b748(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) >> (32 + 0));
     // 0x11b758: 0xa62825
     ctx->pc = 0x11b758u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 6));
     // 0x11b75c: 0x27bdfff0
     ctx->pc = 0x11b75cu;
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
@@ -38,7 +38,7 @@ void setXYZ2_0x11b748(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));
     // 0x11b768: 0xa63025
     ctx->pc = 0x11b768u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 5) | GPR_U64(ctx, 6));
     // 0x11b76c: 0xc046d3a
     ctx->pc = 0x11B76Cu;
     SET_GPR_U32(ctx, 31, 0x11B774u);

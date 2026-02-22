@@ -222,13 +222,13 @@ void _pack_header_0x11eb10(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_U32(ctx, 16, SRL32(GPR_U32(ctx, 16), 2));
     // 0x11ebc8: 0x511025
     ctx->pc = 0x11ebc8u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 17)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 17));
     // 0x11ebcc: 0x32100001
     ctx->pc = 0x11ebccu;
     SET_GPR_U32(ctx, 16, AND32(GPR_U32(ctx, 16), 1));
     // 0x11ebd0: 0x521025
     ctx->pc = 0x11ebd0u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 18)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 18));
     // 0x11ebd4: 0xaed00008
     ctx->pc = 0x11ebd4u;
     WRITE32(ADD32(GPR_U32(ctx, 22), 8), GPR_U32(ctx, 16));

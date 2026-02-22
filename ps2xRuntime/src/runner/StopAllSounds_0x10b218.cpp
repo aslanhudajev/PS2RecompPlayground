@@ -17,7 +17,7 @@ void StopAllSounds_0x10b218(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967264));
     // 0x10b21c: 0x3c0700ff
     ctx->pc = 0x10b21cu;
-    SET_GPR_U32(ctx, 7, ((uint32_t)255 << 16));
+    SET_GPR_S32(ctx, 7, ((uint32_t)255 << 16));
     // 0x10b220: 0xffb00000
     ctx->pc = 0x10b220u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
@@ -26,13 +26,13 @@ void StopAllSounds_0x10b218(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
     // 0x10b228: 0x34058030
     ctx->pc = 0x10b228u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32816));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32816);
     // 0x10b22c: 0x24061600
     ctx->pc = 0x10b22cu;
     SET_GPR_S32(ctx, 6, ADD32(GPR_U32(ctx, 0), 5632));
     // 0x10b230: 0x34e7ffff
     ctx->pc = 0x10b230u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 7), 65535));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) | (uint64_t)65535);
     // 0x10b234: 0xffbf0010
     ctx->pc = 0x10b234u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 31));
@@ -55,7 +55,7 @@ void StopAllSounds_0x10b218(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
         const bool branch_taken_0x10b240 = (GPR_U32(ctx, 2) != GPR_U32(ctx, 16));
         if (branch_taken_0x10b240) {
             ctx->pc = 0x10B244u;
-            SET_GPR_U32(ctx, 7, ((uint32_t)255 << 16));
+            SET_GPR_S32(ctx, 7, ((uint32_t)255 << 16));
             ctx->pc = 0x10B258u;
             goto label_10b258;
         }
@@ -63,7 +63,7 @@ void StopAllSounds_0x10b218(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x10B248u;
     // 0x10b248: 0x3c040017
     ctx->pc = 0x10b248u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x10b24c: 0xc04ace4
     ctx->pc = 0x10B24Cu;
     SET_GPR_U32(ctx, 31, 0x10B254u);
@@ -79,14 +79,14 @@ void StopAllSounds_0x10b218(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x10B254u;
     // 0x10b254: 0x3c0700ff
     ctx->pc = 0x10b254u;
-    SET_GPR_U32(ctx, 7, ((uint32_t)255 << 16));
+    SET_GPR_S32(ctx, 7, ((uint32_t)255 << 16));
 label_10b258:
     // 0x10b258: 0x24040001
     ctx->pc = 0x10b258u;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
     // 0x10b25c: 0x34058030
     ctx->pc = 0x10b25cu;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32816));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32816);
     // 0x10b260: 0x24061601
     ctx->pc = 0x10b260u;
     SET_GPR_S32(ctx, 6, ADD32(GPR_U32(ctx, 0), 5633));
@@ -94,7 +94,7 @@ label_10b258:
     ctx->pc = 0x10B264u;
     SET_GPR_U32(ctx, 31, 0x10B26Cu);
     ctx->pc = 0x10B268u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 7), 65535));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) | (uint64_t)65535);
     ctx->pc = 0x117200u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -117,7 +117,7 @@ label_10b258:
     ctx->pc = 0x10B274u;
     // 0x10b274: 0x3c040017
     ctx->pc = 0x10b274u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x10b278: 0xdfb00000
     ctx->pc = 0x10b278u;
     SET_GPR_U64(ctx, 16, READ64(ADD32(GPR_U32(ctx, 29), 0)));

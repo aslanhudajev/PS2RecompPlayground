@@ -46,7 +46,7 @@ void cdtrayCheck_0x102740(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     ctx->pc = 0x10275Cu;
     // 0x10275c: 0x3c040017
     ctx->pc = 0x10275cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x102760: 0xc04ace4
     ctx->pc = 0x102760u;
     SET_GPR_U32(ctx, 31, 0x102768u);

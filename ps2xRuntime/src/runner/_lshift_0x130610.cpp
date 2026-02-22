@@ -231,7 +231,7 @@ label_1306f0:
     SET_GPR_U32(ctx, 2, SLL32(GPR_U32(ctx, 2), GPR_U32(ctx, 19) & 0x1F));
     // 0x1306f8: 0x431025
     ctx->pc = 0x1306f8u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 3));
     // 0x1306fc: 0xacc20000
     ctx->pc = 0x1306fcu;
     WRITE32(ADD32(GPR_U32(ctx, 6), 0), GPR_U32(ctx, 2));

@@ -29,14 +29,14 @@ label_1243b4:
 label_1243b8:
     if (ctx->pc == 0x1243B8u) {
         ctx->pc = 0x1243B8u;
-        SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
         ctx->pc = 0x1243BCu;
         goto label_1243bc;
     }
     ctx->pc = 0x1243B4u;
     SET_GPR_U32(ctx, 31, 0x1243BCu);
     ctx->pc = 0x1243B8u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     ctx->pc = 0x1240D8u;
     {
         const uint32_t __entryPc = ctx->pc;

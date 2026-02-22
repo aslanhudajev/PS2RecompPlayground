@@ -14,7 +14,7 @@ void _decodeOrSkip_0x11fc08(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
 
     // 0x11fc08: 0x3c020017
     ctx->pc = 0x11fc08u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x11fc0c: 0x27bdfff0
     ctx->pc = 0x11fc0cu;
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));

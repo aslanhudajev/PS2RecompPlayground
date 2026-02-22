@@ -26,7 +26,7 @@ void videoDecPutTs_0x11a158(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 5));
     // 0x11a168: 0x3c040075
     ctx->pc = 0x11a168u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x11a16c: 0xe23823
     ctx->pc = 0x11a16cu;
     SET_GPR_U32(ctx, 7, SUB32(GPR_U32(ctx, 7), GPR_U32(ctx, 2)));

@@ -14,7 +14,7 @@ void setGIFad_0x11b4e8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     // 0x11b4e8: 0x3c02ffff
     ctx->pc = 0x11b4e8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)65535 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)65535 << 16));
     // 0x11b4ec: 0x2103e
     ctx->pc = 0x11b4ecu;
     SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) >> (32 + 0));

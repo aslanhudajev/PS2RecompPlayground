@@ -17,13 +17,13 @@ void _fs_version_0x1112e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967216));
     // 0x1112e4: 0x3c020017
     ctx->pc = 0x1112e4u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x1112e8: 0xffb30030
     ctx->pc = 0x1112e8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
     // 0x1112ec: 0x3c030018
     ctx->pc = 0x1112ecu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)24 << 16));
     // 0x1112f0: 0xffb10010
     ctx->pc = 0x1112f0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 17));
@@ -69,7 +69,7 @@ void _fs_version_0x1112e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     {
         const bool branch_taken_0x11131c = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x111320u;
-        SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
         if (branch_taken_0x11131c) {
             ctx->pc = 0x11134Cu;
             goto label_11134c;

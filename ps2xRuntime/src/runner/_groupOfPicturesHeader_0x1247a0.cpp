@@ -17,25 +17,25 @@ void _groupOfPicturesHeader_0x1247a0(uint8_t* rdram, R5900Context* ctx, PS2Runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967200));
     // 0x1247a4: 0x3c020017
     ctx->pc = 0x1247a4u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x1247a8: 0x8c4417bc
     ctx->pc = 0x1247a8u;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 2), 6076)));
     // 0x1247ac: 0x3c030017
     ctx->pc = 0x1247acu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x1247b0: 0xffb40040
     ctx->pc = 0x1247b0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 64), GPR_U64(ctx, 20));
     // 0x1247b4: 0x3c060017
     ctx->pc = 0x1247b4u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)23 << 16));
     // 0x1247b8: 0xffb30030
     ctx->pc = 0x1247b8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
     // 0x1247bc: 0x3c070017
     ctx->pc = 0x1247bcu;
-    SET_GPR_U32(ctx, 7, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 7, ((uint32_t)23 << 16));
     // 0x1247c0: 0xffb20020
     ctx->pc = 0x1247c0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 18));
@@ -47,31 +47,31 @@ void _groupOfPicturesHeader_0x1247a0(uint8_t* rdram, R5900Context* ctx, PS2Runti
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 17));
     // 0x1247cc: 0x3c120017
     ctx->pc = 0x1247ccu;
-    SET_GPR_U32(ctx, 18, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)23 << 16));
     // 0x1247d0: 0xffb00000
     ctx->pc = 0x1247d0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x1247d4: 0x3c110017
     ctx->pc = 0x1247d4u;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x1247d8: 0xffbf0050
     ctx->pc = 0x1247d8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 31));
     // 0x1247dc: 0x3c100017
     ctx->pc = 0x1247dcu;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     // 0x1247e0: 0x8c622134
     ctx->pc = 0x1247e0u;
     SET_GPR_U32(ctx, 2, READ32(ADD32(GPR_U32(ctx, 3), 8500)));
     // 0x1247e4: 0x3c140017
     ctx->pc = 0x1247e4u;
-    SET_GPR_U32(ctx, 20, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)23 << 16));
     // 0x1247e8: 0x8c830040
     ctx->pc = 0x1247e8u;
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 4), 64)));
     // 0x1247ec: 0x3c130017
     ctx->pc = 0x1247ecu;
-    SET_GPR_U32(ctx, 19, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)23 << 16));
     // 0x1247f0: 0x24420001
     ctx->pc = 0x1247f0u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 2), 1));
@@ -115,7 +115,7 @@ void _groupOfPicturesHeader_0x1247a0(uint8_t* rdram, R5900Context* ctx, PS2Runti
     ctx->pc = 0x124814u;
     // 0x124814: 0x3c100017
     ctx->pc = 0x124814u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     // 0x124818: 0xae221a20
     ctx->pc = 0x124818u;
     WRITE32(ADD32(GPR_U32(ctx, 17), 6688), GPR_U32(ctx, 2));
@@ -134,7 +134,7 @@ void _groupOfPicturesHeader_0x1247a0(uint8_t* rdram, R5900Context* ctx, PS2Runti
     ctx->pc = 0x124824u;
     // 0x124824: 0x3c110017
     ctx->pc = 0x124824u;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x124828: 0xae421a24
     ctx->pc = 0x124828u;
     WRITE32(ADD32(GPR_U32(ctx, 18), 6692), GPR_U32(ctx, 2));

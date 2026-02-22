@@ -25,7 +25,7 @@ void initialiseMovie_0x102578(uint8_t* rdram, R5900Context* ctx, PS2Runtime *run
     ctx->pc = 0x102584u;
     SET_GPR_U32(ctx, 31, 0x10258Cu);
     ctx->pc = 0x102588u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)192 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)192 << 16));
     ctx->pc = 0x12A430u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -48,7 +48,7 @@ void initialiseMovie_0x102578(uint8_t* rdram, R5900Context* ctx, PS2Runtime *run
     ctx->pc = 0x102594u;
     // 0x102594: 0x3c040017
     ctx->pc = 0x102594u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x102598: 0xc04ace4
     ctx->pc = 0x102598u;
     SET_GPR_U32(ctx, 31, 0x1025A0u);
@@ -78,7 +78,7 @@ void initialiseMovie_0x102578(uint8_t* rdram, R5900Context* ctx, PS2Runtime *run
 label_1025a8:
     // 0x1025a8: 0x3c040017
     ctx->pc = 0x1025a8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1025ac: 0x40282d
     ctx->pc = 0x1025acu;
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 2) + (uint64_t)GPR_U64(ctx, 0));
@@ -100,7 +100,7 @@ label_1025a8:
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 28), 4294934712)));
     // 0x1025bc: 0x3c0500c0
     ctx->pc = 0x1025bcu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)192 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)192 << 16));
     // 0x1025c0: 0xdfbf0000
     ctx->pc = 0x1025c0u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 0)));

@@ -51,18 +51,18 @@ void ps2_main_0x102798(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U64(ctx, 6, (uint64_t)GPR_U64(ctx, 29) + (uint64_t)GPR_U64(ctx, 0));
     // 0x1027c0: 0x37a70002
     ctx->pc = 0x1027c0u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 29), 2));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 29) | (uint64_t)2);
     // 0x1027c4: 0x37a80004
     ctx->pc = 0x1027c4u;
-    SET_GPR_U32(ctx, 8, OR32(GPR_U32(ctx, 29), 4));
+    SET_GPR_U64(ctx, 8, GPR_U64(ctx, 29) | (uint64_t)4);
     // 0x1027c8: 0x37a90006
     ctx->pc = 0x1027c8u;
-    SET_GPR_U32(ctx, 9, OR32(GPR_U32(ctx, 29), 6));
+    SET_GPR_U64(ctx, 9, GPR_U64(ctx, 29) | (uint64_t)6);
     // 0x1027cc: 0xc0473e2
     ctx->pc = 0x1027CCu;
     SET_GPR_U32(ctx, 31, 0x1027D4u);
     ctx->pc = 0x1027D0u;
-    SET_GPR_U32(ctx, 10, OR32(GPR_U32(ctx, 29), 8));
+    SET_GPR_U64(ctx, 10, GPR_U64(ctx, 29) | (uint64_t)8);
     ctx->pc = 0x11CF88u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -76,13 +76,13 @@ void ps2_main_0x102798(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 0), 1));
     // 0x1027d8: 0x3c040013
     ctx->pc = 0x1027d8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)19 << 16));
     // 0x1027dc: 0x3c050013
     ctx->pc = 0x1027dcu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)19 << 16));
     // 0x1027e0: 0x3c020014
     ctx->pc = 0x1027e0u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x1027e4: 0xa443dfc2
     ctx->pc = 0x1027e4u;
     WRITE16(ADD32(GPR_U32(ctx, 2), 4294959042), (uint16_t)GPR_U32(ctx, 3));

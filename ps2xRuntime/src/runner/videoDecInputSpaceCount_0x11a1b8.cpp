@@ -23,15 +23,15 @@ void videoDecInputSpaceCount_0x11a1b8(uint8_t* rdram, R5900Context* ctx, PS2Runt
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 29) + (uint64_t)GPR_U64(ctx, 0));
     // 0x11a1c4: 0x37a60004
     ctx->pc = 0x11a1c4u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 29), 4));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 29) | (uint64_t)4);
     // 0x11a1c8: 0x37a70008
     ctx->pc = 0x11a1c8u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 29), 8));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 29) | (uint64_t)8);
     // 0x11a1cc: 0xc046836
     ctx->pc = 0x11A1CCu;
     SET_GPR_U32(ctx, 31, 0x11A1D4u);
     ctx->pc = 0x11A1D0u;
-    SET_GPR_U32(ctx, 8, OR32(GPR_U32(ctx, 29), 12));
+    SET_GPR_U64(ctx, 8, GPR_U64(ctx, 29) | (uint64_t)12);
     ctx->pc = 0x11A0D8u;
     {
         const uint32_t __entryPc = ctx->pc;

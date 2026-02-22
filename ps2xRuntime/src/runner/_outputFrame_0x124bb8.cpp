@@ -17,7 +17,7 @@ void _outputFrame_0x124bb8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967264));
     // 0x124bbc: 0x3c030017
     ctx->pc = 0x124bbcu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x124bc0: 0xffbf0010
     ctx->pc = 0x124bc0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 31));
@@ -44,7 +44,7 @@ void _outputFrame_0x124bb8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x124BD8u;
     // 0x124bd8: 0x3c030017
     ctx->pc = 0x124bd8u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x124bdc: 0x24040003
     ctx->pc = 0x124bdcu;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 3));
@@ -56,7 +56,7 @@ void _outputFrame_0x124bb8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     {
         const bool branch_taken_0x124be4 = (GPR_U32(ctx, 2) != GPR_U32(ctx, 4));
         ctx->pc = 0x124BE8u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x124be4) {
             ctx->pc = 0x124C18u;
             goto label_124c18;
@@ -71,7 +71,7 @@ void _outputFrame_0x124bb8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     {
         const bool branch_taken_0x124bf0 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 4));
         ctx->pc = 0x124BF4u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x124bf0) {
             ctx->pc = 0x124C04u;
             goto label_124c04;
@@ -80,7 +80,7 @@ void _outputFrame_0x124bb8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x124BF8u;
     // 0x124bf8: 0x3c020017
     ctx->pc = 0x124bf8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x124bfc: 0x10000002
     ctx->pc = 0x124BFCu;
     {
@@ -132,7 +132,7 @@ label_124c18:
     {
         const bool branch_taken_0x124c1c = (GPR_U32(ctx, 3) != GPR_U32(ctx, 4));
         ctx->pc = 0x124C20u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x124c1c) {
             ctx->pc = 0x124C38u;
             goto label_124c38;
@@ -141,10 +141,10 @@ label_124c18:
     ctx->pc = 0x124C24u;
     // 0x124c24: 0x3c020017
     ctx->pc = 0x124c24u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x124c28: 0x3c030017
     ctx->pc = 0x124c28u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x124c2c: 0x8c441814
     ctx->pc = 0x124c2cu;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 2), 6164)));
@@ -163,7 +163,7 @@ label_124c18:
 label_124c38:
     // 0x124c38: 0x3c030017
     ctx->pc = 0x124c38u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x124c3c: 0x8c44180c
     ctx->pc = 0x124c3cu;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 2), 6156)));

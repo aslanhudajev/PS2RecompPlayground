@@ -14,7 +14,7 @@ void QueueInit_0x10eda8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
 
     // 0x10eda8: 0x3c020017
     ctx->pc = 0x10eda8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x10edac: 0x24436a40
     ctx->pc = 0x10edacu;
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 2), 27200));

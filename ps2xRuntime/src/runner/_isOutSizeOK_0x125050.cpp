@@ -17,7 +17,7 @@ void _isOutSizeOK_0x125050(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967008));
     // 0x125054: 0x3c030017
     ctx->pc = 0x125054u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x125058: 0xffbf0110
     ctx->pc = 0x125058u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 272), GPR_U64(ctx, 31));
@@ -121,7 +121,7 @@ label_1250b0:
     SET_GPR_U32(ctx, 7, READ32(ADD32(GPR_U32(ctx, 6), 8)));
     // 0x1250bc: 0x3c050017
     ctx->pc = 0x1250bcu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)23 << 16));
     // 0x1250c0: 0x8cc60004
     ctx->pc = 0x1250c0u;
     SET_GPR_U32(ctx, 6, READ32(ADD32(GPR_U32(ctx, 6), 4)));

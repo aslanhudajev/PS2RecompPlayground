@@ -86,7 +86,7 @@ void setImage_0x108a90(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     ctx->pc = 0x108AE8u;
     // 0x108ae8: 0x3c040017
     ctx->pc = 0x108ae8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x108aec: 0xc04ace4
     ctx->pc = 0x108AECu;
     SET_GPR_U32(ctx, 31, 0x108AF4u);
@@ -106,7 +106,7 @@ label_108af4:
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 68));
     // 0x108af8: 0x3c030014
     ctx->pc = 0x108af8u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)20 << 16));
     // 0x108afc: 0x2242018
     ctx->pc = 0x108afcu;
     { int64_t result = (int64_t)GPR_S32(ctx, 17) * (int64_t)GPR_S32(ctx, 4); ctx->lo = (uint32_t)result; ctx->hi = (uint32_t)(result >> 32); SET_GPR_S32(ctx, 4, (int32_t)(uint32_t)result); }
@@ -115,7 +115,7 @@ label_108af4:
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 5784));
     // 0x108b04: 0x3c013f80
     ctx->pc = 0x108b04u;
-    SET_GPR_U32(ctx, 1, ((uint32_t)16256 << 16));
+    SET_GPR_S32(ctx, 1, ((uint32_t)16256 << 16));
     // 0x108b08: 0x44810000
     ctx->pc = 0x108b08u;
     *(uint32_t*)&ctx->f[0] = GPR_U32(ctx, 1);

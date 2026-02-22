@@ -23,7 +23,7 @@ void _sliceA0_0x122d78(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 21));
     // 0x122d84: 0x3c140017
     ctx->pc = 0x122d84u;
-    SET_GPR_U32(ctx, 20, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)23 << 16));
     // 0x122d88: 0xffb30030
     ctx->pc = 0x122d88u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
@@ -88,7 +88,7 @@ void _sliceA0_0x122d78(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     {
         const bool branch_taken_0x122dc4 = (GPR_U32(ctx, 2) != GPR_U32(ctx, 0));
         ctx->pc = 0x122DC8u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x122dc4) {
             ctx->pc = 0x122DE0u;
             goto label_122de0;
@@ -175,7 +175,7 @@ label_122de0:
     {
         const bool branch_taken_0x122e04 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x122E08u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x122e04) {
             ctx->pc = 0x122E1Cu;
             goto label_122e1c;
@@ -213,7 +213,7 @@ label_122e1c:
     SET_GPR_U32(ctx, 2, AND32(GPR_U32(ctx, 17), 255));
     // 0x122e20: 0x3c040017
     ctx->pc = 0x122e20u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x122e24: 0x1219c0
     ctx->pc = 0x122e24u;
     SET_GPR_U32(ctx, 3, SLL32(GPR_U32(ctx, 18), 7));
@@ -231,7 +231,7 @@ label_122e1c:
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 4294967295));
     // 0x122e38: 0x3c060017
     ctx->pc = 0x122e38u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)23 << 16));
     // 0x122e3c: 0x651018
     ctx->pc = 0x122e3cu;
     { int64_t result = (int64_t)GPR_S32(ctx, 3) * (int64_t)GPR_S32(ctx, 5); ctx->lo = (uint32_t)result; ctx->hi = (uint32_t)(result >> 32); SET_GPR_S32(ctx, 2, (int32_t)(uint32_t)result); }

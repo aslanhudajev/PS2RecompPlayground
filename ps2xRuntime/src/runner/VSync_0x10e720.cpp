@@ -14,20 +14,20 @@ void VSync_0x10e720(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     // 0x10e720: 0x3c021000
     ctx->pc = 0x10e720u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4096 << 16));
     // 0x10e724: 0x24030004
     ctx->pc = 0x10e724u;
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 0), 4));
     // 0x10e728: 0x3442f000
     ctx->pc = 0x10e728u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 61440));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)61440);
     // 0x10e72c: 0xac430000
     ctx->pc = 0x10e72cu;
     runtime->Store32(rdram, ctx, ADD32(GPR_U32(ctx, 2), 0), GPR_U32(ctx, 3)); // MMIO: 0x10000000
 label_10e730:
     // 0x10e730: 0x3c021001
     ctx->pc = 0x10e730u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4097 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4097 << 16));
     // 0x10e734: 0x8c42f000
     ctx->pc = 0x10e734u;
     SET_GPR_U32(ctx, 2, runtime->Load32(rdram, ctx, ADD32(GPR_U32(ctx, 2), 4294963200))); // MMIO: 0x1000f000
@@ -58,7 +58,7 @@ label_10e730:
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 4));
     // 0x10e754: 0x3c011001
     ctx->pc = 0x10e754u;
-    SET_GPR_U32(ctx, 1, ((uint32_t)4097 << 16));
+    SET_GPR_S32(ctx, 1, ((uint32_t)4097 << 16));
     // 0x10e758: 0x3e00008
     ctx->pc = 0x10E758u;
     {

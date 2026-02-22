@@ -23,13 +23,13 @@ void quizDisplay_0x106ea0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 18));
     // 0x106eac: 0x3c140014
     ctx->pc = 0x106eacu;
-    SET_GPR_U32(ctx, 20, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)20 << 16));
     // 0x106eb0: 0xffb10020
     ctx->pc = 0x106eb0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 17));
     // 0x106eb4: 0x3c127f00
     ctx->pc = 0x106eb4u;
-    SET_GPR_U32(ctx, 18, ((uint32_t)32512 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)32512 << 16));
     // 0x106eb8: 0xffbf0060
     ctx->pc = 0x106eb8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 96), GPR_U64(ctx, 31));
@@ -41,7 +41,7 @@ void quizDisplay_0x106ea0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     WRITE64(ADD32(GPR_U32(ctx, 29), 64), GPR_U64(ctx, 19));
     // 0x106ec4: 0x365280ff
     ctx->pc = 0x106ec4u;
-    SET_GPR_U32(ctx, 18, OR32(GPR_U32(ctx, 18), 33023));
+    SET_GPR_U64(ctx, 18, GPR_U64(ctx, 18) | (uint64_t)33023);
     // 0x106ec8: 0xffb00010
     ctx->pc = 0x106ec8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 16));
@@ -129,7 +129,7 @@ void quizDisplay_0x106ea0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 17), 512)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[3] = f; }
     // 0x106f30: 0x3c027f19
     ctx->pc = 0x106f30u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32537 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32537 << 16));
     // 0x106f34: 0x922b0204
     ctx->pc = 0x106f34u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 17), 516)));
@@ -138,7 +138,7 @@ void quizDisplay_0x106ea0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     ctx->f[0] = FPU_MUL_S(ctx->f[0], ctx->f[2]);
     // 0x106f3c: 0x34422cef
     ctx->pc = 0x106f3cu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 11503));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)11503);
     // 0x106f40: 0x46030842
     ctx->pc = 0x106f40u;
     ctx->f[1] = FPU_MUL_S(ctx->f[1], ctx->f[3]);
@@ -251,7 +251,7 @@ void quizDisplay_0x106ea0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     ctx->pc = 0x106FC0u;
     // 0x106fc0: 0x3c020013
     ctx->pc = 0x106fc0u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)19 << 16));
     // 0x106fc4: 0x24030002
     ctx->pc = 0x106fc4u;
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 0), 2));
@@ -479,7 +479,7 @@ label_107074:
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 17), 240)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[3] = f; }
     // 0x107094: 0x3c027fff
     ctx->pc = 0x107094u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32767 << 16));
     // 0x107098: 0x922b00f4
     ctx->pc = 0x107098u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 17), 244)));
@@ -494,7 +494,7 @@ label_107074:
     ctx->f[1] = FPU_MUL_S(ctx->f[1], ctx->f[3]);
     // 0x1070a8: 0x3442ffff
     ctx->pc = 0x1070a8u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x1070ac: 0x8e2400cc
     ctx->pc = 0x1070acu;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 17), 204)));
@@ -639,7 +639,7 @@ label_107140:
     SET_GPR_S32(ctx, 16, ADD32(GPR_U32(ctx, 20), 5784));
     // 0x107144: 0x3c117fff
     ctx->pc = 0x107144u;
-    SET_GPR_U32(ctx, 17, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)32767 << 16));
     // 0x107148: 0xc6000124
     ctx->pc = 0x107148u;
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 16), 292)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[0] = f; }
@@ -660,7 +660,7 @@ label_107140:
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 16), 308)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[3] = f; }
     // 0x107160: 0x3631ffff
     ctx->pc = 0x107160u;
-    SET_GPR_U32(ctx, 17, OR32(GPR_U32(ctx, 17), 65535));
+    SET_GPR_U64(ctx, 17, GPR_U64(ctx, 17) | (uint64_t)65535);
     // 0x107164: 0x920b0138
     ctx->pc = 0x107164u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 16), 312)));
@@ -761,7 +761,7 @@ label_1071bc:
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 17), 240)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[3] = f; }
     // 0x1071d4: 0x3c107fff
     ctx->pc = 0x1071d4u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)32767 << 16));
     // 0x1071d8: 0x922b00f4
     ctx->pc = 0x1071d8u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 17), 244)));
@@ -782,7 +782,7 @@ label_1071bc:
     SET_GPR_U32(ctx, 6, READ32(ADD32(GPR_U32(ctx, 17), 212)));
     // 0x1071f0: 0x3610ffff
     ctx->pc = 0x1071f0u;
-    SET_GPR_U32(ctx, 16, OR32(GPR_U32(ctx, 16), 65535));
+    SET_GPR_U64(ctx, 16, GPR_U64(ctx, 16) | (uint64_t)65535);
     // 0x1071f4: 0x460000a4
     ctx->pc = 0x1071f4u;
     *(int32_t*)&ctx->f[2] = FPU_CVT_W_S(ctx->f[0]);
@@ -1103,7 +1103,7 @@ label_107348:
     SET_GPR_S32(ctx, 16, ADD32(GPR_U32(ctx, 20), 5784));
     // 0x10734c: 0x3c117fff
     ctx->pc = 0x10734cu;
-    SET_GPR_U32(ctx, 17, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)32767 << 16));
     // 0x107350: 0xc6000168
     ctx->pc = 0x107350u;
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 16), 360)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[0] = f; }
@@ -1127,7 +1127,7 @@ label_107348:
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 16), 380)));
     // 0x10736c: 0x3631ffff
     ctx->pc = 0x10736cu;
-    SET_GPR_U32(ctx, 17, OR32(GPR_U32(ctx, 17), 65535));
+    SET_GPR_U64(ctx, 17, GPR_U64(ctx, 17) | (uint64_t)65535);
 label_107370:
     // 0x107370: 0x46020002
     ctx->pc = 0x107370u;
@@ -1275,7 +1275,7 @@ label_1073fc:
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 17), 240)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[3] = f; }
     // 0x107414: 0x3c107fff
     ctx->pc = 0x107414u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)32767 << 16));
     // 0x107418: 0x922b00f4
     ctx->pc = 0x107418u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 17), 244)));
@@ -1284,7 +1284,7 @@ label_1073fc:
     ctx->f[0] = FPU_MUL_S(ctx->f[0], ctx->f[2]);
     // 0x107420: 0x3610ffff
     ctx->pc = 0x107420u;
-    SET_GPR_U32(ctx, 16, OR32(GPR_U32(ctx, 16), 65535));
+    SET_GPR_U64(ctx, 16, GPR_U64(ctx, 16) | (uint64_t)65535);
     // 0x107424: 0x46030842
     ctx->pc = 0x107424u;
     ctx->f[1] = FPU_MUL_S(ctx->f[1], ctx->f[3]);
@@ -1682,7 +1682,7 @@ label_1075d8:
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 20), 5784));
     // 0x1075dc: 0x3c037fff
     ctx->pc = 0x1075dcu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)32767 << 16));
     // 0x1075e0: 0xc44001ac
     ctx->pc = 0x1075e0u;
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 2), 428)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[0] = f; }
@@ -1706,7 +1706,7 @@ label_1075d8:
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 2), 448)));
     // 0x1075fc: 0x3463ffff
     ctx->pc = 0x1075fcu;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 65535));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)65535);
     // 0x107600: 0x46020002
     ctx->pc = 0x107600u;
     ctx->f[0] = FPU_MUL_S(ctx->f[0], ctx->f[2]);
@@ -1786,7 +1786,7 @@ label_10763c:
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 17), 240)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[3] = f; }
     // 0x107654: 0x3c107fff
     ctx->pc = 0x107654u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)32767 << 16));
     // 0x107658: 0x922b00f4
     ctx->pc = 0x107658u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 17), 244)));
@@ -1795,7 +1795,7 @@ label_10763c:
     ctx->f[0] = FPU_MUL_S(ctx->f[0], ctx->f[2]);
     // 0x107660: 0x3610ffff
     ctx->pc = 0x107660u;
-    SET_GPR_U32(ctx, 16, OR32(GPR_U32(ctx, 16), 65535));
+    SET_GPR_U64(ctx, 16, GPR_U64(ctx, 16) | (uint64_t)65535);
     // 0x107664: 0x46030842
     ctx->pc = 0x107664u;
     ctx->f[1] = FPU_MUL_S(ctx->f[1], ctx->f[3]);

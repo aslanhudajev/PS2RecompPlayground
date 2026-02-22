@@ -29,7 +29,7 @@ void setUV_0x11b6c8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
     // 0x11b6dc: 0xa63025
     ctx->pc = 0x11b6dcu;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 5) | GPR_U64(ctx, 6));
     // 0x11b6e0: 0xffbf0000
     ctx->pc = 0x11b6e0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));

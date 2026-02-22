@@ -51,10 +51,10 @@ void voBufGetData_0x11a9b8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 16), 8)));
     // 0x11a9d8: 0x3c020016
     ctx->pc = 0x11a9d8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)22 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)22 << 16));
     // 0x11a9dc: 0x34428000
     ctx->pc = 0x11a9dcu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 32768));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)32768);
     // 0x11a9e0: 0x8e040000
     ctx->pc = 0x11a9e0u;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 16), 0)));

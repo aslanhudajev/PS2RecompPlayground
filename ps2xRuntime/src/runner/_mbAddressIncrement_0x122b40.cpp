@@ -35,7 +35,7 @@ void _mbAddressIncrement_0x122b40(uint8_t* rdram, R5900Context* ctx, PS2Runtime 
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 21));
     // 0x122b5c: 0x3c160017
     ctx->pc = 0x122b5cu;
-    SET_GPR_U32(ctx, 22, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 22, ((uint32_t)23 << 16));
     // 0x122b60: 0xffb40040
     ctx->pc = 0x122b60u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 64), GPR_U64(ctx, 20));
@@ -47,13 +47,13 @@ void _mbAddressIncrement_0x122b40(uint8_t* rdram, R5900Context* ctx, PS2Runtime 
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
     // 0x122b6c: 0x3c140017
     ctx->pc = 0x122b6cu;
-    SET_GPR_U32(ctx, 20, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)23 << 16));
     // 0x122b70: 0xffb20020
     ctx->pc = 0x122b70u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 18));
     // 0x122b74: 0x3c130017
     ctx->pc = 0x122b74u;
-    SET_GPR_U32(ctx, 19, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)23 << 16));
     // 0x122b78: 0xffb10010
     ctx->pc = 0x122b78u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 17));

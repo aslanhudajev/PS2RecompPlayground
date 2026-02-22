@@ -14,7 +14,7 @@ void _pictureTemporalScalableExtension_0x1209e8(uint8_t* rdram, R5900Context* ct
 
     // 0x1209e8: 0x3c040017
     ctx->pc = 0x1209e8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1209ec: 0x8048006
     ctx->pc = 0x1209ECu;
     ctx->pc = 0x1209F0u;

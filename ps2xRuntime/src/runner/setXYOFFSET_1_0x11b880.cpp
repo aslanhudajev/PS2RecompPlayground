@@ -26,7 +26,7 @@ void setXYOFFSET_1_0x11b880(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
     // 0x11b890: 0xa63025
     ctx->pc = 0x11b890u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 5) | GPR_U64(ctx, 6));
     // 0x11b894: 0xffbf0000
     ctx->pc = 0x11b894u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));

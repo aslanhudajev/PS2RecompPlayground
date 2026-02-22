@@ -17,7 +17,7 @@ void mpegTS_0x11a750(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967232));
     // 0x11a754: 0x3c040075
     ctx->pc = 0x11a754u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x11a758: 0xffb00020
     ctx->pc = 0x11a758u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 16));

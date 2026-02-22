@@ -45,10 +45,10 @@ void voBufCreate_0x11a8d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
 label_11a8f0:
     // 0x11a8f0: 0x3c02000a
     ctx->pc = 0x11a8f0u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)10 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)10 << 16));
     // 0x11a8f4: 0x3442af40
     ctx->pc = 0x11a8f4u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 44864));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)44864);
     // 0x11a8f8: 0xa21818
     ctx->pc = 0x11a8f8u;
     { int64_t result = (int64_t)GPR_S32(ctx, 5) * (int64_t)GPR_S32(ctx, 2); ctx->lo = (uint32_t)result; ctx->hi = (uint32_t)(result >> 32); SET_GPR_S32(ctx, 3, (int32_t)(uint32_t)result); }

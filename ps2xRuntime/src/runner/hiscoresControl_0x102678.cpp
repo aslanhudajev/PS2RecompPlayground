@@ -26,7 +26,7 @@ void hiscoresControl_0x102678(uint8_t* rdram, R5900Context* ctx, PS2Runtime *run
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
     // 0x102688: 0x3c100014
     ctx->pc = 0x102688u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)20 << 16));
     // 0x10268c: 0xffbf0010
     ctx->pc = 0x10268cu;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 31));
@@ -136,7 +136,7 @@ label_1026e0:
     {
         const bool branch_taken_0x1026e8 = (GPR_U32(ctx, 2) != GPR_U32(ctx, 0));
         ctx->pc = 0x1026ECu;
-        SET_GPR_U32(ctx, 2, ((uint32_t)19 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)19 << 16));
         if (branch_taken_0x1026e8) {
             ctx->pc = 0x10270Cu;
             goto label_10270c;

@@ -14,7 +14,7 @@ void localeconv_0x12fb30(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
 
     // 0x12fb30: 0x3c020017
     ctx->pc = 0x12fb30u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x12fb34: 0x27bdfff0
     ctx->pc = 0x12fb34u;
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));

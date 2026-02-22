@@ -32,7 +32,7 @@ void handler_endimage_0x11bbc8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *ru
     ctx->pc = 0x11BBD8u;
     // 0x11bbd8: 0x3c040075
     ctx->pc = 0x11bbd8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x11bbdc: 0xc046a9e
     ctx->pc = 0x11BBDCu;
     SET_GPR_U32(ctx, 31, 0x11BBE4u);

@@ -41,10 +41,10 @@ void setCLAMP_1_0x11b950(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U64(ctx, 9, GPR_U64(ctx, 9) << (32 + 0));
     // 0x11b974: 0xaa2825
     ctx->pc = 0x11b974u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 10)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 10));
     // 0x11b978: 0x1074025
     ctx->pc = 0x11b978u;
-    SET_GPR_U32(ctx, 8, OR32(GPR_U32(ctx, 8), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 8, GPR_U64(ctx, 8) | GPR_U64(ctx, 7));
     // 0x11b97c: 0x637ba
     ctx->pc = 0x11b97cu;
     SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) >> 30);
@@ -53,16 +53,16 @@ void setCLAMP_1_0x11b950(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U64(ctx, 9, GPR_U64(ctx, 9) >> 8);
     // 0x11b984: 0xa82825
     ctx->pc = 0x11b984u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 8)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 8));
     // 0x11b988: 0xc93025
     ctx->pc = 0x11b988u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 6), GPR_U32(ctx, 9)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) | GPR_U64(ctx, 9));
     // 0x11b98c: 0x27bdfff0
     ctx->pc = 0x11b98cu;
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
     // 0x11b990: 0xa63025
     ctx->pc = 0x11b990u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 5) | GPR_U64(ctx, 6));
     // 0x11b994: 0xffbf0000
     ctx->pc = 0x11b994u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));

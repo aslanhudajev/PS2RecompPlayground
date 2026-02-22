@@ -121,10 +121,12 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
     if (!data || sizeBytes < 16 || !m_vram)
         return;
 
-    static int s_gifPktCount = 0;
-    ++s_gifPktCount;
-    if (s_gifPktCount <= 20 || (s_gifPktCount % 500) == 0)
-        printf("[GS::processGIFPacket #%d] sizeBytes=%u\n", s_gifPktCount, sizeBytes);
+    static int s_gifCallCount = 0;
+    static int s_gifTagCount = 0;
+    ++s_gifCallCount;
+    if (s_gifCallCount <= 8 || (s_gifCallCount % 5000) == 0)
+        printf("[GS::processGIFPacket #%d] size=%u (0x%x) tags_so_far=%d\n",
+               s_gifCallCount, sizeBytes, sizeBytes, s_gifTagCount);
 
     uint32_t offset = 0;
     while (offset + 16 <= sizeBytes)
@@ -137,6 +139,11 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
         uint8_t flg = static_cast<uint8_t>((tagLo >> 58) & 0x3);
         uint32_t nreg = static_cast<uint32_t>((tagLo >> 60) & 0xF);
         if (nreg == 0) nreg = 16;
+
+        ++s_gifTagCount;
+        if (s_gifTagCount <= 20 || (s_gifTagCount % 5000) == 0)
+            printf("[GIF tag #%d] flg=%d nloop=%u nreg=%u tagLo=0x%016llx tagHi=0x%016llx\n",
+                   s_gifTagCount, flg, nloop, nreg, (unsigned long long)tagLo, (unsigned long long)tagHi);
 
         bool pre = ((tagLo >> 46) & 1) != 0;
         if (pre)
@@ -289,12 +296,14 @@ void GS::writeRegisterPacked(uint8_t regDesc, uint64_t lo, uint64_t hi)
         vertexKick(false);
         break;
     }
-    case 0x0F: // A+D
+    case 0x0E: // A+D
     {
         uint8_t addr = static_cast<uint8_t>(hi & 0xFF);
         writeRegister(addr, lo);
         break;
     }
+    case 0x0F: // NOP
+        break;
     default:
         // Other packed reg descs: forward as raw register write
         writeRegister(regDesc, lo);
@@ -323,13 +332,6 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         m_prim.fix = ((value >> 10) & 1) != 0;
         m_vtxCount = 0;
         m_vtxIndex = 0;
-        {
-            static int s_primLog = 0;
-            if (++s_primLog <= 20 || (s_primLog % 1000) == 0)
-                printf("[GS_REG_PRIM #%d] type=%d tme=%d fst=%d ctxt=%d abe=%d val=0x%llx\n",
-                       s_primLog, (int)m_prim.type, m_prim.tme, m_prim.fst, m_prim.ctxt, m_prim.abe,
-                       (unsigned long long)value);
-        }
         break;
     }
     case GS_REG_RGBAQ:
@@ -429,6 +431,14 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
         int ci = (regAddr == GS_REG_XYOFFSET_2) ? 1 : 0;
         m_ctx[ci].xyoffset.ofx = static_cast<uint16_t>(value & 0xFFFF);
         m_ctx[ci].xyoffset.ofy = static_cast<uint16_t>((value >> 32) & 0xFFFF);
+        static int s_xyoffCount = 0;
+        ++s_xyoffCount;
+        if (s_xyoffCount <= 20 || (s_xyoffCount % 1000) == 0) {
+            printf("[GS::writeRegister XYOFFSET_%d #%d] value=0x%016llx ofx=%u(%d) ofy=%u(%d)\n",
+                   ci + 1, s_xyoffCount, (unsigned long long)value,
+                   m_ctx[ci].xyoffset.ofx, m_ctx[ci].xyoffset.ofx >> 4,
+                   m_ctx[ci].xyoffset.ofy, m_ctx[ci].xyoffset.ofy >> 4);
+        }
         break;
     }
     case GS_REG_PRMODECONT:

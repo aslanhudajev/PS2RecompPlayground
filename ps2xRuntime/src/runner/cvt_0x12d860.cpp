@@ -195,7 +195,7 @@ label_12d900:
     ctx->pc = 0x12D918u;
     SET_GPR_U32(ctx, 31, 0x12D920u);
     ctx->pc = 0x12D91Cu;
-    SET_GPR_U32(ctx, 10, OR32(GPR_U32(ctx, 29), 4));
+    SET_GPR_U64(ctx, 10, GPR_U64(ctx, 29) | (uint64_t)4);
     ctx->pc = 0x12DF28u;
     {
         const uint32_t __entryPc = ctx->pc;

@@ -56,7 +56,7 @@ void _pow5mult_0x130510(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 4294967295));
     // 0x130540: 0x3c020017
     ctx->pc = 0x130540u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x130544: 0x24425990
     ctx->pc = 0x130544u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 2), 22928));

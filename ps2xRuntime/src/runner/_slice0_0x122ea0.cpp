@@ -81,7 +81,7 @@ void _slice0_0x122ea0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     ctx->pc = 0x122EE8u;
     // 0x122ee8: 0x3c120017
     ctx->pc = 0x122ee8u;
-    SET_GPR_U32(ctx, 18, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)23 << 16));
     // 0x122eec: 0xae401908
     ctx->pc = 0x122eecu;
     WRITE32(ADD32(GPR_U32(ctx, 18), 6408), GPR_U32(ctx, 0));
@@ -103,7 +103,7 @@ label_122ef8:
     {
         const bool branch_taken_0x122f00 = (GPR_U32(ctx, 2) != GPR_U32(ctx, 0));
         ctx->pc = 0x122F04u;
-        SET_GPR_U32(ctx, 19, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 19, ((uint32_t)23 << 16));
         if (branch_taken_0x122f00) {
             ctx->pc = 0x122F10u;
             goto label_122f10;
@@ -303,7 +303,7 @@ label_122f8c:
     ctx->pc = 0x122F98u;
     // 0x122f98: 0x3c040017
     ctx->pc = 0x122f98u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x122f9c: 0xc048006
     ctx->pc = 0x122F9Cu;
     SET_GPR_U32(ctx, 31, 0x122FA4u);

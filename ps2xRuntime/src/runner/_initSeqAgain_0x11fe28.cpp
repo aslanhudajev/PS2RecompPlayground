@@ -14,7 +14,7 @@ void _initSeqAgain_0x11fe28(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
 
     // 0x11fe28: 0x3c020017
     ctx->pc = 0x11fe28u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x11fe2c: 0x24040001
     ctx->pc = 0x11fe2cu;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));

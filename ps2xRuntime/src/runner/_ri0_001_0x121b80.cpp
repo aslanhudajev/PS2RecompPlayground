@@ -89,7 +89,7 @@ label_121ba8:
 }
     // 0x121bbc: 0x356b8000
     ctx->pc = 0x121bbcu;
-    SET_GPR_U32(ctx, 11, OR32(GPR_U32(ctx, 11), 32768));
+    SET_GPR_U64(ctx, 11, GPR_U64(ctx, 11) | (uint64_t)32768);
     // 0x121bc0: 0x10e00010
     ctx->pc = 0x121BC0u;
     {

@@ -58,7 +58,7 @@ label_11b1ac:
     SET_GPR_U32(ctx, 2, AND32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));
     // 0x11b1c0: 0x451025
     ctx->pc = 0x11b1c0u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 5)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 5));
     // 0x11b1c4: 0x80499b2
     ctx->pc = 0x11B1C4u;
     ctx->pc = 0x11B1C8u;

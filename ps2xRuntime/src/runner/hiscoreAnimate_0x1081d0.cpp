@@ -41,7 +41,7 @@ void hiscoreAnimate_0x1081d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     WRITE64(ADD32(GPR_U32(ctx, 29), 96), GPR_U64(ctx, 31));
     // 0x1081f4: 0x34138000
     ctx->pc = 0x1081f4u;
-    SET_GPR_U32(ctx, 19, OR32(GPR_U32(ctx, 0), 32768));
+    SET_GPR_U64(ctx, 19, GPR_U64(ctx, 0) | (uint64_t)32768);
     // 0x1081f8: 0xffb20020
     ctx->pc = 0x1081f8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 18));
@@ -65,7 +65,7 @@ void hiscoreAnimate_0x1081d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x10820Cu;
     // 0x10820c: 0x3c040017
     ctx->pc = 0x10820cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x108210: 0xc04ace4
     ctx->pc = 0x108210u;
     SET_GPR_U32(ctx, 31, 0x108218u);
@@ -82,7 +82,7 @@ void hiscoreAnimate_0x1081d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
 label_108218:
     // 0x108218: 0x3c020014
     ctx->pc = 0x108218u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x10821c: 0x8f9282e4
     ctx->pc = 0x10821cu;
     SET_GPR_U32(ctx, 18, READ32(ADD32(GPR_U32(ctx, 28), 4294935268)));
@@ -97,7 +97,7 @@ label_108218:
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 320));
     // 0x10822c: 0x3c013f80
     ctx->pc = 0x10822cu;
-    SET_GPR_U32(ctx, 1, ((uint32_t)16256 << 16));
+    SET_GPR_S32(ctx, 1, ((uint32_t)16256 << 16));
     // 0x108230: 0x4481a000
     ctx->pc = 0x108230u;
     *(uint32_t*)&ctx->f[20] = GPR_U32(ctx, 1);
@@ -154,7 +154,7 @@ label_108218:
     ctx->pc = 0x108270u;
     // 0x108270: 0x3c040017
     ctx->pc = 0x108270u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x108274: 0xc04ace4
     ctx->pc = 0x108274u;
     SET_GPR_U32(ctx, 31, 0x10827Cu);
@@ -180,7 +180,7 @@ label_10827c:
     WRITE32(ADD32(GPR_U32(ctx, 16), 144), GPR_U32(ctx, 2));
     // 0x108288: 0x34028c20
     ctx->pc = 0x108288u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 0), 35872));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 0) | (uint64_t)35872);
     // 0x10828c: 0xe61400ac
     ctx->pc = 0x10828cu;
     { float f = ctx->f[20]; uint32_t bits; std::memcpy(&bits, &f, sizeof(bits)); WRITE32(ADD32(GPR_U32(ctx, 16), 172), bits); }

@@ -17,7 +17,7 @@ void loadQuestions_0x109258(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294966128));
     // 0x10925c: 0x3c050001
     ctx->pc = 0x10925cu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)1 << 16));
     // 0x109260: 0xffb40440
     ctx->pc = 0x109260u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 1088), GPR_U64(ctx, 20));
@@ -29,13 +29,13 @@ void loadQuestions_0x109258(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     WRITE64(ADD32(GPR_U32(ctx, 29), 1072), GPR_U64(ctx, 19));
     // 0x10926c: 0x34a59000
     ctx->pc = 0x10926cu;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), 36864));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | (uint64_t)36864);
     // 0x109270: 0xffb20420
     ctx->pc = 0x109270u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 1056), GPR_U64(ctx, 18));
     // 0x109274: 0x3c140013
     ctx->pc = 0x109274u;
-    SET_GPR_U32(ctx, 20, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)19 << 16));
     // 0x109278: 0xffb10410
     ctx->pc = 0x109278u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 1040), GPR_U64(ctx, 17));
@@ -75,10 +75,10 @@ void loadQuestions_0x109258(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x1092A0u;
     // 0x1092a0: 0x3c040017
     ctx->pc = 0x1092a0u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1092a4: 0x3c060001
     ctx->pc = 0x1092a4u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)1 << 16));
     // 0x1092a8: 0x24843418
     ctx->pc = 0x1092a8u;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 4), 13336));
@@ -92,7 +92,7 @@ void loadQuestions_0x109258(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x1092B4u;
     SET_GPR_U32(ctx, 31, 0x1092BCu);
     ctx->pc = 0x1092B8u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 6), 36864));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) | (uint64_t)36864);
     ctx->pc = 0x102870u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -134,7 +134,7 @@ void loadQuestions_0x109258(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x1092D4u;
     // 0x1092d4: 0x3c170013
     ctx->pc = 0x1092d4u;
-    SET_GPR_U32(ctx, 23, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 23, ((uint32_t)19 << 16));
 label_1092d8:
     // 0x1092d8: 0x8f848360
     ctx->pc = 0x1092d8u;
@@ -191,7 +191,7 @@ label_1092d8:
     {
         const bool branch_taken_0x109308 = (GPR_S32(ctx, 2) <= 0);
         ctx->pc = 0x10930Cu;
-        SET_GPR_U32(ctx, 21, ((uint32_t)19 << 16));
+        SET_GPR_S32(ctx, 21, ((uint32_t)19 << 16));
         if (branch_taken_0x109308) {
             ctx->pc = 0x1093DCu;
             goto label_1093dc;

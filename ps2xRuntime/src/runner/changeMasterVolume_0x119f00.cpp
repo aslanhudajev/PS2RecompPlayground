@@ -32,7 +32,7 @@ void changeMasterVolume_0x119f00(uint8_t* rdram, R5900Context* ctx, PS2Runtime *
     SET_GPR_U64(ctx, 16, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
     // 0x119f18: 0x36060980
     ctx->pc = 0x119f18u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 16), 2432));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 16) | (uint64_t)2432);
     // 0x119f1c: 0x0
     ctx->pc = 0x119f1cu;
     // NOP
@@ -42,7 +42,7 @@ label_119f20:
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
     // 0x119f24: 0x34058010
     ctx->pc = 0x119f24u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32784));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32784);
     // 0x119f28: 0xc045c80
     ctx->pc = 0x119F28u;
     SET_GPR_U32(ctx, 31, 0x119F30u);
@@ -58,13 +58,13 @@ label_119f20:
     ctx->pc = 0x119F30u;
     // 0x119f30: 0x36060a80
     ctx->pc = 0x119f30u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 16), 2688));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 16) | (uint64_t)2688);
     // 0x119f34: 0x24040001
     ctx->pc = 0x119f34u;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
     // 0x119f38: 0x34058010
     ctx->pc = 0x119f38u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32784));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32784);
     // 0x119f3c: 0xc045c80
     ctx->pc = 0x119F3Cu;
     SET_GPR_U32(ctx, 31, 0x119F44u);
@@ -89,7 +89,7 @@ label_119f20:
     {
         const bool branch_taken_0x119f4c = (GPR_U32(ctx, 2) != GPR_U32(ctx, 0));
         ctx->pc = 0x119F50u;
-        SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 16), 2432));
+        SET_GPR_U64(ctx, 6, GPR_U64(ctx, 16) | (uint64_t)2432);
         if (branch_taken_0x119f4c) {
             ctx->pc = 0x119F20u;
             goto label_119f20;

@@ -28,7 +28,7 @@ void _sliceB_0x124140(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     ctx->pc = 0x124150u;
     SET_GPR_U32(ctx, 31, 0x124158u);
     ctx->pc = 0x124154u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     ctx->pc = 0x123F70u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -69,7 +69,7 @@ void _sliceB_0x124140(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     ctx->pc = 0x12416Cu;
     SET_GPR_U32(ctx, 31, 0x124174u);
     ctx->pc = 0x124170u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     ctx->pc = 0x123F70u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -120,7 +120,7 @@ void _sliceB_0x124140(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 label_124190:
     // 0x124190: 0x3c020017
     ctx->pc = 0x124190u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x124194: 0xac4020c0
     ctx->pc = 0x124194u;
     WRITE32(ADD32(GPR_U32(ctx, 2), 8384), GPR_U32(ctx, 0));

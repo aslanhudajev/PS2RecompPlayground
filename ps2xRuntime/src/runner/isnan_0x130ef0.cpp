@@ -23,16 +23,16 @@ void isnan_0x130ef0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S64(ctx, 4, GPR_S64(ctx, 4) >> (32 + 0));
     // 0x130efc: 0x3c037fff
     ctx->pc = 0x130efcu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)32767 << 16));
     // 0x130f00: 0x22823
     ctx->pc = 0x130f00u;
     SET_GPR_U32(ctx, 5, SUB32(GPR_U32(ctx, 0), GPR_U32(ctx, 2)));
     // 0x130f04: 0x3463ffff
     ctx->pc = 0x130f04u;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 65535));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)65535);
     // 0x130f08: 0x451025
     ctx->pc = 0x130f08u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 5)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 5));
     // 0x130f0c: 0x832024
     ctx->pc = 0x130f0cu;
     SET_GPR_U32(ctx, 4, AND32(GPR_U32(ctx, 4), GPR_U32(ctx, 3)));
@@ -41,10 +41,10 @@ void isnan_0x130ef0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U32(ctx, 2, SRL32(GPR_U32(ctx, 2), 31));
     // 0x130f14: 0x3c037ff0
     ctx->pc = 0x130f14u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)32752 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)32752 << 16));
     // 0x130f18: 0x822025
     ctx->pc = 0x130f18u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), GPR_U32(ctx, 2)));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | GPR_U64(ctx, 2));
     // 0x130f1c: 0x642023
     ctx->pc = 0x130f1cu;
     SET_GPR_U32(ctx, 4, SUB32(GPR_U32(ctx, 3), GPR_U32(ctx, 4)));

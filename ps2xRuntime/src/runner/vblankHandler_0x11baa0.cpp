@@ -17,13 +17,13 @@ void vblankHandler_0x11baa0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967248));
     // 0x11baa4: 0x3c021200
     ctx->pc = 0x11baa4u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4608 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4608 << 16));
     // 0x11baa8: 0xffbf0020
     ctx->pc = 0x11baa8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 31));
     // 0x11baac: 0x34421000
     ctx->pc = 0x11baacu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 4096));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)4096);
     // 0x11bab0: 0xffb10010
     ctx->pc = 0x11bab0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 17));
@@ -105,7 +105,7 @@ void vblankHandler_0x11baa0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x11BB08u;
     // 0x11bb08: 0x3c040075
     ctx->pc = 0x11bb08u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x11bb0c: 0xc046a84
     ctx->pc = 0x11BB0Cu;
     SET_GPR_U32(ctx, 31, 0x11BB14u);
@@ -186,7 +186,7 @@ label_11bb34:
     {
         const bool branch_taken_0x11bb44 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 2));
         ctx->pc = 0x11BB48u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
         if (branch_taken_0x11bb44) {
             ctx->pc = 0x11BB74u;
             goto label_11bb74;
@@ -211,10 +211,10 @@ label_11bb34:
     ctx->pc = 0x11BB58u;
     // 0x11bb58: 0x3c040002
     ctx->pc = 0x11bb58u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)2 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)2 << 16));
     // 0x11bb5c: 0x34842340
     ctx->pc = 0x11bb5cu;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), 9024));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | (uint64_t)9024);
     // 0x11bb60: 0xc046e9a
     ctx->pc = 0x11BB60u;
     SET_GPR_U32(ctx, 31, 0x11BB68u);
@@ -276,7 +276,7 @@ label_11bb74:
     ctx->pc = 0x11BB8Cu;
     // 0x11bb8c: 0x3c040075
     ctx->pc = 0x11bb8cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x11bb90: 0xc046c66
     ctx->pc = 0x11BB90u;
     SET_GPR_U32(ctx, 31, 0x11BB98u);

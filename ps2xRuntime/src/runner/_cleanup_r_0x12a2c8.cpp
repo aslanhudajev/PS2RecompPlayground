@@ -14,7 +14,7 @@ void _cleanup_r_0x12a2c8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
 
     // 0x12a2c8: 0x3c050013
     ctx->pc = 0x12a2c8u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)19 << 16));
     // 0x12a2cc: 0x804a8de
     ctx->pc = 0x12A2CCu;
     ctx->pc = 0x12A2D0u;

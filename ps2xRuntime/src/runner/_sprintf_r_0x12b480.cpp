@@ -20,13 +20,13 @@ void _sprintf_r_0x12b480(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U64(ctx, 12, (uint64_t)GPR_U64(ctx, 5) + (uint64_t)GPR_U64(ctx, 0));
     // 0x12b488: 0x3c027fff
     ctx->pc = 0x12b488u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32767 << 16));
     // 0x12b48c: 0xafa40054
     ctx->pc = 0x12b48cu;
     WRITE32(ADD32(GPR_U32(ctx, 29), 84), GPR_U32(ctx, 4));
     // 0x12b490: 0x3442ffff
     ctx->pc = 0x12b490u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x12b494: 0xc0282d
     ctx->pc = 0x12b494u;
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 6) + (uint64_t)GPR_U64(ctx, 0));

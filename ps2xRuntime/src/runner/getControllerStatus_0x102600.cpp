@@ -26,7 +26,7 @@ void getControllerStatus_0x102600(uint8_t* rdram, R5900Context* ctx, PS2Runtime 
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
     // 0x102610: 0x3c100014
     ctx->pc = 0x102610u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)20 << 16));
     // 0x102614: 0xffbf0010
     ctx->pc = 0x102614u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 31));

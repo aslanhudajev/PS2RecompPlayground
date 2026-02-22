@@ -33,10 +33,10 @@ void _nextStartCode_0x1240d8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x1240E8u;
     // 0x1240e8: 0x3c021000
     ctx->pc = 0x1240e8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4096 << 16));
     // 0x1240ec: 0x34422020
     ctx->pc = 0x1240ecu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 8224));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)8224);
     // 0x1240f0: 0x8c430000
     ctx->pc = 0x1240f0u;
     SET_GPR_U32(ctx, 3, runtime->Load32(rdram, ctx, ADD32(GPR_U32(ctx, 2), 0))); // MMIO: 0x10000000

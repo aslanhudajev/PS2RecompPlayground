@@ -74,15 +74,15 @@ void movieKeys_0x10c4b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 29) + (uint64_t)GPR_U64(ctx, 0));
     // 0x10c4f0: 0x37a50004
     ctx->pc = 0x10c4f0u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 29), 4));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 29) | (uint64_t)4);
     // 0x10c4f4: 0x37a60008
     ctx->pc = 0x10c4f4u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 29), 8));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 29) | (uint64_t)8);
     // 0x10c4f8: 0xc043024
     ctx->pc = 0x10C4F8u;
     SET_GPR_U32(ctx, 31, 0x10C500u);
     ctx->pc = 0x10C4FCu;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 29), 12));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 29) | (uint64_t)12);
     ctx->pc = 0x10C090u;
     {
         const uint32_t __entryPc = ctx->pc;

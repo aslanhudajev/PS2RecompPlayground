@@ -39,28 +39,28 @@ void viBufDelete_0x11ca08(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     ctx->pc = 0x11CA20u;
     // 0x11ca20: 0x3c031000
     ctx->pc = 0x11ca20u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)4096 << 16));
     // 0x11ca24: 0x3c041000
     ctx->pc = 0x11ca24u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)4096 << 16));
     // 0x11ca28: 0x3463b420
     ctx->pc = 0x11ca28u;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 46112));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)46112);
     // 0x11ca2c: 0x3484b410
     ctx->pc = 0x11ca2cu;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), 46096));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | (uint64_t)46096);
     // 0x11ca30: 0xac600000
     ctx->pc = 0x11ca30u;
     runtime->Store32(rdram, ctx, ADD32(GPR_U32(ctx, 3), 0), GPR_U32(ctx, 0)); // MMIO: 0x10000000
     // 0x11ca34: 0x3c021000
     ctx->pc = 0x11ca34u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4096 << 16));
     // 0x11ca38: 0xac800000
     ctx->pc = 0x11ca38u;
     runtime->Store32(rdram, ctx, ADD32(GPR_U32(ctx, 4), 0), GPR_U32(ctx, 0)); // MMIO: 0x10000000
     // 0x11ca3c: 0x3442b430
     ctx->pc = 0x11ca3cu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 46128));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)46128);
     // 0x11ca40: 0xac400000
     ctx->pc = 0x11ca40u;
     runtime->Store32(rdram, ctx, ADD32(GPR_U32(ctx, 2), 0), GPR_U32(ctx, 0)); // MMIO: 0x10000000

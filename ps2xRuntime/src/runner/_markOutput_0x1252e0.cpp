@@ -14,7 +14,7 @@ void _markOutput_0x1252e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
 
     // 0x1252e0: 0x3c020017
     ctx->pc = 0x1252e0u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x1252e4: 0x24050002
     ctx->pc = 0x1252e4u;
     SET_GPR_S32(ctx, 5, ADD32(GPR_U32(ctx, 0), 2));
@@ -32,7 +32,7 @@ void _markOutput_0x1252e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     {
         const bool branch_taken_0x1252f4 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 5));
         ctx->pc = 0x1252F8u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x1252f4) {
             ctx->pc = 0x125308u;
             goto label_125308;
@@ -51,7 +51,7 @@ void _markOutput_0x1252e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
 label_125308:
     // 0x125308: 0x3c030017
     ctx->pc = 0x125308u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x12530c: 0x24020001
     ctx->pc = 0x12530cu;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));

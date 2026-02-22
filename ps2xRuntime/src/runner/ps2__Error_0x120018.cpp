@@ -14,7 +14,7 @@ void ps2__Error_0x120018(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
 
     // 0x120018: 0x3c020017
     ctx->pc = 0x120018u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x12001c: 0x80182d
     ctx->pc = 0x12001cu;
     SET_GPR_U64(ctx, 3, (uint64_t)GPR_U64(ctx, 4) + (uint64_t)GPR_U64(ctx, 0));

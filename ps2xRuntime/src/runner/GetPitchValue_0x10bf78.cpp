@@ -17,7 +17,7 @@ void GetPitchValue_0x10bf78(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967264));
     // 0x10bf7c: 0x3c050017
     ctx->pc = 0x10bf7cu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)23 << 16));
     // 0x10bf80: 0xffb00000
     ctx->pc = 0x10bf80u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
@@ -73,7 +73,7 @@ void GetPitchValue_0x10bf78(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 2, SLL32(GPR_U32(ctx, 2), 12));
     // 0x10bfac: 0x3403bb80
     ctx->pc = 0x10bfacu;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 0), 48000));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 0) | (uint64_t)48000);
     // 0x10bfb0: 0x43001a
     ctx->pc = 0x10bfb0u;
     { int32_t divisor = GPR_S32(ctx, 3);    int32_t dividend = GPR_S32(ctx, 2);    if (divisor != 0) {        if (divisor == -1 && dividend == INT32_MIN) {            ctx->lo = INT32_MIN; ctx->hi = 0;        } else {            ctx->lo = (uint32_t)(dividend / divisor);            ctx->hi = (uint32_t)(dividend % divisor);        }    } else {        ctx->lo = (dividend < 0) ? 1 : -1; ctx->hi = dividend;    } }
@@ -103,7 +103,7 @@ label_10bfbc:
 label_10bfc4:
     // 0x10bfc4: 0x3403bb80
     ctx->pc = 0x10bfc4u;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 0), 48000));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 0) | (uint64_t)48000);
     // 0x10bfc8: 0x50600001
     ctx->pc = 0x10BFC8u;
     {

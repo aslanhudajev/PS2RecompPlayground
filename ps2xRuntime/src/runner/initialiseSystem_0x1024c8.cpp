@@ -23,31 +23,31 @@ void initialiseSystem_0x1024c8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *ru
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
     // 0x1024d4: 0x3c140017
     ctx->pc = 0x1024d4u;
-    SET_GPR_U32(ctx, 20, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)23 << 16));
     // 0x1024d8: 0xffb20020
     ctx->pc = 0x1024d8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 18));
     // 0x1024dc: 0x3c130017
     ctx->pc = 0x1024dcu;
-    SET_GPR_U32(ctx, 19, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)23 << 16));
     // 0x1024e0: 0xffb10010
     ctx->pc = 0x1024e0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 17));
     // 0x1024e4: 0x3c120017
     ctx->pc = 0x1024e4u;
-    SET_GPR_U32(ctx, 18, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)23 << 16));
     // 0x1024e8: 0xffb00000
     ctx->pc = 0x1024e8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x1024ec: 0x3c110017
     ctx->pc = 0x1024ecu;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x1024f0: 0xffbf0050
     ctx->pc = 0x1024f0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 31));
     // 0x1024f4: 0x3c100017
     ctx->pc = 0x1024f4u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
 label_1024f8:
     // 0x1024f8: 0xc0453aa
     ctx->pc = 0x1024F8u;

@@ -31,7 +31,7 @@ void get_iob_0x110c88(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     ctx->pc = 0x110C9Cu;
     SET_GPR_U32(ctx, 31, 0x110CA4u);
     ctx->pc = 0x110CA0u;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     ctx->pc = 0x110BA0u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -61,7 +61,7 @@ void get_iob_0x110c88(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     {
         const bool branch_taken_0x110cb0 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 0));
         ctx->pc = 0x110CB4u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)24 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)24 << 16));
         if (branch_taken_0x110cb0) {
             ctx->pc = 0x110CC8u;
             goto label_110cc8;

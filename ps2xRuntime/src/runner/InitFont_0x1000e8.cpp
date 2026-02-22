@@ -72,7 +72,7 @@ void InitFont_0x1000e8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     ctx->pc = 0x10012Cu;
     // 0x10012c: 0x3c100017
     ctx->pc = 0x10012cu;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     // 0x100130: 0x40882d
     ctx->pc = 0x100130u;
     SET_GPR_U64(ctx, 17, (uint64_t)GPR_U64(ctx, 2) + (uint64_t)GPR_U64(ctx, 0));
@@ -97,7 +97,7 @@ void InitFont_0x1000e8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     ctx->pc = 0x100144u;
     // 0x100144: 0x3c040016
     ctx->pc = 0x100144u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)22 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)22 << 16));
     // 0x100148: 0x220382d
     ctx->pc = 0x100148u;
     SET_GPR_U64(ctx, 7, (uint64_t)GPR_U64(ctx, 17) + (uint64_t)GPR_U64(ctx, 0));

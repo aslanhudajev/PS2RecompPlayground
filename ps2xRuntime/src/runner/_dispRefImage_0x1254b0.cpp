@@ -20,7 +20,7 @@ void _dispRefImage_0x1254b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x1254b8: 0x3c100017
     ctx->pc = 0x1254b8u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     // 0x1254bc: 0xffb20020
     ctx->pc = 0x1254bcu;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 18));
@@ -63,7 +63,7 @@ void _dispRefImage_0x1254b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 6, READ32(ADD32(GPR_U32(ctx, 16), 6076)));
     // 0x1254e8: 0x3c050017
     ctx->pc = 0x1254e8u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)23 << 16));
     // 0x1254ec: 0x24a52178
     ctx->pc = 0x1254ecu;
     SET_GPR_S32(ctx, 5, ADD32(GPR_U32(ctx, 5), 8568));

@@ -29,7 +29,7 @@ void menuAnimate_0x105810(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 21));
     // 0x105824: 0x34168000
     ctx->pc = 0x105824u;
-    SET_GPR_U32(ctx, 22, OR32(GPR_U32(ctx, 0), 32768));
+    SET_GPR_U64(ctx, 22, GPR_U64(ctx, 0) | (uint64_t)32768);
     // 0x105828: 0xffb40040
     ctx->pc = 0x105828u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 64), GPR_U64(ctx, 20));
@@ -77,7 +77,7 @@ void menuAnimate_0x105810(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     ctx->pc = 0x10585Cu;
     // 0x10585c: 0x3c040017
     ctx->pc = 0x10585cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x105860: 0xc04ace4
     ctx->pc = 0x105860u;
     SET_GPR_U32(ctx, 31, 0x105868u);
@@ -94,7 +94,7 @@ void menuAnimate_0x105810(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
 label_105868:
     // 0x105868: 0x3c020014
     ctx->pc = 0x105868u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x10586c: 0x8f9282d0
     ctx->pc = 0x10586cu;
     SET_GPR_U32(ctx, 18, READ32(ADD32(GPR_U32(ctx, 28), 4294935248)));
@@ -103,7 +103,7 @@ label_105868:
     SET_GPR_S32(ctx, 16, ADD32(GPR_U32(ctx, 2), 5784));
     // 0x105874: 0x3c013f80
     ctx->pc = 0x105874u;
-    SET_GPR_U32(ctx, 1, ((uint32_t)16256 << 16));
+    SET_GPR_S32(ctx, 1, ((uint32_t)16256 << 16));
     // 0x105878: 0x4481a000
     ctx->pc = 0x105878u;
     *(uint32_t*)&ctx->f[20] = GPR_U32(ctx, 1);
@@ -169,7 +169,7 @@ label_105868:
     ctx->pc = 0x1058C4u;
     // 0x1058c4: 0x3c040017
     ctx->pc = 0x1058c4u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1058c8: 0xc04ace4
     ctx->pc = 0x1058C8u;
     SET_GPR_U32(ctx, 31, 0x1058D0u);
@@ -243,7 +243,7 @@ label_1058d0:
     ctx->pc = 0x105914u;
     // 0x105914: 0x3c040017
     ctx->pc = 0x105914u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x105918: 0xc04ace4
     ctx->pc = 0x105918u;
     SET_GPR_U32(ctx, 31, 0x105920u);
@@ -269,7 +269,7 @@ label_105920:
     WRITE32(ADD32(GPR_U32(ctx, 16), 756), GPR_U32(ctx, 2));
     // 0x10592c: 0x34028500
     ctx->pc = 0x10592cu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 0), 34048));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 0) | (uint64_t)34048);
     // 0x105930: 0xe6140310
     ctx->pc = 0x105930u;
     { float f = ctx->f[20]; uint32_t bits; std::memcpy(&bits, &f, sizeof(bits)); WRITE32(ADD32(GPR_U32(ctx, 16), 784), bits); }

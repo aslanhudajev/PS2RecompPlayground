@@ -26,13 +26,13 @@ void convertEnd_0x10bff0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U32(ctx, 5, SLL32(GPR_U32(ctx, 5), 8));
     // 0x10c000: 0x451025
     ctx->pc = 0x10c000u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 5)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 5));
     // 0x10c004: 0x3063ff00
     ctx->pc = 0x10c004u;
     SET_GPR_U32(ctx, 3, AND32(GPR_U32(ctx, 3), 65280));
     // 0x10c008: 0x431025
     ctx->pc = 0x10c008u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 3));
     // 0x10c00c: 0x42602
     ctx->pc = 0x10c00cu;
     SET_GPR_U32(ctx, 4, SRL32(GPR_U32(ctx, 4), 24));
@@ -41,7 +41,7 @@ void convertEnd_0x10bff0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     {
         uint32_t jumpTarget = GPR_U32(ctx, 31);
         ctx->pc = 0x10C014u;
-        SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 4)));
+        SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 4));
         ctx->pc = jumpTarget;
         return;
     }

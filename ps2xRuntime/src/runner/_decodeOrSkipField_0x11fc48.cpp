@@ -26,7 +26,7 @@ void _decodeOrSkipField_0x11fc48(uint8_t* rdram, R5900Context* ctx, PS2Runtime *
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
     // 0x11fc58: 0x3c150017
     ctx->pc = 0x11fc58u;
-    SET_GPR_U32(ctx, 21, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 21, ((uint32_t)23 << 16));
     // 0x11fc5c: 0xffb20020
     ctx->pc = 0x11fc5cu;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 18));
@@ -145,7 +145,7 @@ label_11fcac:
     ctx->pc = 0x11FCC4u;
     // 0x11fcc4: 0x3c140017
     ctx->pc = 0x11fcc4u;
-    SET_GPR_U32(ctx, 20, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)23 << 16));
     // 0x11fcc8: 0x8e050004
     ctx->pc = 0x11fcc8u;
     SET_GPR_U32(ctx, 5, READ32(ADD32(GPR_U32(ctx, 16), 4)));
@@ -222,7 +222,7 @@ label_11fcd8:
 label_11fcfc:
     // 0x11fcfc: 0x3c030017
     ctx->pc = 0x11fcfcu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x11fd00: 0x24020002
     ctx->pc = 0x11fd00u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 2));
@@ -274,7 +274,7 @@ label_11fcfc:
     {
         const bool branch_taken_0x11fd2c = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x11FD30u;
-        SET_GPR_U32(ctx, 20, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 20, ((uint32_t)23 << 16));
         if (branch_taken_0x11fd2c) {
             ctx->pc = 0x11FD4Cu;
             goto label_11fd4c;

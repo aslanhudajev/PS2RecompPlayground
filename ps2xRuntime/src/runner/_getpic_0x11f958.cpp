@@ -95,7 +95,7 @@ label_11f998:
 label_11f99c:
     // 0x11f99c: 0x3c040017
     ctx->pc = 0x11f99cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
 label_11f9a0:
     // 0x11f9a0: 0xc047ffa
 label_11f9a4:
@@ -140,7 +140,7 @@ label_11f9ac:
 label_11f9b0:
     // 0x11f9b0: 0x3c160017
     ctx->pc = 0x11f9b0u;
-    SET_GPR_U32(ctx, 22, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 22, ((uint32_t)23 << 16));
 label_11f9b4:
     // 0x11f9b4: 0xaec02080
     ctx->pc = 0x11f9b4u;
@@ -176,11 +176,11 @@ label_11f9c4:
 label_11f9c8:
     // 0x11f9c8: 0x3c120017
     ctx->pc = 0x11f9c8u;
-    SET_GPR_U32(ctx, 18, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)23 << 16));
 label_11f9cc:
     // 0x11f9cc: 0x3c110017
     ctx->pc = 0x11f9ccu;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
 label_11f9d0:
     // 0x11f9d0: 0xc04906c
 label_11f9d4:
@@ -271,7 +271,7 @@ label_11f9fc:
 label_11fa00:
     if (ctx->pc == 0x11FA00u) {
         ctx->pc = 0x11FA00u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         ctx->pc = 0x11FA04u;
         goto label_11fa04;
     }
@@ -279,7 +279,7 @@ label_11fa00:
     {
         const bool branch_taken_0x11f9fc = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x11FA00u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x11f9fc) {
             ctx->pc = 0x11FAA4u;
             goto label_11faa4;

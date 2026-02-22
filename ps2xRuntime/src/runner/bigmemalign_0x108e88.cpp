@@ -35,7 +35,7 @@ void bigmemalign_0x108e88(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     ctx->pc = 0x108E9Cu;
     // 0x108e9c: 0x3c040017
     ctx->pc = 0x108e9cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x108ea0: 0xc043ef8
     ctx->pc = 0x108EA0u;
     SET_GPR_U32(ctx, 31, 0x108EA8u);

@@ -39,10 +39,10 @@ void voBufIncCount_0x11a948(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 16), 8)));
     // 0x11a960: 0x3c02000a
     ctx->pc = 0x11a960u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)10 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)10 << 16));
     // 0x11a964: 0x3442af40
     ctx->pc = 0x11a964u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 44864));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)44864);
     // 0x11a968: 0x8e050004
     ctx->pc = 0x11a968u;
     SET_GPR_U32(ctx, 5, READ32(ADD32(GPR_U32(ctx, 16), 4)));

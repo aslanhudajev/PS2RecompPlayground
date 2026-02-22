@@ -14,7 +14,7 @@ void _sequenceScalableExtension_0x1209b8(uint8_t* rdram, R5900Context* ctx, PS2R
 
     // 0x1209b8: 0x3c040017
     ctx->pc = 0x1209b8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1209bc: 0x8048006
     ctx->pc = 0x1209BCu;
     ctx->pc = 0x1209C0u;

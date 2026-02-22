@@ -31,7 +31,7 @@ void initialiseDrawDisplay_0x102b18(uint8_t* rdram, R5900Context* ctx, PS2Runtim
     ctx->pc = 0x102B28u;
     // 0x102b28: 0x3c050019
     ctx->pc = 0x102b28u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)25 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)25 << 16));
     // 0x102b2c: 0xc04a90c
     ctx->pc = 0x102B2Cu;
     SET_GPR_U32(ctx, 31, 0x102B34u);

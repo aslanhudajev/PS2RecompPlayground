@@ -3,10 +3,11 @@
 #include "ps2_stubs.h"
 
 void sceNextFBaddr_0x1088b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
-    const uint32_t __entryPc = ctx->pc;
-    ps2_stubs::TODO_NAMED("sceNextFBaddr", rdram, ctx, runtime); 
-    if (ctx->pc == __entryPc)
-    {
-        ctx->pc = getRegU32(ctx, 31);
-    }
+    (void)rdram;
+    (void)runtime;
+    static int s_nextFb = 0;
+    const int next = s_nextFb & 1;
+    s_nextFb++;
+    setReturnS32(ctx, next);
+    ctx->pc = getRegU32(ctx, 31);
 }

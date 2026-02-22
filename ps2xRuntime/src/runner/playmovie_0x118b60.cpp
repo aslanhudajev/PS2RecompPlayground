@@ -17,7 +17,7 @@ void playmovie_0x118b60(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967232));
     // 0x118b64: 0x3c020075
     ctx->pc = 0x118b64u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)117 << 16));
     // 0x118b68: 0xffb10010
     ctx->pc = 0x118b68u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 17));
@@ -69,7 +69,7 @@ void playmovie_0x118b60(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     ctx->pc = 0x118BA0u;
     // 0x118ba0: 0x3c058000
     ctx->pc = 0x118ba0u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)32768 << 16));
     // 0x118ba4: 0xc046c74
     ctx->pc = 0x118BA4u;
     SET_GPR_U32(ctx, 31, 0x118BACu);
@@ -110,13 +110,13 @@ void playmovie_0x118b60(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     ctx->pc = 0x118BBCu;
     // 0x118bbc: 0x3c040075
     ctx->pc = 0x118bbcu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x118bc0: 0x3c050067
     ctx->pc = 0x118bc0u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)103 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)103 << 16));
     // 0x118bc4: 0x3c060075
     ctx->pc = 0x118bc4u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)117 << 16));
     // 0x118bc8: 0x240382d
     ctx->pc = 0x118bc8u;
     SET_GPR_U64(ctx, 7, (uint64_t)GPR_U64(ctx, 18) + (uint64_t)GPR_U64(ctx, 0));

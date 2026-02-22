@@ -17,7 +17,7 @@ void _id2type_0x11e508(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967168));
     // 0x11e50c: 0x3c030017
     ctx->pc = 0x11e50cu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)23 << 16));
     // 0x11e510: 0xffb70070
     ctx->pc = 0x11e510u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 112), GPR_U64(ctx, 23));
@@ -68,13 +68,13 @@ void _id2type_0x11e508(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x11e550: 0x340bffff
     ctx->pc = 0x11e550u;
-    SET_GPR_U32(ctx, 11, OR32(GPR_U32(ctx, 0), 65535));
+    SET_GPR_U64(ctx, 11, GPR_U64(ctx, 0) | (uint64_t)65535);
     // 0x11e554: 0xb5e38
     ctx->pc = 0x11e554u;
     SET_GPR_U64(ctx, 11, GPR_U64(ctx, 11) << 24);
     // 0x11e558: 0x3417ff00
     ctx->pc = 0x11e558u;
-    SET_GPR_U32(ctx, 23, OR32(GPR_U32(ctx, 0), 65280));
+    SET_GPR_U64(ctx, 23, GPR_U64(ctx, 0) | (uint64_t)65280);
     // 0x11e55c: 0x17be38
     ctx->pc = 0x11e55cu;
     SET_GPR_U64(ctx, 23, GPR_U64(ctx, 23) << 24);
@@ -95,49 +95,49 @@ void _id2type_0x11e508(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U64(ctx, 21, GPR_U64(ctx, 21) >> 24);
     // 0x11e574: 0x3414bd20
     ctx->pc = 0x11e574u;
-    SET_GPR_U32(ctx, 20, OR32(GPR_U32(ctx, 0), 48416));
+    SET_GPR_U64(ctx, 20, GPR_U64(ctx, 0) | (uint64_t)48416);
     // 0x11e578: 0x14a638
     ctx->pc = 0x11e578u;
     SET_GPR_U64(ctx, 20, GPR_U64(ctx, 20) << 24);
     // 0x11e57c: 0x3413bd80
     ctx->pc = 0x11e57cu;
-    SET_GPR_U32(ctx, 19, OR32(GPR_U32(ctx, 0), 48512));
+    SET_GPR_U64(ctx, 19, GPR_U64(ctx, 0) | (uint64_t)48512);
     // 0x11e580: 0x139e38
     ctx->pc = 0x11e580u;
     SET_GPR_U64(ctx, 19, GPR_U64(ctx, 19) << 24);
     // 0x11e584: 0x3412bd90
     ctx->pc = 0x11e584u;
-    SET_GPR_U32(ctx, 18, OR32(GPR_U32(ctx, 0), 48528));
+    SET_GPR_U64(ctx, 18, GPR_U64(ctx, 0) | (uint64_t)48528);
     // 0x11e588: 0x129638
     ctx->pc = 0x11e588u;
     SET_GPR_U64(ctx, 18, GPR_U64(ctx, 18) << 24);
     // 0x11e58c: 0x3411bda0
     ctx->pc = 0x11e58cu;
-    SET_GPR_U32(ctx, 17, OR32(GPR_U32(ctx, 0), 48544));
+    SET_GPR_U64(ctx, 17, GPR_U64(ctx, 0) | (uint64_t)48544);
     // 0x11e590: 0x118e38
     ctx->pc = 0x11e590u;
     SET_GPR_U64(ctx, 17, GPR_U64(ctx, 17) << 24);
     // 0x11e594: 0x3410ffe0
     ctx->pc = 0x11e594u;
-    SET_GPR_U32(ctx, 16, OR32(GPR_U32(ctx, 0), 65504));
+    SET_GPR_U64(ctx, 16, GPR_U64(ctx, 0) | (uint64_t)65504);
     // 0x11e598: 0x108638
     ctx->pc = 0x11e598u;
     SET_GPR_U64(ctx, 16, GPR_U64(ctx, 16) << 24);
     // 0x11e59c: 0x3419fff8
     ctx->pc = 0x11e59cu;
-    SET_GPR_U32(ctx, 25, OR32(GPR_U32(ctx, 0), 65528));
+    SET_GPR_U64(ctx, 25, GPR_U64(ctx, 0) | (uint64_t)65528);
     // 0x11e5a0: 0x19ce38
     ctx->pc = 0x11e5a0u;
     SET_GPR_U64(ctx, 25, GPR_U64(ctx, 25) << 24);
     // 0x11e5a4: 0x3418f000
     ctx->pc = 0x11e5a4u;
-    SET_GPR_U32(ctx, 24, OR32(GPR_U32(ctx, 0), 61440));
+    SET_GPR_U64(ctx, 24, GPR_U64(ctx, 0) | (uint64_t)61440);
     // 0x11e5a8: 0x18c638
     ctx->pc = 0x11e5a8u;
     SET_GPR_U64(ctx, 24, GPR_U64(ctx, 24) << 24);
     // 0x11e5ac: 0x340fc000
     ctx->pc = 0x11e5acu;
-    SET_GPR_U32(ctx, 15, OR32(GPR_U32(ctx, 0), 49152));
+    SET_GPR_U64(ctx, 15, GPR_U64(ctx, 0) | (uint64_t)49152);
     // 0x11e5b0: 0xf7e38
     ctx->pc = 0x11e5b0u;
     SET_GPR_U64(ctx, 15, GPR_U64(ctx, 15) << 24);
@@ -246,7 +246,7 @@ label_11e600:
     SET_GPR_U64(ctx, 8, READ64(ADD32(GPR_U32(ctx, 3), 0)));
     // 0x11e604: 0x3402bd88
     ctx->pc = 0x11e604u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 0), 48520));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 0) | (uint64_t)48520);
     // 0x11e608: 0x21638
     ctx->pc = 0x11e608u;
     SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) << 24);
@@ -394,7 +394,7 @@ label_11e65c:
 label_11e66c:
     // 0x11e66c: 0x3402e000
     ctx->pc = 0x11e66cu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 0), 57344));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 0) | (uint64_t)57344);
     // 0x11e670: 0x21638
     ctx->pc = 0x11e670u;
     SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) << 24);

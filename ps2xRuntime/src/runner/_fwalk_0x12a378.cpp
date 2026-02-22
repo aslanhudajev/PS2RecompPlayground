@@ -192,7 +192,7 @@ label_12a3c8:
 label_12a3cc:
     // 0x12a3cc: 0x2629825
     ctx->pc = 0x12a3ccu;
-    SET_GPR_U32(ctx, 19, OR32(GPR_U32(ctx, 19), GPR_U32(ctx, 2)));
+    SET_GPR_U64(ctx, 19, GPR_U64(ctx, 19) | GPR_U64(ctx, 2));
 label_12a3d0:
     // 0x12a3d0: 0x2610ffff
     ctx->pc = 0x12a3d0u;

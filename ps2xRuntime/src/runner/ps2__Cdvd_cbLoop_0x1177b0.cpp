@@ -27,7 +27,7 @@ label_1177b8:
 label_1177bc:
     // 0x1177bc: 0x3c1e0017
     ctx->pc = 0x1177bcu;
-    SET_GPR_U32(ctx, 30, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 30, ((uint32_t)23 << 16));
 label_1177c0:
     // 0x1177c0: 0xffb60060
     ctx->pc = 0x1177c0u;
@@ -35,7 +35,7 @@ label_1177c0:
 label_1177c4:
     // 0x1177c4: 0x3c170017
     ctx->pc = 0x1177c4u;
-    SET_GPR_U32(ctx, 23, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 23, ((uint32_t)23 << 16));
 label_1177c8:
     // 0x1177c8: 0xffb50050
     ctx->pc = 0x1177c8u;
@@ -43,7 +43,7 @@ label_1177c8:
 label_1177cc:
     // 0x1177cc: 0x3c160018
     ctx->pc = 0x1177ccu;
-    SET_GPR_U32(ctx, 22, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 22, ((uint32_t)24 << 16));
 label_1177d0:
     // 0x1177d0: 0xffb40040
     ctx->pc = 0x1177d0u;
@@ -51,7 +51,7 @@ label_1177d0:
 label_1177d4:
     // 0x1177d4: 0x3c150017
     ctx->pc = 0x1177d4u;
-    SET_GPR_U32(ctx, 21, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 21, ((uint32_t)23 << 16));
 label_1177d8:
     // 0x1177d8: 0xffb30030
     ctx->pc = 0x1177d8u;
@@ -59,7 +59,7 @@ label_1177d8:
 label_1177dc:
     // 0x1177dc: 0x3c140017
     ctx->pc = 0x1177dcu;
-    SET_GPR_U32(ctx, 20, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)23 << 16));
 label_1177e0:
     // 0x1177e0: 0xffb20020
     ctx->pc = 0x1177e0u;
@@ -67,7 +67,7 @@ label_1177e0:
 label_1177e4:
     // 0x1177e4: 0x3c130017
     ctx->pc = 0x1177e4u;
-    SET_GPR_U32(ctx, 19, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)23 << 16));
 label_1177e8:
     // 0x1177e8: 0xffb10010
     ctx->pc = 0x1177e8u;
@@ -75,7 +75,7 @@ label_1177e8:
 label_1177ec:
     // 0x1177ec: 0x3c120017
     ctx->pc = 0x1177ecu;
-    SET_GPR_U32(ctx, 18, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)23 << 16));
 label_1177f0:
     // 0x1177f0: 0xffb00000
     ctx->pc = 0x1177f0u;
@@ -83,7 +83,7 @@ label_1177f0:
 label_1177f4:
     // 0x1177f4: 0x3c110018
     ctx->pc = 0x1177f4u;
-    SET_GPR_U32(ctx, 17, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)24 << 16));
 label_1177f8:
     // 0x1177f8: 0xffbf0090
     ctx->pc = 0x1177f8u;
@@ -91,7 +91,7 @@ label_1177f8:
 label_1177fc:
     // 0x1177fc: 0x3c100017
     ctx->pc = 0x1177fcu;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
 label_117800:
     // 0x117800: 0xc0438b8
 label_117804:

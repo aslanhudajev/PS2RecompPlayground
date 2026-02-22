@@ -31,7 +31,7 @@ void mpegNodata_0x11a6d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x11A6E0u;
     // 0x11a6e0: 0x3c040075
     ctx->pc = 0x11a6e0u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x11a6e4: 0xc0470fe
     ctx->pc = 0x11A6E4u;
     SET_GPR_U32(ctx, 31, 0x11A6ECu);

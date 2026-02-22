@@ -23,13 +23,13 @@ void copysignf_0x11e450(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_U64(ctx, 3, (uint64_t)GPR_U64(ctx, 4) + (uint64_t)GPR_U64(ctx, 0));
     // 0x11e45c: 0x3c027fff
     ctx->pc = 0x11e45cu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32767 << 16));
     // 0x11e460: 0x3442ffff
     ctx->pc = 0x11e460u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x11e464: 0x3c048000
     ctx->pc = 0x11e464u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)32768 << 16));
     // 0x11e468: 0xa22824
     ctx->pc = 0x11e468u;
     SET_GPR_U32(ctx, 5, AND32(GPR_U32(ctx, 5), GPR_U32(ctx, 2)));
@@ -38,7 +38,7 @@ void copysignf_0x11e450(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_U32(ctx, 3, AND32(GPR_U32(ctx, 3), GPR_U32(ctx, 4)));
     // 0x11e470: 0xa32825
     ctx->pc = 0x11e470u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 3));
     // 0x11e474: 0x44850000
     ctx->pc = 0x11e474u;
     *(uint32_t*)&ctx->f[0] = GPR_U32(ctx, 5);

@@ -17,7 +17,7 @@ void _getPtsDtsFlags_0x125318(uint8_t* rdram, R5900Context* ctx, PS2Runtime *run
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967120));
     // 0x12531c: 0x3c020017
     ctx->pc = 0x12531cu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x125320: 0xffbe0090
     ctx->pc = 0x125320u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 144), GPR_U64(ctx, 30));
@@ -315,7 +315,7 @@ label_125430:
     SET_GPR_U32(ctx, 7, READ32(ADD32(GPR_U32(ctx, 20), 44)));
     // 0x125448: 0xa42825
     ctx->pc = 0x125448u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 4)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 4));
     // 0x12544c: 0x8e830038
     ctx->pc = 0x12544cu;
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 20), 56)));
@@ -327,7 +327,7 @@ label_125430:
     SET_GPR_U64(ctx, 4, READ64(ADD32(GPR_U32(ctx, 20), 32)));
     // 0x125458: 0x471025
     ctx->pc = 0x125458u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 7));
     // 0x12545c: 0x630f8
     ctx->pc = 0x12545cu;
     SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) << 3);
@@ -339,16 +339,16 @@ label_125430:
     WRITE64(ADD32(GPR_U32(ctx, 30), 0), GPR_U64(ctx, 4));
     // 0x125468: 0x661825
     ctx->pc = 0x125468u;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | GPR_U64(ctx, 6));
     // 0x12546c: 0x451025
     ctx->pc = 0x12546cu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 5)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 5));
     // 0x125470: 0xdfbf00a0
     ctx->pc = 0x125470u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 160)));
     // 0x125474: 0x431025
     ctx->pc = 0x125474u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 3));
     // 0x125478: 0xdfbe0090
     ctx->pc = 0x125478u;
     SET_GPR_U64(ctx, 30, READ64(ADD32(GPR_U32(ctx, 29), 144)));

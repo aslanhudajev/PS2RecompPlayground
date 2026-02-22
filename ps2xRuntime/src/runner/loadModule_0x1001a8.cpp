@@ -17,7 +17,7 @@ void loadModule_0x1001a8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967248));
     // 0x1001ac: 0x3c060017
     ctx->pc = 0x1001acu;
-    SET_GPR_U32(ctx, 6, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)23 << 16));
     // 0x1001b0: 0xffb10010
     ctx->pc = 0x1001b0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 17));
@@ -63,7 +63,7 @@ void loadModule_0x1001a8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x1001D8u;
     // 0x1001d8: 0x3c040017
     ctx->pc = 0x1001d8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1001dc: 0x24842a10
     ctx->pc = 0x1001dcu;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 4), 10768));
@@ -85,16 +85,16 @@ void loadModule_0x1001a8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x1001ECu;
     // 0x1001ec: 0x3c03fffe
     ctx->pc = 0x1001ecu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)65534 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)65534 << 16));
     // 0x1001f0: 0x3463fffb
     ctx->pc = 0x1001f0u;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 65531));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)65531);
     // 0x1001f4: 0x16030006
     ctx->pc = 0x1001F4u;
     {
         const bool branch_taken_0x1001f4 = (GPR_U32(ctx, 16) != GPR_U32(ctx, 3));
         ctx->pc = 0x1001F8u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x1001f4) {
             ctx->pc = 0x100210u;
             goto label_100210;
@@ -103,7 +103,7 @@ void loadModule_0x1001a8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x1001FCu;
     // 0x1001fc: 0x3c040017
     ctx->pc = 0x1001fcu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x100200: 0xc04ace4
     ctx->pc = 0x100200u;
     SET_GPR_U32(ctx, 31, 0x100208u);
@@ -166,7 +166,7 @@ label_10021c:
 label_100230:
     // 0x100230: 0x3c040017
     ctx->pc = 0x100230u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x100234: 0xdfbf0020
     ctx->pc = 0x100234u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 32)));

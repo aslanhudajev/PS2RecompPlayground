@@ -87,12 +87,21 @@ static void dispatchIntcHandlersForCause(uint8_t *rdram, PS2Runtime *runtime, ui
         }
     }
 
+    static int s_dispatchCount = 0;
     for (const IrqHandlerInfo &info : handlers)
     {
+        ++s_dispatchCount;
         if (!runtime->hasFunction(info.handler))
         {
+            if (s_dispatchCount <= 10)
+                printf("[INTC dispatch #%d] cause=%u handler=0x%x NOT in function table\n",
+                       s_dispatchCount, cause, info.handler);
             continue;
         }
+
+        if (s_dispatchCount <= 10 || (s_dispatchCount % 600) == 0)
+            printf("[INTC dispatch #%d] cause=%u handler=0x%x CALLING\n",
+                   s_dispatchCount, cause, info.handler);
 
         try
         {
@@ -109,9 +118,16 @@ static void dispatchIntcHandlersForCause(uint8_t *rdram, PS2Runtime *runtime, ui
 
             PS2Runtime::RecompiledFunction func = runtime->lookupFunction(info.handler);
             func(rdram, &irqCtx, runtime);
+
+            if (s_dispatchCount <= 10 || (s_dispatchCount % 600) == 0)
+                printf("[INTC dispatch #%d] handler 0x%x returned OK\n",
+                       s_dispatchCount, info.handler);
         }
         catch (const ThreadExitException &)
         {
+            if (s_dispatchCount <= 10)
+                printf("[INTC dispatch #%d] handler 0x%x threw ThreadExitException\n",
+                       s_dispatchCount, info.handler);
         }
         catch (const std::exception &e)
         {

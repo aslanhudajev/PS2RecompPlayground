@@ -26,7 +26,7 @@ void menuControl_0x100980(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
     // 0x100990: 0x3c100014
     ctx->pc = 0x100990u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)20 << 16));
     // 0x100994: 0xffbf0020
     ctx->pc = 0x100994u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 31));
@@ -155,7 +155,7 @@ label_1009ec:
     {
         const bool branch_taken_0x100a00 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x100A04u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)19 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)19 << 16));
         if (branch_taken_0x100a00) {
             ctx->pc = 0x100A90u;
             goto label_100a90;
@@ -182,7 +182,7 @@ label_1009ec:
     ctx->pc = 0x100A18u;
     // 0x100a18: 0x3c030014
     ctx->pc = 0x100a18u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)20 << 16));
     // 0x100a1c: 0x2470dfc0
     ctx->pc = 0x100a1cu;
     SET_GPR_S32(ctx, 16, ADD32(GPR_U32(ctx, 3), 4294959040));
@@ -197,7 +197,7 @@ label_1009ec:
     {
         const bool branch_taken_0x100a28 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x100A2Cu;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x100a28) {
             ctx->pc = 0x100A90u;
             goto label_100a90;
@@ -232,7 +232,7 @@ label_1009ec:
     ctx->pc = 0x100A40u;
     // 0x100a40: 0x3c020014
     ctx->pc = 0x100a40u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x100a44: 0x24040001
     ctx->pc = 0x100a44u;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
@@ -317,7 +317,7 @@ label_100a94:
     {
         const bool branch_taken_0x100a94 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x100A98u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)19 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)19 << 16));
         if (branch_taken_0x100a94) {
             ctx->pc = 0x100B28u;
             goto label_100b28;
@@ -344,7 +344,7 @@ label_100a94:
     ctx->pc = 0x100AACu;
     // 0x100aac: 0x3c030014
     ctx->pc = 0x100aacu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)20 << 16));
     // 0x100ab0: 0x2470dfc0
     ctx->pc = 0x100ab0u;
     SET_GPR_S32(ctx, 16, ADD32(GPR_U32(ctx, 3), 4294959040));
@@ -368,7 +368,7 @@ label_100a94:
     ctx->pc = 0x100AC4u;
     // 0x100ac4: 0x3c040017
     ctx->pc = 0x100ac4u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x100ac8: 0xc04ace4
     ctx->pc = 0x100AC8u;
     SET_GPR_U32(ctx, 31, 0x100AD0u);
@@ -397,7 +397,7 @@ label_100a94:
     ctx->pc = 0x100AD8u;
     // 0x100ad8: 0x3c020014
     ctx->pc = 0x100ad8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x100adc: 0x24040001
     ctx->pc = 0x100adcu;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
@@ -491,7 +491,7 @@ label_100b2c:
     ctx->pc = 0x100B34u;
     // 0x100b34: 0x3c020013
     ctx->pc = 0x100b34u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)19 << 16));
     // 0x100b38: 0x24040001
     ctx->pc = 0x100b38u;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
@@ -523,7 +523,7 @@ label_100b50:
     {
         const bool branch_taken_0x100b50 = (GPR_U32(ctx, 2) != GPR_U32(ctx, 0));
         ctx->pc = 0x100B54u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)19 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)19 << 16));
         if (branch_taken_0x100b50) {
             ctx->pc = 0x100B6Cu;
             goto label_100b6c;
@@ -580,7 +580,7 @@ label_100b6c:
     ctx->pc = 0x100B80u;
     // 0x100b80: 0x3c040017
     ctx->pc = 0x100b80u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x100b84: 0xc04ace4
     ctx->pc = 0x100B84u;
     SET_GPR_U32(ctx, 31, 0x100B8Cu);

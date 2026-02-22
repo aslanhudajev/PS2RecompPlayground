@@ -36,40 +36,40 @@ void setD3_CHCR_0x11c008(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x11C01Cu;
     // 0x11c01c: 0x3c051000
     ctx->pc = 0x11c01cu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)4096 << 16));
     // 0x11c020: 0x3c070001
     ctx->pc = 0x11c020u;
-    SET_GPR_U32(ctx, 7, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 7, ((uint32_t)1 << 16));
     // 0x11c024: 0x34a5f520
     ctx->pc = 0x11c024u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), 62752));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | (uint64_t)62752);
     // 0x11c028: 0x3c061000
     ctx->pc = 0x11c028u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)4096 << 16));
     // 0x11c02c: 0x8ca20000
     ctx->pc = 0x11c02cu;
     SET_GPR_U32(ctx, 2, runtime->Load32(rdram, ctx, ADD32(GPR_U32(ctx, 5), 0))); // MMIO: 0x10000000
     // 0x11c030: 0x34c6f590
     ctx->pc = 0x11c030u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 6), 62864));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) | (uint64_t)62864);
     // 0x11c034: 0x3c031000
     ctx->pc = 0x11c034u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)4096 << 16));
     // 0x11c038: 0x3c04fffe
     ctx->pc = 0x11c038u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)65534 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)65534 << 16));
     // 0x11c03c: 0x471025
     ctx->pc = 0x11c03cu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 7));
     // 0x11c040: 0x3463b000
     ctx->pc = 0x11c040u;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 45056));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)45056);
     // 0x11c044: 0xacc20000
     ctx->pc = 0x11c044u;
     WRITE32(ADD32(GPR_U32(ctx, 6), 0), GPR_U32(ctx, 2));
     // 0x11c048: 0x3484ffff
     ctx->pc = 0x11c048u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), 65535));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | (uint64_t)65535);
     // 0x11c04c: 0xac700000
     ctx->pc = 0x11c04cu;
     WRITE32(ADD32(GPR_U32(ctx, 3), 0), GPR_U32(ctx, 16));

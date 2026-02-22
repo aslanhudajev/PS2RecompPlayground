@@ -38,13 +38,13 @@ void setRandomNumber_0x109440(uint8_t* rdram, R5900Context* ctx, PS2Runtime *run
     WRITE32(ADD32(GPR_U32(ctx, 28), 4294934808), GPR_U32(ctx, 0));
     // 0x109460: 0x3c014080
     ctx->pc = 0x109460u;
-    SET_GPR_U32(ctx, 1, ((uint32_t)16512 << 16));
+    SET_GPR_S32(ctx, 1, ((uint32_t)16512 << 16));
     // 0x109464: 0x4481a800
     ctx->pc = 0x109464u;
     *(uint32_t*)&ctx->f[21] = GPR_U32(ctx, 1);
     // 0x109468: 0x3c013000
     ctx->pc = 0x109468u;
-    SET_GPR_U32(ctx, 1, ((uint32_t)12288 << 16));
+    SET_GPR_S32(ctx, 1, ((uint32_t)12288 << 16));
     // 0x10946c: 0x4481a000
     ctx->pc = 0x10946cu;
     *(uint32_t*)&ctx->f[20] = GPR_U32(ctx, 1);
@@ -314,7 +314,7 @@ label_1094e8:
     {
         const bool branch_taken_0x10956c = (GPR_U32(ctx, 2) == GPR_U32(ctx, 8));
         ctx->pc = 0x109570u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x10956c) {
             ctx->pc = 0x109470u;
             goto label_109470;

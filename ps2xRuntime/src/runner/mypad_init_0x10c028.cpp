@@ -33,7 +33,7 @@ void mypad_init_0x10c028(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x10C038u;
     // 0x10c038: 0x3c060017
     ctx->pc = 0x10c038u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)23 << 16));
     // 0x10c03c: 0x202d
     ctx->pc = 0x10c03cu;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
@@ -55,7 +55,7 @@ void mypad_init_0x10c028(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x10C04Cu;
     // 0x10c04c: 0x3c060017
     ctx->pc = 0x10c04cu;
-    SET_GPR_U32(ctx, 6, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)23 << 16));
     // 0x10c050: 0x24040001
     ctx->pc = 0x10c050u;
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));

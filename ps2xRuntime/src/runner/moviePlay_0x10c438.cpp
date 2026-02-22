@@ -45,7 +45,7 @@ void moviePlay_0x10c438(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     ctx->pc = 0x10C458u;
     // 0x10c458: 0x3c080011
     ctx->pc = 0x10c458u;
-    SET_GPR_U32(ctx, 8, ((uint32_t)17 << 16));
+    SET_GPR_S32(ctx, 8, ((uint32_t)17 << 16));
     // 0x10c45c: 0x200202d
     ctx->pc = 0x10c45cu;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));
@@ -110,7 +110,7 @@ void moviePlay_0x10c438(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     ctx->pc = 0x10C48Cu;
     // 0x10c48c: 0x3c040017
     ctx->pc = 0x10c48cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x10c490: 0x200282d
     ctx->pc = 0x10c490u;
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));

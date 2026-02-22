@@ -17,7 +17,7 @@ void DIntr_0x114fb8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U32(ctx, 3, ctx->cop0_status);
     // 0x114fbc: 0x3c020001
     ctx->pc = 0x114fbcu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)1 << 16));
     // 0x114fc0: 0x621824
     ctx->pc = 0x114fc0u;
     SET_GPR_U32(ctx, 3, AND32(GPR_U32(ctx, 3), GPR_U32(ctx, 2)));
@@ -49,7 +49,7 @@ label_114fd0:
     SET_GPR_U32(ctx, 2, ctx->cop0_status);
     // 0x114fdc: 0x3c030001
     ctx->pc = 0x114fdcu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)1 << 16));
     // 0x114fe0: 0x431024
     ctx->pc = 0x114fe0u;
     SET_GPR_U32(ctx, 2, AND32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));

@@ -20,7 +20,7 @@ void setBITBLTBUF_0x11b9b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) << (32 + 16));
     // 0x11b9b8: 0xe63825
     ctx->pc = 0x11b9b8u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 7), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) | GPR_U64(ctx, 6));
     // 0x11b9bc: 0x5283c
     ctx->pc = 0x11b9bcu;
     SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) << (32 + 0));
@@ -29,7 +29,7 @@ void setBITBLTBUF_0x11b9b0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
     // 0x11b9c4: 0xe53025
     ctx->pc = 0x11b9c4u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 7), GPR_U32(ctx, 5)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 7) | GPR_U64(ctx, 5));
     // 0x11b9c8: 0xffbf0000
     ctx->pc = 0x11b9c8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));

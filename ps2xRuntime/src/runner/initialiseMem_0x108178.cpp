@@ -25,7 +25,7 @@ void initialiseMem_0x108178(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x108184u;
     SET_GPR_U32(ctx, 31, 0x10818Cu);
     ctx->pc = 0x108188u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)32 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)32 << 16));
     ctx->pc = 0x12A430u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -48,7 +48,7 @@ void initialiseMem_0x108178(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x108194u;
     // 0x108194: 0x3c040017
     ctx->pc = 0x108194u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x108198: 0xc04ace4
     ctx->pc = 0x108198u;
     SET_GPR_U32(ctx, 31, 0x1081A0u);
@@ -78,7 +78,7 @@ void initialiseMem_0x108178(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
 label_1081a8:
     // 0x1081a8: 0x3c040017
     ctx->pc = 0x1081a8u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1081ac: 0x40282d
     ctx->pc = 0x1081acu;
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 2) + (uint64_t)GPR_U64(ctx, 0));
@@ -100,7 +100,7 @@ label_1081a8:
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 28), 4294934712)));
     // 0x1081bc: 0x3c050020
     ctx->pc = 0x1081bcu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)32 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)32 << 16));
     // 0x1081c0: 0xdfbf0000
     ctx->pc = 0x1081c0u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 0)));

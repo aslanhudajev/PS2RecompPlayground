@@ -37,7 +37,7 @@ label_11755c:
 label_117560:
     if (ctx->pc == 0x117560u) {
         ctx->pc = 0x117560u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         ctx->pc = 0x117564u;
         goto label_117564;
     }
@@ -45,7 +45,7 @@ label_117560:
     {
         const bool branch_taken_0x11755c = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x117560u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x11755c) {
             ctx->pc = 0x117618u;
             goto label_117618;
@@ -144,7 +144,7 @@ label_117578:
 label_11757c:
     // 0x11757c: 0x3c020017
     ctx->pc = 0x11757cu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
 label_117580:
     // 0x117580: 0x10000006
 label_117584:
@@ -168,7 +168,7 @@ label_117584:
 label_117588:
     // 0x117588: 0x3c020017
     ctx->pc = 0x117588u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
 label_11758c:
     // 0x11758c: 0x10000003
 label_117590:
@@ -192,7 +192,7 @@ label_117590:
 label_117594:
     // 0x117594: 0x3c020017
     ctx->pc = 0x117594u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
 label_117598:
     // 0x117598: 0x8c42fc44
     ctx->pc = 0x117598u;
@@ -320,7 +320,7 @@ label_1175b0:
 label_1175b4:
     // 0x1175b4: 0x3c020017
     ctx->pc = 0x1175b4u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
 label_1175b8:
     // 0x1175b8: 0x8c43fc48
     ctx->pc = 0x1175b8u;
@@ -330,7 +330,7 @@ label_1175bc:
 label_1175c0:
     if (ctx->pc == 0x1175C0u) {
         ctx->pc = 0x1175C0u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         ctx->pc = 0x1175C4u;
         goto label_1175c4;
     }
@@ -338,7 +338,7 @@ label_1175c0:
     {
         const bool branch_taken_0x1175bc = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x1175C0u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x1175bc) {
             ctx->pc = 0x117618u;
             goto label_117618;
@@ -456,7 +456,7 @@ label_1175d4:
 label_1175d8:
     // 0x1175d8: 0x3c020017
     ctx->pc = 0x1175d8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
 label_1175dc:
     // 0x1175dc: 0x8c43fc4c
     ctx->pc = 0x1175dcu;
@@ -466,7 +466,7 @@ label_1175e0:
 label_1175e4:
     if (ctx->pc == 0x1175E4u) {
         ctx->pc = 0x1175E4u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         ctx->pc = 0x1175E8u;
         goto label_1175e8;
     }
@@ -474,7 +474,7 @@ label_1175e4:
     {
         const bool branch_taken_0x1175e0 = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x1175E4u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x1175e0) {
             ctx->pc = 0x117618u;
             goto label_117618;
@@ -592,7 +592,7 @@ label_1175f8:
 label_1175fc:
     // 0x1175fc: 0x3c020017
     ctx->pc = 0x1175fcu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
 label_117600:
     // 0x117600: 0x8c43fc50
     ctx->pc = 0x117600u;
@@ -602,7 +602,7 @@ label_117604:
 label_117608:
     if (ctx->pc == 0x117608u) {
         ctx->pc = 0x117608u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         ctx->pc = 0x11760Cu;
         goto label_11760c;
     }
@@ -610,7 +610,7 @@ label_117608:
     {
         const bool branch_taken_0x117604 = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x117608u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x117604) {
             ctx->pc = 0x117618u;
             goto label_117618;

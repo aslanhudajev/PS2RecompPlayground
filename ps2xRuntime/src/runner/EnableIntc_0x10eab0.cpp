@@ -32,7 +32,7 @@ void EnableIntc_0x10eab0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U32(ctx, 16, ctx->cop0_status);
     // 0x10eac8: 0x3c020001
     ctx->pc = 0x10eac8u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)1 << 16));
     // 0x10eacc: 0x2028024
     ctx->pc = 0x10eaccu;
     SET_GPR_U32(ctx, 16, AND32(GPR_U32(ctx, 16), GPR_U32(ctx, 2)));

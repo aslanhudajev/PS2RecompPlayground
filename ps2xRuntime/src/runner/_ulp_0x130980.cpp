@@ -17,13 +17,13 @@ void _ulp_0x130980(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S64(ctx, 4, GPR_S64(ctx, 4) >> (32 + 0));
     // 0x130984: 0x3c027ff0
     ctx->pc = 0x130984u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32752 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32752 << 16));
     // 0x130988: 0x822024
     ctx->pc = 0x130988u;
     SET_GPR_U32(ctx, 4, AND32(GPR_U32(ctx, 4), GPR_U32(ctx, 2)));
     // 0x13098c: 0x3c03fcc0
     ctx->pc = 0x13098cu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)64704 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)64704 << 16));
     // 0x130990: 0x832021
     ctx->pc = 0x130990u;
     SET_GPR_U32(ctx, 4, ADD32(GPR_U32(ctx, 4), GPR_U32(ctx, 3)));
@@ -66,7 +66,7 @@ label_1309a4:
     {
         const bool branch_taken_0x1309b0 = (GPR_U32(ctx, 3) == GPR_U32(ctx, 0));
         ctx->pc = 0x1309B4u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)8 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)8 << 16));
         if (branch_taken_0x1309b0) {
             ctx->pc = 0x1309C4u;
             goto label_1309c4;
@@ -91,7 +91,7 @@ label_1309a4:
 label_1309c4:
     // 0x1309c4: 0x3c03ffff
     ctx->pc = 0x1309c4u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)65535 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)65535 << 16));
     // 0x1309c8: 0x3183e
     ctx->pc = 0x1309c8u;
     SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) >> (32 + 0));
@@ -156,7 +156,7 @@ label_1309f4:
     SET_GPR_U32(ctx, 5, AND32(GPR_U32(ctx, 5), GPR_U32(ctx, 3)));
     // 0x130a08: 0xa22825
     ctx->pc = 0x130a08u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 2)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 2));
 label_130a0c:
     // 0x130a0c: 0xa0102d
     ctx->pc = 0x130a0cu;

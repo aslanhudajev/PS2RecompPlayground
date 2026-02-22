@@ -32,19 +32,19 @@ void setRGBAQ_0x11b6f8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) >> (32 + 0));
     // 0x11b710: 0xe63825
     ctx->pc = 0x11b710u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 7), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) | GPR_U64(ctx, 6));
     // 0x11b714: 0x9483c
     ctx->pc = 0x11b714u;
     SET_GPR_U64(ctx, 9, GPR_U64(ctx, 9) << (32 + 0));
     // 0x11b718: 0xa92825
     ctx->pc = 0x11b718u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 9)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 9));
     // 0x11b71c: 0x8303c
     ctx->pc = 0x11b71cu;
     SET_GPR_U64(ctx, 6, GPR_U64(ctx, 8) << (32 + 0));
     // 0x11b720: 0xa72825
     ctx->pc = 0x11b720u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 7));
     // 0x11b724: 0x6323a
     ctx->pc = 0x11b724u;
     SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) >> 8);
@@ -53,7 +53,7 @@ void setRGBAQ_0x11b6f8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
     // 0x11b72c: 0xa63025
     ctx->pc = 0x11b72cu;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 5) | GPR_U64(ctx, 6));
     // 0x11b730: 0xffbf0000
     ctx->pc = 0x11b730u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));

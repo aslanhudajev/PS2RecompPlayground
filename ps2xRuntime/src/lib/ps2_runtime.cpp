@@ -187,53 +187,120 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     uint32_t dw = static_cast<uint32_t>((display64 >> 32) & 0xFFF);
     uint32_t dh = static_cast<uint32_t>((display64 >> 44) & 0x7FF);
 
-    // Default to 640x448 if regs look strange.
+    // Width/height from DISPLAY1 DW/DH (in pixels; reg holds value-1).
     uint32_t width = (dw + 1);
     uint32_t height = (dh + 1);
-    if (dw == 0)
+    // If dimensions are tiny or zero, game may not have set DISPLAY1; use default.
+    if (width < 64 || height < 64)
+    {
         width = FB_WIDTH;
-    if (dh == 0)
         height = FB_HEIGHT;
+    }
     if (width > FB_WIDTH)
         width = FB_WIDTH;
     if (height > FB_HEIGHT)
         height = FB_HEIGHT;
 
-    // Only handle PSMCT32 (0).
-    if (psm != 0)
+    uint32_t baseBytes = fbp * 2048;
+    const uint32_t bytesPerPixel = (psm == 2u || psm == 0x0Au) ? 2u : 4u;
+    uint32_t strideBytes = (fbw ? fbw : (FB_WIDTH / 64)) * 64 * bytesPerPixel;
+
+    std::vector<uint8_t> scratch(FB_WIDTH * FB_HEIGHT * 4, 0);
+
+    uint8_t *rdram = rt->memory().getRDRAM();
+    uint8_t *gsvram = rt->memory().getGSVRAM();
+
+    if (psm == 0u)
     {
-        // I can`t stand a random RAM glitch screen so lets use some magenta to calm down
+        // PSMCT32: copy RGB from VRAM, force alpha to 255.
+        // PS2 display output ignores framebuffer alpha; it only affects
+        // blending during draw operations.
+        for (uint32_t y = 0; y < height; ++y)
+        {
+            uint32_t srcOff = baseBytes + y * strideBytes;
+            uint32_t dstOff = y * FB_WIDTH * 4;
+            uint32_t copyW = width * 4;
+            uint32_t srcIdx = srcOff;
+            if (srcIdx + copyW <= PS2_GS_VRAM_SIZE && gsvram)
+                std::memcpy(&scratch[dstOff], gsvram + srcIdx, copyW);
+            else
+            {
+                uint32_t rdramIdx = srcOff & PS2_RAM_MASK;
+                if (rdramIdx + copyW > PS2_RAM_SIZE)
+                    copyW = PS2_RAM_SIZE - rdramIdx;
+                std::memcpy(&scratch[dstOff], rdram + rdramIdx, copyW);
+            }
+            uint8_t *row = scratch.data() + dstOff;
+            for (uint32_t x = 0; x < width; ++x)
+                row[x * 4 + 3] = 255u;
+        }
+    }
+    else if (psm == 2u)
+    {
+        // PSMCT16: 16-bit (A1R5G5B5) to RGBA8888, alpha always 255
+        const uint32_t srcLineBytes = width * 2u;
+        for (uint32_t y = 0; y < height; ++y)
+        {
+            uint32_t srcOff = baseBytes + y * strideBytes;
+            uint32_t dstOff = y * FB_WIDTH * 4;
+            const uint8_t *src = nullptr;
+            if (srcOff + srcLineBytes <= PS2_GS_VRAM_SIZE && gsvram)
+                src = gsvram + srcOff;
+            else if ((srcOff & PS2_RAM_MASK) + srcLineBytes <= PS2_RAM_SIZE)
+                src = rdram + (srcOff & PS2_RAM_MASK);
+            if (!src)
+                continue;
+            uint8_t *dst = scratch.data() + dstOff;
+            for (uint32_t x = 0; x < width; ++x)
+            {
+                uint16_t p = *reinterpret_cast<const uint16_t *>(src + x * 2);
+                uint32_t r = (p >> 10) & 31u;
+                uint32_t g = (p >> 5) & 31u;
+                uint32_t b = p & 31u;
+                dst[x * 4 + 0] = static_cast<uint8_t>((r << 3) | (r >> 2));
+                dst[x * 4 + 1] = static_cast<uint8_t>((g << 3) | (g >> 2));
+                dst[x * 4 + 2] = static_cast<uint8_t>((b << 3) | (b >> 2));
+                dst[x * 4 + 3] = 255u;
+            }
+        }
+    }
+    else
+    {
+        // Unsupported PSM (e.g. 15): show magenta. Real display needs proper GS/GIF
+        // emulation; treating as 32-bit would read GS VRAM that is filled with
+        // raw GIF packet data (not pixels), giving black or garbage.
         Image blank = GenImageColor(FB_WIDTH, FB_HEIGHT, MAGENTA);
         UpdateTexture(tex, blank.data);
         UnloadImage(blank);
         return;
     }
 
-    uint32_t baseBytes = fbp * 2048;
-    const uint32_t bytesPerPixel = (psm == 2u || psm == 0x0Au) ? 2u : 4u;
-    uint32_t strideBytes = (fbw ? fbw : (FB_WIDTH / 64)) * 64 * bytesPerPixel;
-
-    std::vector<uint8_t> scratch(FB_WIDTH * FB_HEIGHT * 4, 0); // maybe we can do this static
-
-    uint8_t *rdram = rt->memory().getRDRAM();
-    uint8_t *gsvram = rt->memory().getGSVRAM();
-    for (uint32_t y = 0; y < height; ++y)
+    static int s_uploadCount = 0;
+    ++s_uploadCount;
+    if (s_uploadCount <= 10 || (s_uploadCount % 120) == 0)
     {
-        uint32_t srcOff = baseBytes + y * strideBytes;
-        uint32_t dstOff = y * FB_WIDTH * 4;
-        uint32_t copyW = width * 4;
-        uint32_t srcIdx = srcOff;
-        if (srcIdx + copyW <= PS2_GS_VRAM_SIZE && gsvram)
+        int nonBlack = 0;
+        uint8_t sampleR = 0, sampleG = 0, sampleB = 0, sampleA = 0;
+        int sampleX = -1, sampleY = -1;
+        for (uint32_t i = 0; i < width * height && nonBlack == 0; ++i)
         {
-            std::memcpy(&scratch[dstOff], gsvram + srcIdx, copyW);
+            uint8_t r = scratch[i * 4 + 0];
+            uint8_t g = scratch[i * 4 + 1];
+            uint8_t b = scratch[i * 4 + 2];
+            if (r | g | b)
+            {
+                nonBlack = 1;
+                sampleR = r; sampleG = g; sampleB = b;
+                sampleA = scratch[i * 4 + 3];
+                sampleX = static_cast<int>(i % width);
+                sampleY = static_cast<int>(i / width);
+            }
         }
-        else
-        {
-            uint32_t rdramIdx = srcOff & PS2_RAM_MASK;
-            if (rdramIdx + copyW > PS2_RAM_SIZE)
-                copyW = PS2_RAM_SIZE - rdramIdx;
-            std::memcpy(&scratch[dstOff], rdram + rdramIdx, copyW);
-        }
+        printf("[UploadFrame #%d] %ux%u psm=%u fbp=%u fbw=%u stride=%u nonBlack=%d",
+               s_uploadCount, width, height, psm, fbp, fbw, strideBytes, nonBlack);
+        if (nonBlack)
+            printf(" first@(%d,%d) rgba=(%d,%d,%d,%d)", sampleX, sampleY, sampleR, sampleG, sampleB, sampleA);
+        printf("\n");
     }
 
     UpdateTexture(tex, scratch.data());
@@ -279,6 +346,13 @@ bool PS2Runtime::initialize(const char *title)
         std::cerr << "Failed to initialize PS2 memory" << std::endl;
         return false;
     }
+
+    m_gs.init(m_memory.getGSVRAM(), static_cast<uint32_t>(PS2_GS_VRAM_SIZE), &m_memory.gs());
+    m_gs.reset();
+    m_memory.setGifPacketCallback([this](const uint8_t *data, uint32_t size) { m_gs.processGIFPacket(data, size); });
+    m_iop.init(m_memory.getRDRAM());
+    m_iop.reset();
+    m_vu1.reset();
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(FB_WIDTH, FB_HEIGHT, title);
@@ -1419,12 +1493,33 @@ void PS2Runtime::run()
                 lastVif = curVif;
             }
         }
+        if ((tick % 60) == 0)
+        {
+            const GSRegisters &gs = m_memory.gs();
+            uint32_t dispfb = static_cast<uint32_t>(gs.dispfb1 & 0xFFFFFFFFULL);
+            uint64_t display64 = gs.display1;
+            uint32_t fbp = dispfb & 0x1FF;
+            uint32_t fbw = (dispfb >> 9) & 0x3F;
+            uint32_t psm = (dispfb >> 15) & 0x1F;
+            uint32_t dw = static_cast<uint32_t>((display64 >> 32) & 0xFFF);
+            uint32_t dh = static_cast<uint32_t>((display64 >> 44) & 0x7FF);
+            std::cout << "[GS] frame=" << tick
+                      << " dispfb=0x" << std::hex << dispfb << std::dec
+                      << " fbp=" << fbp << " fbw=" << fbw << " psm=" << psm
+                      << " dw=" << (dw + 1) << " dh=" << (dh + 1) << std::endl;
+        }
         UploadFrame(frameTex, this);
 
         BeginDrawing();
         ClearBackground(BLACK);
         DrawTexture(frameTex, 0, 0, WHITE);
         EndDrawing();
+
+        if ((tick % 60) == 0)
+        {
+            std::cout << "[raylib] frame=" << tick
+                      << " DrawTexture(tex 640x448 @ 0,0) done" << std::endl;
+        }
 
         if (WindowShouldClose())
         {

@@ -1270,7 +1270,7 @@ namespace
     std::mutex g_dmaStubMutex;
     std::unordered_map<uint32_t, uint32_t> g_dmaPendingPolls;
     uint32_t g_dmaStubLogCount = 0;
-    constexpr uint32_t kMaxDmaStubLogs = 64;
+    constexpr uint32_t kMaxDmaStubLogs = 8;
 
     bool isKnownDmaChannelBase(uint32_t value)
     {
@@ -1435,6 +1435,8 @@ namespace
                       << " tadr=0x" << tadr
                       << " chcr=0x" << chcr << std::dec << std::endl;
             ++g_dmaStubLogCount;
+            if (g_dmaStubLogCount == kMaxDmaStubLogs)
+                std::cout << "[sceDmaSend] logging suppressed after " << kMaxDmaStubLogs << " lines\n";
         }
 
         return 0;
@@ -1497,8 +1499,11 @@ namespace
 
     struct GsDispEnvMem
     {
-        uint64_t display;
-        uint64_t dispfb;
+        uint64_t pmode;    // offset 0x00
+        uint64_t smode2;   // offset 0x08
+        uint64_t dispfb;   // offset 0x10
+        uint64_t display;  // offset 0x18
+        uint64_t bgcolor;  // offset 0x20
     };
 
     struct GsImageMem
@@ -1704,7 +1709,10 @@ namespace
         uint8_t *ptr = getMemPtr(rdram, addr);
         if (!ptr)
             return false;
-        GsDispEnvMem env{display, dispfb};
+        GsDispEnvMem env{};
+        std::memcpy(&env, ptr, sizeof(env));
+        env.dispfb = dispfb;
+        env.display = display;
         std::memcpy(ptr, &env, sizeof(env));
         return true;
     }

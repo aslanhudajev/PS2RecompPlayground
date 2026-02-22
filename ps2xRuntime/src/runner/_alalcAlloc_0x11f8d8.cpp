@@ -73,7 +73,7 @@ label_11f8ec:
         const bool branch_taken_0x11f918 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 0));
         if (branch_taken_0x11f918) {
             ctx->pc = 0x11F91Cu;
-            SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+            SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
             ctx->pc = 0x11F928u;
             goto label_11f928;
         }

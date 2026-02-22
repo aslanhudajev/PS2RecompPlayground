@@ -17,7 +17,7 @@ void hiscoreDraw_0x1082e8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967248));
     // 0x1082ec: 0x3c020014
     ctx->pc = 0x1082ecu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x1082f0: 0xffb00010
     ctx->pc = 0x1082f0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 16));
@@ -129,7 +129,7 @@ void hiscoreDraw_0x1082e8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     { uint32_t bits = READ32(ADD32(GPR_U32(ctx, 16), 172)); float f; std::memcpy(&f, &bits, sizeof(f)); ctx->f[3] = f; }
     // 0x108370: 0x3c027f00
     ctx->pc = 0x108370u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32512 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32512 << 16));
     // 0x108374: 0x920b00b0
     ctx->pc = 0x108374u;
     SET_GPR_U32(ctx, 11, (uint8_t)READ8(ADD32(GPR_U32(ctx, 16), 176)));
@@ -144,7 +144,7 @@ void hiscoreDraw_0x1082e8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     ctx->f[1] = FPU_MUL_S(ctx->f[1], ctx->f[3]);
     // 0x108384: 0x344280ff
     ctx->pc = 0x108384u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 33023));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)33023);
     // 0x108388: 0x8e040088
     ctx->pc = 0x108388u;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 16), 136)));

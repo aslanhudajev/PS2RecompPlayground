@@ -20,7 +20,7 @@ void setTRXPOS_0x11b9e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) << (32 + 16));
     // 0x11b9e8: 0xa72825
     ctx->pc = 0x11b9e8u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 7));
     // 0x11b9ec: 0x6303c
     ctx->pc = 0x11b9ecu;
     SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) << (32 + 0));
@@ -29,7 +29,7 @@ void setTRXPOS_0x11b9e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
     // 0x11b9f4: 0xa63025
     ctx->pc = 0x11b9f4u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 5) | GPR_U64(ctx, 6));
     // 0x11b9f8: 0xffbf0000
     ctx->pc = 0x11b9f8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));

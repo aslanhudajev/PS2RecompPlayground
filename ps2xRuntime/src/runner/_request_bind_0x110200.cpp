@@ -57,10 +57,10 @@ void _request_bind_0x110200(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 16), 20)));
     // 0x110230: 0x3c028000
     ctx->pc = 0x110230u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32768 << 16));
     // 0x110234: 0x34420009
     ctx->pc = 0x110234u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 9));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)9);
     // 0x110238: 0xae44001c
     ctx->pc = 0x110238u;
     WRITE32(ADD32(GPR_U32(ctx, 18), 28), GPR_U32(ctx, 4));
@@ -138,13 +138,13 @@ label_11027c:
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 18) + (uint64_t)GPR_U64(ctx, 0));
     // 0x110280: 0x3c048000
     ctx->pc = 0x110280u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)32768 << 16));
     // 0x110284: 0xdfbf0030
     ctx->pc = 0x110284u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 48)));
     // 0x110288: 0x34840008
     ctx->pc = 0x110288u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), 8));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | (uint64_t)8);
     // 0x11028c: 0xdfb20020
     ctx->pc = 0x11028cu;
     SET_GPR_U64(ctx, 18, READ64(ADD32(GPR_U32(ctx, 29), 32)));

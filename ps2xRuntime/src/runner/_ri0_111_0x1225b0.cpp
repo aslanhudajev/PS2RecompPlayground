@@ -98,7 +98,7 @@ label_1225d8:
     SET_GPR_U32(ctx, 5, ADD32(GPR_U32(ctx, 5), GPR_U32(ctx, 12)));
     // 0x1225f8: 0x356b8000
     ctx->pc = 0x1225f8u;
-    SET_GPR_U32(ctx, 11, OR32(GPR_U32(ctx, 11), 32768));
+    SET_GPR_U64(ctx, 11, GPR_U64(ctx, 11) | (uint64_t)32768);
     // 0x1225fc: 0x7180000
     ctx->pc = 0x1225fcu;
     ctx->sa = (GPR_U32(ctx, 24) + 0) & 0xF;

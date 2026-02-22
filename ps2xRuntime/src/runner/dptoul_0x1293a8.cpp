@@ -135,13 +135,13 @@ label_1293e0:
 label_129404:
     // 0x129404: 0x3c02ffff
     ctx->pc = 0x129404u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)65535 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)65535 << 16));
     // 0x129408: 0x1000000c
     ctx->pc = 0x129408u;
     {
         const bool branch_taken_0x129408 = (GPR_U32(ctx, 0) == GPR_U32(ctx, 0));
         ctx->pc = 0x12940Cu;
-        SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+        SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
         if (branch_taken_0x129408) {
             ctx->pc = 0x12943Cu;
             goto label_12943c;

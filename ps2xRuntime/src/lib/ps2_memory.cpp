@@ -613,6 +613,13 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
             const uint32_t qwc = m_ioRegisters[channelBase + 0x20];
             m_dmaStartCount.fetch_add(1, std::memory_order_relaxed);
 
+            static int s_dmaHitCount = 0;
+            ++s_dmaHitCount;
+            if (s_dmaHitCount <= 30 || (s_dmaHitCount % 1000) == 0)
+                printf("[DMA-writeIO #%d] ch=0x%08x madr=0x%x qwc=0x%x val=0x%x gifCh=%s\n",
+                       s_dmaHitCount, channelBase, madr, qwc, value,
+                       (channelBase == 0x1000A000 || channelBase == 0x10009000) ? "yes" : "no");
+
             if ((channelBase == 0x1000A000 || channelBase == 0x10009000) && m_gsVRAM)
             {
                 auto doCopy = [&](uint32_t srcAddr, uint32_t qwCount)
@@ -628,53 +635,84 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                     {
                         return;
                     }
-                    uint32_t basePage = static_cast<uint32_t>(gs_regs.dispfb1 & 0x1FF);
-                    uint32_t dest = basePage * 2048;
-                    if (dest >= PS2_GS_VRAM_SIZE)
-                    {
-                        return;
-                    }
-                    if (dest + bytes > PS2_GS_VRAM_SIZE)
-                    {
-                        bytes = std::min<uint32_t>(bytes, PS2_GS_VRAM_SIZE - dest);
-                    }
                     if (src >= PS2_RAM_SIZE)
-                    {
                         return;
-                    }
                     if (src + bytes > PS2_RAM_SIZE)
-                    {
-                        bytes = std::min<uint32_t>(bytes, PS2_RAM_SIZE - src);
-                    }
+                        bytes = PS2_RAM_SIZE - src;
                     if (bytes == 0)
-                    {
                         return;
-                    }
-                    std::memcpy(m_gsVRAM + dest, m_rdram + src, bytes);
                     m_seenGifCopy = true;
                     m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+                    if (m_gifPacketCallback)
+                        m_gifPacketCallback(m_rdram + src, bytes);
                 };
 
-                if (qwc > 0)
+                uint32_t chcr = value;
+                uint32_t mode = (chcr >> 2) & 0x3;
+
+                if (mode == 0 && qwc > 0)
                 {
                     doCopy(madr, qwc);
                 }
-                else
+                else if (mode == 1)
                 {
-                    uint32_t tadr = m_ioRegisters[channelBase + 0x30];
-                    uint32_t physTag = translateAddress(tadr);
-                    if (physTag + 16 <= PS2_RAM_SIZE)
+                    uint32_t tagAddr = m_ioRegisters[channelBase + 0x30];
+                    static int s_chainLogCount = 0;
+                    const int kMaxChainTags = 4096;
+                    int tagsProcessed = 0;
+
+                    while (tagsProcessed < kMaxChainTags)
                     {
+                        uint32_t physTag = 0;
+                        try { physTag = translateAddress(tagAddr); }
+                        catch (...) { break; }
+                        if (physTag + 16 > PS2_RAM_SIZE)
+                            break;
+
                         const uint8_t *tp = m_rdram + physTag;
-                        uint64_t tag = loadScalar<uint64_t>(tp, 0, 16, "dma chain tag", tadr);
+                        uint64_t tag = loadScalar<uint64_t>(tp, 0, 16, "dma chain tag", tagAddr);
                         uint16_t tagQwc = static_cast<uint16_t>(tag & 0xFFFF);
                         uint32_t id = static_cast<uint32_t>((tag >> 28) & 0x7);
-                        uint32_t addr = static_cast<uint32_t>((tag >> 32) & 0x7FFFFFF);
-                        if (id == 0 || id == 1 || id == 2)
+                        uint32_t addr = static_cast<uint32_t>((tag >> 32) & 0x7FFFFFFF);
+                        ++tagsProcessed;
+
+                        ++s_chainLogCount;
+                        if (s_chainLogCount <= 20 || (s_chainLogCount % 5000) == 0)
+                            printf("[DMA chain #%d] tagAddr=0x%x id=%u qwc=%u addr=0x%x\n",
+                                   s_chainLogCount, tagAddr, id, tagQwc, addr);
+
+                        switch (id)
                         {
-                            doCopy(addr, tagQwc);
+                        case 0: // refe: data from addr, then end
+                            if (tagQwc > 0) doCopy(addr, tagQwc);
+                            goto chain_done;
+                        case 1: // cnt: data follows tag inline
+                            if (tagQwc > 0) doCopy(tagAddr + 16, tagQwc);
+                            tagAddr = tagAddr + 16 + tagQwc * 16;
+                            break;
+                        case 2: // next: data follows tag inline, next tag at addr
+                            if (tagQwc > 0) doCopy(tagAddr + 16, tagQwc);
+                            tagAddr = addr;
+                            break;
+                        case 3: // ref: data from addr, next tag after header
+                        case 4: // refs: same as ref with stall
+                            if (tagQwc > 0) doCopy(addr, tagQwc);
+                            tagAddr = tagAddr + 16;
+                            break;
+                        case 7: // end: data follows tag inline, then end
+                            if (tagQwc > 0) doCopy(tagAddr + 16, tagQwc);
+                            goto chain_done;
+                        default:
+                            goto chain_done;
                         }
                     }
+                chain_done:
+                    if (s_chainLogCount <= 20 || (s_chainLogCount % 5000) == 0)
+                        printf("[DMA chain] done, processed %d tags\n", tagsProcessed);
+                }
+                else if (qwc > 0)
+                {
+                    doCopy(madr, qwc);
                 }
                 m_ioRegisters[address] &= ~0x100;
             }

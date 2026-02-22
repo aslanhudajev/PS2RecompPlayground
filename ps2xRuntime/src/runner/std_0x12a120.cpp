@@ -14,16 +14,16 @@ void std_0x12a120(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
 
     // 0x12a120: 0x3c020013
     ctx->pc = 0x12a120u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)19 << 16));
     // 0x12a124: 0x3c030013
     ctx->pc = 0x12a124u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)19 << 16));
     // 0x12a128: 0x3c080013
     ctx->pc = 0x12a128u;
-    SET_GPR_U32(ctx, 8, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 8, ((uint32_t)19 << 16));
     // 0x12a12c: 0x3c090013
     ctx->pc = 0x12a12cu;
-    SET_GPR_U32(ctx, 9, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 9, ((uint32_t)19 << 16));
     // 0x12a130: 0x2442b558
     ctx->pc = 0x12a130u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 2), 4294948184));

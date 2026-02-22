@@ -133,7 +133,7 @@ label_108c88:
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 1));
     // 0x108c8c: 0x3c040017
     ctx->pc = 0x108c8cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x108c90: 0xaf8382bc
     ctx->pc = 0x108c90u;
     WRITE32(ADD32(GPR_U32(ctx, 28), 4294935228), GPR_U32(ctx, 3));

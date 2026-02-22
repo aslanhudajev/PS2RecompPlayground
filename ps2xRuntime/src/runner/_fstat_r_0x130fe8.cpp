@@ -29,7 +29,7 @@ void _fstat_r_0x130fe8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 5) + (uint64_t)GPR_U64(ctx, 0));
     // 0x130ffc: 0x3c110017
     ctx->pc = 0x130ffcu;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x131000: 0xffbf0020
     ctx->pc = 0x131000u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 31));

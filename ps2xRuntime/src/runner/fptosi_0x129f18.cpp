@@ -123,13 +123,13 @@ label_129f68:
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 29), 4)));
     // 0x129f6c: 0x3c027fff
     ctx->pc = 0x129f6cu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32767 << 16));
     // 0x129f70: 0x3442ffff
     ctx->pc = 0x129f70u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x129f74: 0x3c048000
     ctx->pc = 0x129f74u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)32768 << 16));
     // 0x129f78: 0x10000007
     ctx->pc = 0x129F78u;
     {

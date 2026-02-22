@@ -38,7 +38,7 @@ void iRotateThreadReadyQueue_0x1152d8(uint8_t* rdram, R5900Context* ctx, PS2Runt
     ctx->pc = 0x1152F0u;
     // 0x1152f0: 0x3c020017
     ctx->pc = 0x1152f0u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x1152f4: 0x8c43fbd8
     ctx->pc = 0x1152f4u;
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 2), 4294966232)));
@@ -47,7 +47,7 @@ void iRotateThreadReadyQueue_0x1152d8(uint8_t* rdram, R5900Context* ctx, PS2Runt
     {
         const bool branch_taken_0x1152f8 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 0));
         ctx->pc = 0x1152FCu;
-        SET_GPR_U32(ctx, 3, ((uint32_t)24 << 16));
+        SET_GPR_S32(ctx, 3, ((uint32_t)24 << 16));
         if (branch_taken_0x1152f8) {
             ctx->pc = 0x115308u;
             goto label_115308;
@@ -70,7 +70,7 @@ label_115300:
 label_115308:
     // 0x115308: 0x3c050018
     ctx->pc = 0x115308u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)24 << 16));
     // 0x11530c: 0x2463a2f8
     ctx->pc = 0x11530cu;
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 4294943480));

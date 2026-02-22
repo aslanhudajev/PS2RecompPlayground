@@ -33,10 +33,10 @@ void _clearOnce_0x11fec0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     ctx->pc = 0x11FED0u;
     // 0x11fed0: 0x3c040017
     ctx->pc = 0x11fed0u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x11fed4: 0x3c060017
     ctx->pc = 0x11fed4u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)23 << 16));
     // 0x11fed8: 0x8c8217b0
     ctx->pc = 0x11fed8u;
     SET_GPR_U32(ctx, 2, READ32(ADD32(GPR_U32(ctx, 4), 6064)));

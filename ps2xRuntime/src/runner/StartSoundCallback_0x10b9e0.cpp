@@ -14,7 +14,7 @@ void StartSoundCallback_0x10b9e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *
 
     // 0x10b9e0: 0x3c040011
     ctx->pc = 0x10b9e0u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)17 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)17 << 16));
     // 0x10b9e4: 0x8045c7c
     ctx->pc = 0x10B9E4u;
     ctx->pc = 0x10B9E8u;

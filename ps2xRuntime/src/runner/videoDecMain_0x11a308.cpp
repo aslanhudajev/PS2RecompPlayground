@@ -42,7 +42,7 @@ void videoDecMain_0x11a308(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x11A324u;
     // 0x11a324: 0x3c100075
     ctx->pc = 0x11a324u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)117 << 16));
     // 0x11a328: 0x2610e518
     ctx->pc = 0x11a328u;
     SET_GPR_S32(ctx, 16, ADD32(GPR_U32(ctx, 16), 4294960408));

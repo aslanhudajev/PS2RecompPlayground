@@ -17,13 +17,13 @@ void getFIFOindex_0x11bfc8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     SET_GPR_U64(ctx, 6, (uint64_t)GPR_U64(ctx, 4) + (uint64_t)GPR_U64(ctx, 0));
     // 0x11bfcc: 0x3c020fff
     ctx->pc = 0x11bfccu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4095 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4095 << 16));
     // 0x11bfd0: 0x8cc30008
     ctx->pc = 0x11bfd0u;
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 6), 8)));
     // 0x11bfd4: 0x3442ffff
     ctx->pc = 0x11bfd4u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x11bfd8: 0x8cc40004
     ctx->pc = 0x11bfd8u;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 6), 4)));

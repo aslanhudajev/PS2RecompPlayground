@@ -23,7 +23,7 @@ void _sbrk_r_0x12b420(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x12b42c: 0x3c110017
     ctx->pc = 0x12b42cu;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x12b430: 0x80802d
     ctx->pc = 0x12b430u;
     SET_GPR_U64(ctx, 16, (uint64_t)GPR_U64(ctx, 4) + (uint64_t)GPR_U64(ctx, 0));
@@ -51,10 +51,10 @@ void _sbrk_r_0x12b420(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U64(ctx, 3, (uint64_t)GPR_U64(ctx, 2) + (uint64_t)GPR_U64(ctx, 0));
     // 0x12b448: 0x3c02ffff
     ctx->pc = 0x12b448u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)65535 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)65535 << 16));
     // 0x12b44c: 0x3442ffff
     ctx->pc = 0x12b44cu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x12b450: 0x14620005
     ctx->pc = 0x12B450u;
     {

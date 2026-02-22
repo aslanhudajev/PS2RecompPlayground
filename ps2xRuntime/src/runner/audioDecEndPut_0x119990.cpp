@@ -86,7 +86,7 @@ void audioDecEndPut_0x119990(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));
     // 0x1199e0: 0x3c040017
     ctx->pc = 0x1199e0u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1199e4: 0xae020000
     ctx->pc = 0x1199e4u;
     WRITE32(ADD32(GPR_U32(ctx, 16), 0), GPR_U32(ctx, 2));
@@ -108,7 +108,7 @@ void audioDecEndPut_0x119990(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     SET_GPR_U32(ctx, 13, READ32(ADD32(GPR_U32(ctx, 16), 20)));
     // 0x1199f4: 0x3c040017
     ctx->pc = 0x1199f4u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x1199f8: 0x8e0c0018
     ctx->pc = 0x1199f8u;
     SET_GPR_U32(ctx, 12, READ32(ADD32(GPR_U32(ctx, 16), 24)));
@@ -166,7 +166,7 @@ void audioDecEndPut_0x119990(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x119A38u;
     // 0x119a38: 0x3c040017
     ctx->pc = 0x119a38u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x119a3c: 0x82050024
     ctx->pc = 0x119a3cu;
     SET_GPR_S32(ctx, 5, (int8_t)READ8(ADD32(GPR_U32(ctx, 16), 36)));

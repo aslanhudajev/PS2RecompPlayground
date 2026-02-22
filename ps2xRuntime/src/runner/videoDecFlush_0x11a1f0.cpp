@@ -17,7 +17,7 @@ void videoDecFlush_0x11a1f0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967232));
     // 0x11a1f4: 0x3c020017
     ctx->pc = 0x11a1f4u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x11a1f8: 0xffb00020
     ctx->pc = 0x11a1f8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 16));
@@ -93,16 +93,16 @@ void videoDecFlush_0x11a1f0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 29), 16)));
     // 0x11a248: 0x3c020fff
     ctx->pc = 0x11a248u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4095 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4095 << 16));
     // 0x11a24c: 0x8fa60018
     ctx->pc = 0x11a24cu;
     SET_GPR_U32(ctx, 6, READ32(ADD32(GPR_U32(ctx, 29), 24)));
     // 0x11a250: 0x3442ffff
     ctx->pc = 0x11a250u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x11a254: 0x3c032000
     ctx->pc = 0x11a254u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)8192 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)8192 << 16));
     // 0x11a258: 0x822024
     ctx->pc = 0x11a258u;
     SET_GPR_U32(ctx, 4, AND32(GPR_U32(ctx, 4), GPR_U32(ctx, 2)));
@@ -111,10 +111,10 @@ void videoDecFlush_0x11a1f0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 6, AND32(GPR_U32(ctx, 6), GPR_U32(ctx, 2)));
     // 0x11a260: 0x832025
     ctx->pc = 0x11a260u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | GPR_U64(ctx, 3));
     // 0x11a264: 0xc33025
     ctx->pc = 0x11a264u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 6), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) | GPR_U64(ctx, 3));
     // 0x11a268: 0x3a0402d
     ctx->pc = 0x11a268u;
     SET_GPR_U64(ctx, 8, (uint64_t)GPR_U64(ctx, 29) + (uint64_t)GPR_U64(ctx, 0));
@@ -139,7 +139,7 @@ void videoDecFlush_0x11a1f0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x11A27Cu;
     // 0x11a27c: 0x3c040075
     ctx->pc = 0x11a27cu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x11a280: 0x40282d
     ctx->pc = 0x11a280u;
     SET_GPR_U64(ctx, 5, (uint64_t)GPR_U64(ctx, 2) + (uint64_t)GPR_U64(ctx, 0));

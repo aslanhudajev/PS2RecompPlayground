@@ -38,7 +38,7 @@ void SyncDCache_0x1310f0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U32(ctx, 16, ctx->cop0_status);
     // 0x131110: 0x3c020001
     ctx->pc = 0x131110u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)1 << 16));
     // 0x131114: 0x2028024
     ctx->pc = 0x131114u;
     SET_GPR_U32(ctx, 16, AND32(GPR_U32(ctx, 16), GPR_U32(ctx, 2)));
@@ -66,10 +66,10 @@ void SyncDCache_0x1310f0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
 label_131128:
     // 0x131128: 0x3c04ffff
     ctx->pc = 0x131128u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)65535 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)65535 << 16));
     // 0x13112c: 0x3484ffc0
     ctx->pc = 0x13112cu;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), 65472));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | (uint64_t)65472);
     // 0x131130: 0x2242824
     ctx->pc = 0x131130u;
     SET_GPR_U32(ctx, 5, AND32(GPR_U32(ctx, 17), GPR_U32(ctx, 4)));

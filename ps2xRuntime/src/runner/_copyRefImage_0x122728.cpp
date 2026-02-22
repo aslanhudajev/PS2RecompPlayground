@@ -17,7 +17,7 @@ void _copyRefImage_0x122728(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 12, ADD32(GPR_U32(ctx, 0), 24));
     // 0x12272c: 0x3c0a0012
     ctx->pc = 0x12272cu;
-    SET_GPR_U32(ctx, 10, ((uint32_t)18 << 16));
+    SET_GPR_S32(ctx, 10, ((uint32_t)18 << 16));
     // 0x122730: 0x254a2770
     ctx->pc = 0x122730u;
     SET_GPR_S32(ctx, 10, ADD32(GPR_U32(ctx, 10), 10096));

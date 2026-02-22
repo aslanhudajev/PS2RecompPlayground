@@ -14,7 +14,7 @@ void _localeconv_r_0x12faf0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
 
     // 0x12faf0: 0x3c020017
     ctx->pc = 0x12faf0u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
     // 0x12faf4: 0x3e00008
     ctx->pc = 0x12FAF4u;
     {

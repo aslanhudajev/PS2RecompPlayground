@@ -29,13 +29,13 @@ void topThread_0x115090(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 21));
     // 0x1150a4: 0x3c160018
     ctx->pc = 0x1150a4u;
-    SET_GPR_U32(ctx, 22, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 22, ((uint32_t)24 << 16));
     // 0x1150a8: 0xffb40040
     ctx->pc = 0x1150a8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 64), GPR_U64(ctx, 20));
     // 0x1150ac: 0x3c150017
     ctx->pc = 0x1150acu;
-    SET_GPR_U32(ctx, 21, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 21, ((uint32_t)23 << 16));
     // 0x1150b0: 0xffb30030
     ctx->pc = 0x1150b0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));

@@ -35,16 +35,16 @@ void setFRAME_1_0x11b780(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) >> 8);
     // 0x11b79c: 0xa82825
     ctx->pc = 0x11b79cu;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 8)));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 8));
     // 0x11b7a0: 0xe63825
     ctx->pc = 0x11b7a0u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 7), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) | GPR_U64(ctx, 6));
     // 0x11b7a4: 0x27bdfff0
     ctx->pc = 0x11b7a4u;
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967280));
     // 0x11b7a8: 0xa73025
     ctx->pc = 0x11b7a8u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 5) | GPR_U64(ctx, 7));
     // 0x11b7ac: 0xffbf0000
     ctx->pc = 0x11b7acu;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 31));

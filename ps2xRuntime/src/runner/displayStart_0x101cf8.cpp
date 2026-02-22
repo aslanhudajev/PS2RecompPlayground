@@ -26,7 +26,7 @@ void displayStart_0x101cf8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x101d08: 0x3c130014
     ctx->pc = 0x101d08u;
-    SET_GPR_U32(ctx, 19, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)20 << 16));
     // 0x101d0c: 0xffbf0050
     ctx->pc = 0x101d0cu;
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 31));
@@ -54,19 +54,19 @@ void displayStart_0x101cf8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x101D24u;
     // 0x101d24: 0x3c013f80
     ctx->pc = 0x101d24u;
-    SET_GPR_U32(ctx, 1, ((uint32_t)16256 << 16));
+    SET_GPR_S32(ctx, 1, ((uint32_t)16256 << 16));
     // 0x101d28: 0x44816000
     ctx->pc = 0x101d28u;
     *(uint32_t*)&ctx->f[12] = GPR_U32(ctx, 1);
     // 0x101d2c: 0x3c057f7f
     ctx->pc = 0x101d2cu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)32639 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)32639 << 16));
     // 0x101d30: 0x202d
     ctx->pc = 0x101d30u;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
     // 0x101d34: 0x34a57f7f
     ctx->pc = 0x101d34u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), 32639));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | (uint64_t)32639);
     // 0x101d38: 0xc04003a
     ctx->pc = 0x101D38u;
     SET_GPR_U32(ctx, 31, 0x101D40u);
@@ -100,13 +100,13 @@ void displayStart_0x101cf8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x101D50u;
     // 0x101d50: 0x3c140014
     ctx->pc = 0x101d50u;
-    SET_GPR_U32(ctx, 20, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 20, ((uint32_t)20 << 16));
     // 0x101d54: 0x3c110017
     ctx->pc = 0x101d54u;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x101d58: 0x3c120013
     ctx->pc = 0x101d58u;
-    SET_GPR_U32(ctx, 18, ((uint32_t)19 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)19 << 16));
     // 0x101d5c: 0x202d
     ctx->pc = 0x101d5cu;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));

@@ -42,13 +42,13 @@ void _request_rdata_0x10fff8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     SET_GPR_U32(ctx, 5, READ32(ADD32(GPR_U32(ctx, 16), 20)));
     // 0x110014: 0x3c038000
     ctx->pc = 0x110014u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)32768 << 16));
     // 0x110018: 0x8e04001c
     ctx->pc = 0x110018u;
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 16), 28)));
     // 0x11001c: 0x3463000c
     ctx->pc = 0x11001cu;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 12));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)12);
     // 0x110020: 0xac450014
     ctx->pc = 0x110020u;
     WRITE32(ADD32(GPR_U32(ctx, 2), 20), GPR_U32(ctx, 5));
@@ -66,13 +66,13 @@ void _request_rdata_0x10fff8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     WRITE32(ADD32(GPR_U32(ctx, 2), 32), GPR_U32(ctx, 3));
     // 0x110034: 0x3c048000
     ctx->pc = 0x110034u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)32768 << 16));
     // 0x110038: 0xdfbf0010
     ctx->pc = 0x110038u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 16)));
     // 0x11003c: 0x34840008
     ctx->pc = 0x11003cu;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), 8));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | (uint64_t)8);
     // 0x110040: 0x8e090028
     ctx->pc = 0x110040u;
     SET_GPR_U32(ctx, 9, READ32(ADD32(GPR_U32(ctx, 16), 40)));

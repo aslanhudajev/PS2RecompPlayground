@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <vector>
 #include <unordered_map>
 #include <atomic>
@@ -282,6 +283,10 @@ public:
     uint8_t *getGSVRAM() { return m_gsVRAM; }
     const uint8_t *getGSVRAM() const { return m_gsVRAM; }
     bool hasSeenGifCopy() const { return m_seenGifCopy; }
+
+    using GifPacketCallback = std::function<void(const uint8_t *, uint32_t)>;
+    void setGifPacketCallback(GifPacketCallback cb) { m_gifPacketCallback = std::move(cb); }
+
     // Main RAM (32MB)
     uint8_t *m_rdram;
 
@@ -316,6 +321,8 @@ public:
     };
 
     std::vector<TLBEntry> m_tlbEntries;
+
+    GifPacketCallback m_gifPacketCallback;
 
     struct CodeRegion
     {

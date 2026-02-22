@@ -17,7 +17,7 @@ void setRot_0x108bd0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 0), 68));
     // 0x108bd4: 0x3c020014
     ctx->pc = 0x108bd4u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x108bd8: 0x832018
     ctx->pc = 0x108bd8u;
     { int64_t result = (int64_t)GPR_S32(ctx, 4) * (int64_t)GPR_S32(ctx, 3); ctx->lo = (uint32_t)result; ctx->hi = (uint32_t)(result >> 32); SET_GPR_S32(ctx, 4, (int32_t)(uint32_t)result); }

@@ -17,25 +17,25 @@ void viBufGetTs_0x11cda0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967184));
     // 0x11cda4: 0x3c021000
     ctx->pc = 0x11cda4u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4096 << 16));
     // 0x11cda8: 0xffb50050
     ctx->pc = 0x11cda8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 21));
     // 0x11cdac: 0x3442b410
     ctx->pc = 0x11cdacu;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 46096));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)46096);
     // 0x11cdb0: 0xffb40040
     ctx->pc = 0x11cdb0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 64), GPR_U64(ctx, 20));
     // 0x11cdb4: 0x3c031000
     ctx->pc = 0x11cdb4u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)4096 << 16));
     // 0x11cdb8: 0xffb30030
     ctx->pc = 0x11cdb8u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 19));
     // 0x11cdbc: 0x34632020
     ctx->pc = 0x11cdbcu;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 8224));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)8224);
     // 0x11cdc0: 0xffb20020
     ctx->pc = 0x11cdc0u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 18));

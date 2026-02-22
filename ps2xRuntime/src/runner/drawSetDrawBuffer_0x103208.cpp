@@ -23,7 +23,7 @@ void drawSetDrawBuffer_0x103208(uint8_t* rdram, R5900Context* ctx, PS2Runtime *r
     WRITE16(ADD32(GPR_U32(ctx, 28), 4294935702), (uint16_t)GPR_U32(ctx, 4));
     // 0x103214: 0x3c020014
     ctx->pc = 0x103214u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)20 << 16));
     // 0x103218: 0x244214e0
     ctx->pc = 0x103218u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 2), 5344));

@@ -19,7 +19,7 @@ label_118c18:
 label_118c1c:
     // 0x118c1c: 0x3c020005
     ctx->pc = 0x118c1cu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)5 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)5 << 16));
 label_118c20:
     // 0x118c20: 0xffbe0090
     ctx->pc = 0x118c20u;
@@ -31,7 +31,7 @@ label_118c24:
 label_118c28:
     // 0x118c28: 0x3c1e0075
     ctx->pc = 0x118c28u;
-    SET_GPR_U32(ctx, 30, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 30, ((uint32_t)117 << 16));
 label_118c2c:
     // 0x118c2c: 0xffb60070
     ctx->pc = 0x118c2cu;
@@ -298,7 +298,7 @@ label_118c84:
 label_118c88:
     if (ctx->pc == 0x118C88u) {
         ctx->pc = 0x118C88u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)117 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)117 << 16));
         ctx->pc = 0x118C8Cu;
         goto label_118c8c;
     }
@@ -306,7 +306,7 @@ label_118c88:
     {
         const bool branch_taken_0x118c84 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x118C88u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)117 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)117 << 16));
         if (branch_taken_0x118c84) {
             ctx->pc = 0x118C94u;
             goto label_118c94;
@@ -382,7 +382,7 @@ label_118ca4:
 label_118ca8:
     // 0x118ca8: 0x3402ffff
     ctx->pc = 0x118ca8u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 0), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 0) | (uint64_t)65535);
 label_118cac:
     // 0x118cac: 0x43102a
     ctx->pc = 0x118cacu;
@@ -416,14 +416,14 @@ label_118cbc:
 label_118cc0:
     if (ctx->pc == 0x118CC0u) {
         ctx->pc = 0x118CC0u;
-        SET_GPR_U32(ctx, 6, ((uint32_t)1 << 16));
+        SET_GPR_S32(ctx, 6, ((uint32_t)1 << 16));
         ctx->pc = 0x118CC4u;
         goto label_118cc4;
     }
     ctx->pc = 0x118CBCu;
     SET_GPR_U32(ctx, 31, 0x118CC4u);
     ctx->pc = 0x118CC0u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)1 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)1 << 16));
     ctx->pc = 0x11BF88u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -625,7 +625,7 @@ label_118d20:
 label_118d24:
     // 0x118d24: 0x3c020075
     ctx->pc = 0x118d24u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)117 << 16));
 label_118d28:
     // 0x118d28: 0xc046a4c
 label_118d2c:
@@ -1064,7 +1064,7 @@ label_118de8:
 label_118dec:
     // 0x118dec: 0x3c040075
     ctx->pc = 0x118decu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
 label_118df0:
     // 0x118df0: 0xc04662a
 label_118df4:

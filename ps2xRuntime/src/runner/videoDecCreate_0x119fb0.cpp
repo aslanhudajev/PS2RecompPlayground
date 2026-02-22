@@ -66,7 +66,7 @@ void videoDecCreate_0x119fb0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x119FECu;
     // 0x119fec: 0x3c060012
     ctx->pc = 0x119fecu;
-    SET_GPR_U32(ctx, 6, ((uint32_t)18 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)18 << 16));
     // 0x119ff0: 0x200202d
     ctx->pc = 0x119ff0u;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));
@@ -91,7 +91,7 @@ void videoDecCreate_0x119fb0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x11A004u;
     // 0x11a004: 0x3c060012
     ctx->pc = 0x11a004u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)18 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)18 << 16));
     // 0x11a008: 0x200202d
     ctx->pc = 0x11a008u;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));
@@ -116,7 +116,7 @@ void videoDecCreate_0x119fb0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x11A01Cu;
     // 0x11a01c: 0x3c060012
     ctx->pc = 0x11a01cu;
-    SET_GPR_U32(ctx, 6, ((uint32_t)18 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)18 << 16));
     // 0x11a020: 0x200202d
     ctx->pc = 0x11a020u;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));
@@ -141,7 +141,7 @@ void videoDecCreate_0x119fb0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x11A034u;
     // 0x11a034: 0x3c060012
     ctx->pc = 0x11a034u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)18 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)18 << 16));
     // 0x11a038: 0x200202d
     ctx->pc = 0x11a038u;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));
@@ -166,7 +166,7 @@ void videoDecCreate_0x119fb0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x11A04Cu;
     // 0x11a04c: 0x3c060012
     ctx->pc = 0x11a04cu;
-    SET_GPR_U32(ctx, 6, ((uint32_t)18 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)18 << 16));
     // 0x11a050: 0x200202d
     ctx->pc = 0x11a050u;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));

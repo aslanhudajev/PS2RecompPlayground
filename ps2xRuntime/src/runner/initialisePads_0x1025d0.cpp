@@ -33,7 +33,7 @@ void initialisePads_0x1025d0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x1025E0u;
     // 0x1025e0: 0x3c060014
     ctx->pc = 0x1025e0u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)20 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)20 << 16));
     // 0x1025e4: 0xdfbf0000
     ctx->pc = 0x1025e4u;
     SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 0)));

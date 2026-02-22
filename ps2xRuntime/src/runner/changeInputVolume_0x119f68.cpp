@@ -17,7 +17,7 @@ void changeInputVolume_0x119f68(uint8_t* rdram, R5900Context* ctx, PS2Runtime *r
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967264));
     // 0x119f6c: 0x34058010
     ctx->pc = 0x119f6cu;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32784));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32784);
     // 0x119f70: 0xffb00000
     ctx->pc = 0x119f70u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
@@ -60,7 +60,7 @@ void changeInputVolume_0x119f68(uint8_t* rdram, R5900Context* ctx, PS2Runtime *r
     SET_GPR_S32(ctx, 4, ADD32(GPR_U32(ctx, 0), 1));
     // 0x119f9c: 0x34058010
     ctx->pc = 0x119f9cu;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32784));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32784);
     // 0x119fa0: 0x24061080
     ctx->pc = 0x119fa0u;
     SET_GPR_S32(ctx, 6, ADD32(GPR_U32(ctx, 0), 4224));

@@ -89,7 +89,7 @@ label_10f40c:
 label_10f41c:
     // 0x10f41c: 0x34038000
     ctx->pc = 0x10f41cu;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 0), 32768));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 0) | (uint64_t)32768);
     // 0x10f420: 0x3197c
     ctx->pc = 0x10f420u;
     SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) << (32 + 5));
@@ -101,7 +101,7 @@ label_10f41c:
     {
         const bool branch_taken_0x10f428 = (GPR_S32(ctx, 6) >= 0);
         ctx->pc = 0x10F42Cu;
-        SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), GPR_U32(ctx, 3)));
+        SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | GPR_U64(ctx, 3));
         if (branch_taken_0x10f428) {
             ctx->pc = 0x10F460u;
             goto label_10f460;

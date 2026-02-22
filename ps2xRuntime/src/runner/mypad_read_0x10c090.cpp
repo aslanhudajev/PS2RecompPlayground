@@ -93,7 +93,7 @@ void mypad_read_0x10c090(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime)
     SET_GPR_U32(ctx, 2, SLL32(GPR_U32(ctx, 2), 8));
     // 0x10c0e8: 0x431025
     ctx->pc = 0x10c0e8u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 3));
     // 0x10c0ec: 0x38530fff
     ctx->pc = 0x10c0ecu;
     SET_GPR_U32(ctx, 19, XOR32(GPR_U32(ctx, 2), 4095));
@@ -527,13 +527,13 @@ label_10c248:
     SET_GPR_U32(ctx, 2, SLL32(GPR_U32(ctx, 2), 8));
     // 0x10c264: 0x431025
     ctx->pc = 0x10c264u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | GPR_U64(ctx, 3));
     // 0x10c268: 0x3842ffff
     ctx->pc = 0x10c268u;
     SET_GPR_U32(ctx, 2, XOR32(GPR_U32(ctx, 2), 65535));
     // 0x10c26c: 0x2629825
     ctx->pc = 0x10c26cu;
-    SET_GPR_U32(ctx, 19, OR32(GPR_U32(ctx, 19), GPR_U32(ctx, 2)));
+    SET_GPR_U64(ctx, 19, GPR_U64(ctx, 19) | GPR_U64(ctx, 2));
 label_10c270:
     // 0x10c270: 0x93a20001
     ctx->pc = 0x10c270u;

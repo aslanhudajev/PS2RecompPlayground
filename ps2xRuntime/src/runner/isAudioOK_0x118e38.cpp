@@ -32,7 +32,7 @@ void isAudioOK_0x118e38(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     ctx->pc = 0x118E48u;
     // 0x118e48: 0x3c040075
     ctx->pc = 0x118e48u;
-    SET_GPR_U32(ctx, 4, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)117 << 16));
     // 0x118e4c: 0xc0466ac
     ctx->pc = 0x118E4Cu;
     SET_GPR_U32(ctx, 31, 0x118E54u);

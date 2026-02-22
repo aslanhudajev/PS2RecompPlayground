@@ -17,10 +17,10 @@ void fabsf_0x11e1e8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
     SET_GPR_U32(ctx, 3, *(uint32_t*)&ctx->f[12]);
     // 0x11e1ec: 0x3c027fff
     ctx->pc = 0x11e1ecu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)32767 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)32767 << 16));
     // 0x11e1f0: 0x3442ffff
     ctx->pc = 0x11e1f0u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x11e1f4: 0x621824
     ctx->pc = 0x11e1f4u;
     SET_GPR_U32(ctx, 3, AND32(GPR_U32(ctx, 3), GPR_U32(ctx, 2)));

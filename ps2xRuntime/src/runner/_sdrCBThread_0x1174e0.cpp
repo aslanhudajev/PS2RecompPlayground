@@ -60,13 +60,13 @@ void _sdrCBThread_0x1174e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x117504u;
     // 0x117504: 0x3c060011
     ctx->pc = 0x117504u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)17 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)17 << 16));
     // 0x117508: 0x3c070018
     ctx->pc = 0x117508u;
-    SET_GPR_U32(ctx, 7, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 7, ((uint32_t)24 << 16));
     // 0x11750c: 0x3c058000
     ctx->pc = 0x11750cu;
-    SET_GPR_U32(ctx, 5, ((uint32_t)32768 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)32768 << 16));
     // 0x117510: 0x402d
     ctx->pc = 0x117510u;
     SET_GPR_U64(ctx, 8, (uint64_t)GPR_U64(ctx, 0) + (uint64_t)GPR_U64(ctx, 0));
@@ -89,7 +89,7 @@ void _sdrCBThread_0x1174e0(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x117528u;
     SET_GPR_U32(ctx, 31, 0x117530u);
     ctx->pc = 0x11752Cu;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 5), 1796));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 5) | (uint64_t)1796);
     ctx->pc = 0x110748u;
     {
         const uint32_t __entryPc = ctx->pc;

@@ -71,7 +71,7 @@ label_115388:
     {
         const bool branch_taken_0x115388 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x11538Cu;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x115388) {
             ctx->pc = 0x11539Cu;
             goto label_11539c;
@@ -86,7 +86,7 @@ label_115388:
     {
         const bool branch_taken_0x115394 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 0));
         ctx->pc = 0x115398u;
-        SET_GPR_U32(ctx, 3, ((uint32_t)24 << 16));
+        SET_GPR_S32(ctx, 3, ((uint32_t)24 << 16));
         if (branch_taken_0x115394) {
             ctx->pc = 0x1153A4u;
             goto label_1153a4;
@@ -109,7 +109,7 @@ label_11539c:
 label_1153a4:
     // 0x1153a4: 0x3c050018
     ctx->pc = 0x1153a4u;
-    SET_GPR_U32(ctx, 5, ((uint32_t)24 << 16));
+    SET_GPR_S32(ctx, 5, ((uint32_t)24 << 16));
     // 0x1153a8: 0x2463a2f8
     ctx->pc = 0x1153a8u;
     SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 4294943480));

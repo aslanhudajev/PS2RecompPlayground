@@ -50,7 +50,7 @@ void _setlocale_r_0x12fa68(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     ctx->pc = 0x12FA90u;
     // 0x12fa90: 0x3c130017
     ctx->pc = 0x12fa90u;
-    SET_GPR_U32(ctx, 19, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)23 << 16));
     // 0x12fa94: 0x200202d
     ctx->pc = 0x12fa94u;
     SET_GPR_U64(ctx, 4, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));
@@ -72,7 +72,7 @@ void _setlocale_r_0x12fa68(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtim
     {
         const bool branch_taken_0x12faa0 = (GPR_U32(ctx, 2) == GPR_U32(ctx, 0));
         ctx->pc = 0x12FAA4u;
-        SET_GPR_U32(ctx, 5, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 5, ((uint32_t)23 << 16));
         if (branch_taken_0x12faa0) {
             ctx->pc = 0x12FABCu;
             goto label_12fabc;
@@ -126,7 +126,7 @@ label_12fabc:
 label_12fac8:
     // 0x12fac8: 0x3c130017
     ctx->pc = 0x12fac8u;
-    SET_GPR_U32(ctx, 19, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 19, ((uint32_t)23 << 16));
 label_12facc:
     // 0x12facc: 0x26625988
     ctx->pc = 0x12faccu;

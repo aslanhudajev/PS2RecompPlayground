@@ -26,28 +26,28 @@ void setGIFtag_0x11b490(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) 
     SET_GPR_U32(ctx, 8, SLL32(GPR_U32(ctx, 8), 15));
     // 0x11b4a0: 0x3c03ffff
     ctx->pc = 0x11b4a0u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)65535 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)65535 << 16));
     // 0x11b4a4: 0x3183e
     ctx->pc = 0x11b4a4u;
     SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) >> (32 + 0));
     // 0x11b4a8: 0x1264825
     ctx->pc = 0x11b4a8u;
-    SET_GPR_U32(ctx, 9, OR32(GPR_U32(ctx, 9), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 9, GPR_U64(ctx, 9) | GPR_U64(ctx, 6));
     // 0x11b4ac: 0xa31824
     ctx->pc = 0x11b4acu;
     SET_GPR_U32(ctx, 3, AND32(GPR_U32(ctx, 5), GPR_U32(ctx, 3)));
     // 0x11b4b0: 0xe83825
     ctx->pc = 0x11b4b0u;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 7), GPR_U32(ctx, 8)));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 7) | GPR_U64(ctx, 8));
     // 0x11b4b4: 0xa53c0
     ctx->pc = 0x11b4b4u;
     SET_GPR_U32(ctx, 10, SLL32(GPR_U32(ctx, 10), 15));
     // 0x11b4b8: 0x1274825
     ctx->pc = 0x11b4b8u;
-    SET_GPR_U32(ctx, 9, OR32(GPR_U32(ctx, 9), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 9, GPR_U64(ctx, 9) | GPR_U64(ctx, 7));
     // 0x11b4bc: 0x14b5025
     ctx->pc = 0x11b4bcu;
-    SET_GPR_U32(ctx, 10, OR32(GPR_U32(ctx, 10), GPR_U32(ctx, 11)));
+    SET_GPR_U64(ctx, 10, GPR_U64(ctx, 10) | GPR_U64(ctx, 11));
     // 0x11b4c0: 0x3183c
     ctx->pc = 0x11b4c0u;
     SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) << (32 + 0));

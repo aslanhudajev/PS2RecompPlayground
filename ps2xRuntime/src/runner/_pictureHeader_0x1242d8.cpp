@@ -26,13 +26,13 @@ void _pictureHeader_0x1242d8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
     // 0x1242e8: 0x3c120017
     ctx->pc = 0x1242e8u;
-    SET_GPR_U32(ctx, 18, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 18, ((uint32_t)23 << 16));
     // 0x1242ec: 0xffbf0030
     ctx->pc = 0x1242ecu;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 31));
     // 0x1242f0: 0x3c100017
     ctx->pc = 0x1242f0u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     // 0x1242f4: 0xc048fdc
     ctx->pc = 0x1242F4u;
     SET_GPR_U32(ctx, 31, 0x1242FCu);
@@ -64,7 +64,7 @@ void _pictureHeader_0x1242d8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x124308u;
     // 0x124308: 0x3c100017
     ctx->pc = 0x124308u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     // 0x12430c: 0xae42197c
     ctx->pc = 0x12430cu;
     WRITE32(ADD32(GPR_U32(ctx, 18), 6524), GPR_U32(ctx, 2));
@@ -112,7 +112,7 @@ void _pictureHeader_0x1242d8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x124334u;
     SET_GPR_U32(ctx, 31, 0x12433Cu);
     ctx->pc = 0x124338u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     ctx->pc = 0x123F70u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -123,7 +123,7 @@ void _pictureHeader_0x1242d8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x12433Cu;
     // 0x12433c: 0x3c110017
     ctx->pc = 0x12433cu;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x124340: 0xae021984
     ctx->pc = 0x124340u;
     WRITE32(ADD32(GPR_U32(ctx, 16), 6532), GPR_U32(ctx, 2));
@@ -166,7 +166,7 @@ label_124358:
     ctx->pc = 0x124360u;
     SET_GPR_U32(ctx, 31, 0x124368u);
     ctx->pc = 0x124364u;
-    SET_GPR_U32(ctx, 16, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 16, ((uint32_t)23 << 16));
     ctx->pc = 0x123F70u;
     {
         const uint32_t __entryPc = ctx->pc;
@@ -177,7 +177,7 @@ label_124358:
     ctx->pc = 0x124368u;
     // 0x124368: 0x3c110017
     ctx->pc = 0x124368u;
-    SET_GPR_U32(ctx, 17, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 17, ((uint32_t)23 << 16));
     // 0x12436c: 0xae02198c
     ctx->pc = 0x12436cu;
     WRITE32(ADD32(GPR_U32(ctx, 16), 6540), GPR_U32(ctx, 2));

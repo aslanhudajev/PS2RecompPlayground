@@ -22,6 +22,9 @@
 #include <iomanip>
 
 #include "ps2_memory.h"
+#include "ps2_gs.h"
+#include "ps2_iop.h"
+#include "ps2_vu1.h"
 
 enum PS2Exception
 {
@@ -450,6 +453,13 @@ public:
     inline PS2Memory &memory() { return m_memory; }
     inline const PS2Memory &memory() const { return m_memory; }
 
+    inline GS &gs() { return m_gs; }
+    inline const GS &gs() const { return m_gs; }
+    inline IOP &iop() { return m_iop; }
+    inline const IOP &iop() const { return m_iop; }
+    inline VU1Interpreter &vu1() { return m_vu1; }
+    inline const VU1Interpreter &vu1() const { return m_vu1; }
+
 private:
     struct GuestHeapBlock
     {
@@ -474,6 +484,9 @@ private:
 
 private:
     PS2Memory m_memory;
+    GS m_gs;
+    IOP m_iop;
+    VU1Interpreter m_vu1;
     R5900Context m_cpuContext;
     mutable std::mutex m_guestHeapMutex;
     std::vector<GuestHeapBlock> m_guestHeapBlocks;

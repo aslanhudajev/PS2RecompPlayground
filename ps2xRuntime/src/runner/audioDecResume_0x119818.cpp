@@ -66,7 +66,7 @@ void audioDecResume_0x119818(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     SET_GPR_S32(ctx, 9, SRA32(GPR_S32(ctx, 9), 10));
     // 0x119854: 0x340580e0
     ctx->pc = 0x119854u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32992));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32992);
     // 0x119858: 0x94a80
     ctx->pc = 0x119858u;
     SET_GPR_U32(ctx, 9, SLL32(GPR_U32(ctx, 9), 10));

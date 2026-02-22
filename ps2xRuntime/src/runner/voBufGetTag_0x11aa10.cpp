@@ -51,13 +51,13 @@ void voBufGetTag_0x11aa10(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 16), 8)));
     // 0x11aa30: 0x3c06000a
     ctx->pc = 0x11aa30u;
-    SET_GPR_U32(ctx, 6, ((uint32_t)10 << 16));
+    SET_GPR_S32(ctx, 6, ((uint32_t)10 << 16));
     // 0x11aa34: 0x8e02000c
     ctx->pc = 0x11aa34u;
     SET_GPR_U32(ctx, 2, READ32(ADD32(GPR_U32(ctx, 16), 12)));
     // 0x11aa38: 0x34c6af40
     ctx->pc = 0x11aa38u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 6), 44864));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) | (uint64_t)44864);
     // 0x11aa3c: 0x8e030010
     ctx->pc = 0x11aa3cu;
     SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 16), 16)));

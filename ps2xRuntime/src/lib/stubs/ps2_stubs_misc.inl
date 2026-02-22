@@ -858,7 +858,66 @@ void sceIoctl(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceIpuInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceIpuInit", rdram, ctx, runtime);
+    // Real implementation per decompilation: setD4_CHCR(1), then IPU_CTRL/CMD/IN_FIFO writes.
+    // Busy-waits are skipped (we perform the writes; no IPU hardware to wait on).
+    static constexpr uint32_t REG_IPU_CTRL   = 0x10002010u;
+    static constexpr uint32_t REG_IPU_CMD   = 0x10002000u;
+    static constexpr uint32_t REG_IPU_IN_FIFO = 0x10007010u;
+    static constexpr uint32_t IQVAL_BASE    = 0x1721e0u;  // _iqval
+    static constexpr uint32_t VQVAL_BASE    = 0x172230u;  // _vqval
+    static constexpr uint32_t SETD4_CHCR_ENTRY = 0x126428u;
+
+    if (!runtime)
+        return;
+
+    PS2Memory &mem = runtime->memory();
+
+    // 1) setD4_CHCR(1)
+    auto setD4 = runtime->lookupFunction(SETD4_CHCR_ENTRY);
+    if (setD4)
+    {
+        ctx->r[4] = _mm_set_epi64x(0, 1);  // a0 = 1
+        setD4(rdram, ctx, runtime);
+    }
+
+    // 2) REG_IPU_CTRL = 0x40000000
+    mem.write32(REG_IPU_CTRL, 0x40000000u);
+    // 3) REG_IPU_CMD = 0
+    mem.write32(REG_IPU_CMD, 0u);
+
+    // 4) Copy _iqval blocks to IPU_IN_FIFO (0x1721e0 + 0, 0x10, 0x20, 0x30, 0x40, then 0x40 three more times)
+    __m128i v;
+    v = runtime->Load128(rdram, ctx, IQVAL_BASE + 0x00u);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    v = runtime->Load128(rdram, ctx, IQVAL_BASE + 0x10u);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    v = runtime->Load128(rdram, ctx, IQVAL_BASE + 0x20u);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    v = runtime->Load128(rdram, ctx, IQVAL_BASE + 0x30u);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    v = runtime->Load128(rdram, ctx, IQVAL_BASE + 0x40u);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    mem.write128(REG_IPU_IN_FIFO, v);
+
+    // 5) REG_IPU_CMD = 0x50000000, then 0x58000000
+    mem.write32(REG_IPU_CMD, 0x50000000u);
+    mem.write32(REG_IPU_CMD, 0x58000000u);
+
+    // 6) Copy _vqval blocks (0x172230, 0x172240)
+    v = runtime->Load128(rdram, ctx, VQVAL_BASE + 0x00u);
+    mem.write128(REG_IPU_IN_FIFO, v);
+    v = runtime->Load128(rdram, ctx, VQVAL_BASE + 0x10u);
+    mem.write128(REG_IPU_IN_FIFO, v);
+
+    // 7) REG_IPU_CMD = 0x60000000, then 0x90000000
+    mem.write32(REG_IPU_CMD, 0x60000000u);
+    mem.write32(REG_IPU_CMD, 0x90000000u);
+
+    // 8) REG_IPU_CTRL = 0x40000000, REG_IPU_CMD = 0
+    mem.write32(REG_IPU_CTRL, 0x40000000u);
+    mem.write32(REG_IPU_CMD, 0u);
 }
 
 void sceIpuRestartDMA(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -987,6 +1046,249 @@ void sceMcWrite(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     TODO_NAMED("sceMcWrite", rdram, ctx, runtime);
 }
 
+// Font globals (gp-relative): sceeFontScrWidth -0x7b60, sceeFontScrHeight -0x7b5c, sceeFontClut -0x7b64,
+// sceeFontModeAdj -0x7c98, default_colour -0x7b4c, default_scly -0x7b50, default_sclx -0x7b54, default_fontid -0x7b58
+static void writeU32AtGp(uint8_t *rdram, uint32_t gp, int32_t offset, uint32_t value)
+{
+    const uint32_t addr = gp + static_cast<uint32_t>(offset);
+    if (uint8_t *p = getMemPtr(rdram, addr))
+        *reinterpret_cast<uint32_t *>(p) = value;
+}
+
+void sceeFontInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    const uint32_t gp = getRegU32(ctx, 28);
+    const uint32_t a0 = getRegU32(ctx, 4);
+    const uint32_t a1 = getRegU32(ctx, 5);
+    const uint32_t a2 = getRegU32(ctx, 6);
+    const uint32_t a3 = getRegU32(ctx, 7);
+    writeU32AtGp(rdram, gp, -0x7b60, a1);  // sceeFontScrWidth
+    writeU32AtGp(rdram, gp, -0x7b5c, a2);  // sceeFontScrHeight
+    writeU32AtGp(rdram, gp, -0x7b64, a0);  // sceeFontClut
+    writeU32AtGp(rdram, gp, -0x7c98, a3);  // sceeFontModeAdj
+    writeU32AtGp(rdram, gp, -0x7b4c, 0x7f7f7f7f);  // default_colour
+    writeU32AtGp(rdram, gp, -0x7b50, 0x3f800000);  // default_scly 1.0f
+    writeU32AtGp(rdram, gp, -0x7b54, 0x3f800000);  // default_sclx 1.0f
+    writeU32AtGp(rdram, gp, -0x7b58, 0);           // default_fontid
+    setReturnS32(ctx, static_cast<int32_t>(a0 + 4));
+}
+
+void sceeFontLoadFont(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    static constexpr uint32_t kFontBase = 0x176148u;
+    static constexpr uint32_t kFontEntrySz = 0x24u;
+
+    const uint32_t fontDataAddr = getRegU32(ctx, 4);
+    const int fontId = (int)getRegU32(ctx, 5);
+    const int tbp0 = (int)getRegU32(ctx, 7);
+
+    std::fprintf(stderr, "[sceeFontLoadFont] fontDataAddr=0x%x fontId=%d tbp0=%d\n",
+           fontDataAddr, fontId, tbp0);
+
+    if (!fontDataAddr || !runtime) {
+        setReturnS32(ctx, tbp0);
+        return;
+    }
+
+    int width     = (int)FAST_READ32(fontDataAddr + 0x00u);
+    int height    = (int)FAST_READ32(fontDataAddr + 0x04u);
+    uint32_t raw8 = FAST_READ32(fontDataAddr + 0x08u);
+    int fontDataSz= (int)FAST_READ32(fontDataAddr + 0x0cu);
+
+    std::fprintf(stderr, "[sceeFontLoadFont] width=%d height=%d pointsize=0x%x fontDataSz=%d\n",
+           width, height, raw8, fontDataSz);
+
+    uint32_t pointsize = raw8;
+    uint32_t fontOff = (uint32_t)(fontId * (int)kFontEntrySz);
+    if (raw8 & 0x40000000u) {
+        pointsize = raw8 - 0x40000000u;
+        FAST_WRITE32(kFontBase + fontOff + 0x20u, 1u);
+    } else {
+        FAST_WRITE32(kFontBase + fontOff + 0x20u, 0u);
+    }
+
+    int tw = width;
+    if (width >= 0) tw = width; else tw = width + 0x3f;
+    tw >>= 6;
+
+    int qwc = fontDataSz;
+    if (fontDataSz >= 0) qwc = fontDataSz; else qwc = fontDataSz + 0xf;
+    qwc >>= 4;
+
+    uint32_t glyphSrc = fontDataAddr + (uint32_t)fontDataSz + 0x10u;
+    uint32_t glyphAlloc = runtime->guestMalloc(0x2010u, 0x40u);
+    FAST_WRITE32(kFontBase + fontOff, glyphAlloc);
+
+    std::fprintf(stderr, "[sceeFontLoadFont] glyphSrc=0x%x glyphAlloc=0x%x tw=%d qwc=%d\n",
+           glyphSrc, glyphAlloc, tw, qwc);
+
+    if (glyphAlloc != 0u) {
+        uint8_t *dst = getMemPtr(rdram, glyphAlloc);
+        const uint8_t *src = getConstMemPtr(rdram, glyphSrc);
+        if (dst && src) {
+            std::memcpy(dst, src, 0x2010u);
+            uint32_t nonZero = 0;
+            for (int i = 0; i < 0x2010; i++) if (dst[i]) nonZero++;
+            std::fprintf(stderr, "[sceeFontLoadFont] glyph copy done, nonZero=%u/8208\n", nonZero);
+            std::fprintf(stderr, "[sceeFontLoadFont] first 16 glyph bytes: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                   dst[0],dst[1],dst[2],dst[3],dst[4],dst[5],dst[6],dst[7],
+                   dst[8],dst[9],dst[10],dst[11],dst[12],dst[13],dst[14],dst[15]);
+        }
+    }
+
+    uint32_t isDoubleByte = FAST_READ32(kFontBase + fontOff + 0x20u);
+    if (isDoubleByte == 0u) {
+        uint32_t kernSrc = glyphSrc + 0x2010u;
+        uint32_t kernAlloc = runtime->guestMalloc(0xc400u, 0x40u);
+        if (glyphAlloc != 0u) {
+            FAST_WRITE32(glyphAlloc + 0x2000u, kernAlloc);
+        }
+        if (kernAlloc != 0u) {
+            uint8_t *dst = getMemPtr(rdram, kernAlloc);
+            const uint8_t *src = getConstMemPtr(rdram, kernSrc);
+            if (dst && src)
+                std::memcpy(dst, src, 0xc400u);
+        }
+    }
+
+    FAST_WRITE32(kFontBase + fontOff + 0x18u, pointsize);
+    FAST_WRITE32(kFontBase + fontOff + 0x08u, (uint32_t)tbp0);
+    FAST_WRITE32(kFontBase + fontOff + 0x0cu, tw);
+
+    {
+        int logW = 0;
+        bool extra = false;
+        int w = width;
+        if (w != 1) {
+            while (w != 1) {
+                if (w & 1) extra = true;
+                logW++;
+                w = (int)((uint32_t)w >> 1);
+                if (w == 0) break;
+            }
+        }
+        if (extra) logW++;
+        FAST_WRITE32(kFontBase + fontOff + 0x10u, (uint32_t)logW);
+    }
+    {
+        int logH = 0;
+        bool extra = false;
+        int h = height;
+        if (h != 1) {
+            while (h != 1) {
+                if (h & 1) extra = true;
+                logH++;
+                h = (int)((uint32_t)h >> 1);
+                if (h == 0) break;
+            }
+        }
+        if (extra) logH++;
+        FAST_WRITE32(kFontBase + fontOff + 0x14u, (uint32_t)logH);
+    }
+
+    FAST_WRITE32(kFontBase + fontOff + 0x04u, 0u);
+
+    uint32_t spaceWidth = getRegU32(ctx, 6);
+    FAST_WRITE32(kFontBase + fontOff + 0x1cu, spaceWidth);
+
+    {
+        uint32_t headerQWs = 6;
+        uint32_t imageBytes = (uint32_t)qwc * 16u;
+        uint32_t totalBytes = headerQWs * 16u + imageBytes;
+
+        std::vector<uint8_t> packet(totalBytes, 0);
+        auto store64 = [&](uint32_t off, uint64_t val) {
+            std::memcpy(packet.data() + off, &val, 8);
+        };
+
+        // QW0: GIF A+D tag — NLOOP=4, NREG=1, FLG=PACKED(0), EOP=0
+        store64(0x00, 0x1000000000000004ull);
+        store64(0x08, 0x000000000000000Eull);
+
+        // QW1: BITBLTBUF (reg 0x50) — DBP=tbp0, DBW=tw, DPSM=PSMT4(20)
+        uint64_t bitbltbuf = ((uint64_t)(uint32_t)tbp0 << 32)
+                           | ((uint64_t)(uint32_t)tw << 48)
+                           | 0x1400000000000000ull;
+        store64(0x10, bitbltbuf);
+        store64(0x18, 0x0000000000000050ull);
+
+        // QW2: TRXPOS (reg 0x51) — all zeros (start at 0,0)
+        store64(0x20, 0ull);
+        store64(0x28, 0x0000000000000051ull);
+
+        // QW3: TRXREG (reg 0x52) — RRW=width, RRH=height
+        uint64_t trxreg = (uint64_t)(uint32_t)width
+                        | ((uint64_t)(uint32_t)height << 32);
+        store64(0x30, trxreg);
+        store64(0x38, 0x0000000000000052ull);
+
+        // QW4: TRXDIR (reg 0x53) — 0 = host→local
+        store64(0x40, 0ull);
+        store64(0x48, 0x0000000000000053ull);
+
+        // QW5: GIF IMAGE tag — NLOOP=qwc, EOP=1, FLG=IMAGE(2)
+        uint64_t imageTag = (uint64_t)(uint32_t)qwc
+                          | 0x0800000000008000ull;
+        store64(0x50, imageTag);
+        store64(0x58, 0ull);
+
+        // QW6+: font texture image data from fontDataAddr + 0x10
+        const uint8_t *imgSrc = getConstMemPtr(rdram, fontDataAddr + 0x10u);
+        if (imgSrc && imageBytes > 0)
+            std::memcpy(packet.data() + headerQWs * 16u, imgSrc, imageBytes);
+
+        runtime->gs().processGIFPacket(packet.data(), totalBytes);
+    }
+
+    int retTbp = tbp0;
+    {
+        int dataAligned = fontDataSz;
+        if (fontDataSz >= 0) dataAligned = fontDataSz; else dataAligned = fontDataSz + 0x7f;
+        retTbp += (dataAligned >> 7);
+    }
+
+    std::fprintf(stderr, "[sceeFontLoadFont] fontEntry[0x%x]: glyphPtr=0x%x tbp=0x%x tw=%u logW=%u logH=%u ptsz=%u dbl=%u ret=%d\n",
+           kFontBase + fontOff,
+           FAST_READ32(kFontBase + fontOff + 0x00u),
+           FAST_READ32(kFontBase + fontOff + 0x08u),
+           FAST_READ32(kFontBase + fontOff + 0x0cu),
+           FAST_READ32(kFontBase + fontOff + 0x10u),
+           FAST_READ32(kFontBase + fontOff + 0x14u),
+           FAST_READ32(kFontBase + fontOff + 0x18u),
+           FAST_READ32(kFontBase + fontOff + 0x20u),
+           retTbp);
+
+    setReturnS32(ctx, retTbp);
+}
+
+void sceeFontPrintfAt2(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    setReturnS32(ctx, 0);
+}
+
+void sceeFontSetColour(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    const uint32_t gp = getRegU32(ctx, 28);
+    writeU32AtGp(rdram, gp, -0x7b4c, getRegU32(ctx, 4));
+}
+
+void sceeFontSetFont(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    const uint32_t gp = getRegU32(ctx, 28);
+    writeU32AtGp(rdram, gp, -0x7b58, getRegU32(ctx, 4));
+}
+
+void sceeFontSetScale(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    const uint32_t gp = getRegU32(ctx, 28);
+    uint32_t sclx_bits;
+    uint32_t scly_bits;
+    std::memcpy(&sclx_bits, &ctx->f[12], sizeof(float));
+    std::memcpy(&scly_bits, &ctx->f[13], sizeof(float));
+    writeU32AtGp(rdram, gp, -0x7b54, sclx_bits);
+    writeU32AtGp(rdram, gp, -0x7b50, scly_bits);
+}
+
 void sceMpegAddBs(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
     TODO_NAMED("sceMpegAddBs", rdram, ctx, runtime);
@@ -999,17 +1301,130 @@ void sceMpegAddCallback(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceMpegAddStrCallback(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceMpegAddStrCallback", rdram, ctx, runtime);
+    // Minimal: return 0 (no previous callback)
+    setReturnU32(ctx, 0u);
 }
 
 void sceMpegClearRefBuff(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceMpegClearRefBuff", rdram, ctx, runtime);
+    (void)ctx;
+    (void)runtime;
+    // Clear +0x28 at each ref frame/top/bot if the pointer is non-null. Globals at 0x171800 + offsets.
+    static const uint32_t kRefGlobalAddrs[] = {
+        0x171800u, 0x17180Cu, 0x171818u, 0x171804u, 0x171810u, 0x17181Cu
+    };
+    for (uint32_t addr : kRefGlobalAddrs)
+    {
+        uint8_t *p = getMemPtr(rdram, addr);
+        if (!p)
+            continue;
+        uint32_t ptr = *reinterpret_cast<uint32_t *>(p);
+        if (ptr != 0u)
+        {
+            uint8_t *q = getMemPtr(rdram, ptr + 0x28u);
+            if (q)
+                *reinterpret_cast<uint32_t *>(q) = 0u;
+        }
+    }
+    setReturnU32(ctx, 1u);
+}
+
+// Write 32/64-bit to guest memory at address (for sceMpegCreate struct setup).
+static void guestWrite32(uint8_t *rdram, uint32_t addr, uint32_t value)
+{
+    if (uint8_t *p = getMemPtr(rdram, addr))
+        *reinterpret_cast<uint32_t *>(p) = value;
+}
+static void guestWrite64(uint8_t *rdram, uint32_t addr, uint64_t value)
+{
+    if (uint8_t *p = getMemPtr(rdram, addr))
+    {
+        *reinterpret_cast<uint32_t *>(p) = static_cast<uint32_t>(value);
+        *reinterpret_cast<uint32_t *>(p + 4) = static_cast<uint32_t>(value >> 32);
+    }
 }
 
 void sceMpegCreate(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceMpegCreate", rdram, ctx, runtime);
+    const uint32_t param_1 = getRegU32(ctx, 4);   // a0
+    const uint32_t param_2 = getRegU32(ctx, 5);   // a1
+    const uint32_t param_3 = getRegU32(ctx, 6);   // a2
+
+    const uint32_t uVar3 = (param_2 + 3u) & 0xFFFFFFFCu;
+    const int32_t iVar2_signed = static_cast<int32_t>(param_3) - static_cast<int32_t>(uVar3 - param_2);
+
+    if (iVar2_signed <= 0x117)
+    {
+        setReturnU32(ctx, 0u);
+        return;
+    }
+
+    const uint32_t puVar4 = uVar3 + 0x108u;
+    const uint32_t innerSize = static_cast<uint32_t>(iVar2_signed) - 0x118u;
+
+    // param_1[0x10] = uVar3
+    guestWrite32(rdram, param_1 + 0x40, uVar3);
+
+    // _alalcInit effect: puVar4+0 = a1, +4 = a2, +8 = a1, +12 = a1 (a1 = uVar3+0x118, a2 = innerSize)
+    const uint32_t a1_init = uVar3 + 0x118u;
+    guestWrite32(rdram, puVar4 + 0x0, a1_init);
+    guestWrite32(rdram, puVar4 + 0x4, innerSize);
+    guestWrite32(rdram, puVar4 + 0x8, a1_init);
+    guestWrite32(rdram, puVar4 + 0xC, a1_init);
+
+    // _alalcAlloc: allocate 0x600 bytes; store result at uVar3+0x44
+    const uint32_t allocResult = runtime ? runtime->guestMalloc(0x600, 8u) : (uVar3 + 0x200u);
+    guestWrite32(rdram, uVar3 + 0x44, allocResult);
+
+    // param_1[0..2] = 0; param_1[4..0xe] = 0xffffffff/0 as per decompilation
+    guestWrite32(rdram, param_1 + 0x00, 0);
+    guestWrite32(rdram, param_1 + 0x04, 0);
+    guestWrite32(rdram, param_1 + 0x08, 0);
+    guestWrite64(rdram, param_1 + 0x10, 0xFFFFFFFFFFFFFFFFULL);
+    guestWrite64(rdram, param_1 + 0x18, 0xFFFFFFFFFFFFFFFFULL);
+    guestWrite64(rdram, param_1 + 0x20, 0);
+    guestWrite64(rdram, param_1 + 0x28, 0xFFFFFFFFFFFFFFFFULL);
+    guestWrite64(rdram, param_1 + 0x30, 0xFFFFFFFFFFFFFFFFULL);
+    guestWrite64(rdram, param_1 + 0x38, 0);
+
+    // Zero fields at uVar3 (offsets b4..f8, 0c, 14, 2c, 34, 3c)
+    static const unsigned s_zeroOffsets[] = {
+        0xB4, 0xB8, 0xBC, 0xC0, 0xC4, 0xC8, 0xCC, 0xD0, 0xD4, 0xD8, 0xDC, 0xE0, 0xE4, 0xE8, 0xF8,
+        0x0C, 0x14, 0x2C, 0x34, 0x3C,
+        0x48, 0xFC, 0x100, 0x104, 0x70, 0x90, 0xAC
+    };
+    for (unsigned off : s_zeroOffsets)
+        guestWrite32(rdram, uVar3 + off, 0u);
+    guestWrite64(rdram, uVar3 + 0x78, 0);
+    guestWrite64(rdram, uVar3 + 0x88, 0);
+
+    guestWrite64(rdram, uVar3 + 0xF0, 0xFFFFFFFFFFFFFFFFULL);
+    guestWrite32(rdram, uVar3 + 0x1C, 0x1209F8u);   // _defStopDMA
+    guestWrite32(rdram, uVar3 + 0x24, 0x120A08u);   // _defRestartDMA
+    guestWrite32(rdram, uVar3 + 0xB0, 1u);
+    guestWrite32(rdram, uVar3 + 0x9C, 0xFFFFFFFFu);
+    guestWrite32(rdram, uVar3 + 0x80, 0xFFFFFFFFu);
+    guestWrite32(rdram, uVar3 + 0x94, 0xFFFFFFFFu);
+    guestWrite32(rdram, uVar3 + 0x98, 0xFFFFFFFFu);
+
+    // _theSceMpeg = param_1 (global at 0x1717bc per asm)
+    guestWrite32(rdram, 0x1717BCu, param_1);
+
+    // Ref frame globals: store ref pointers into _forwFrame, _zTop, etc. (addresses 0x171800 + i*4)
+    static const uint32_t s_refValues[] = {
+        0x171A50u, 0x171C58u, 0x171CC0u, 0x171D28u, 0x171D90u,
+        0x171AB8u, 0x171B20u, 0x171B88u, 0x171BF0u
+    };
+    for (unsigned i = 0; i < 9u; ++i)
+        guestWrite32(rdram, 0x171800u + i * 4u, s_refValues[i]);
+
+    // _alalcSetDynamic effect: return *(puVar4+8) (and write to +12; we already wrote +12 in _alalcInit)
+    uint32_t setDynamicRet = a1_init;
+    if (uint8_t *p = getMemPtr(rdram, puVar4 + 8))
+        setDynamicRet = *reinterpret_cast<uint32_t *>(p);
+    guestWrite32(rdram, puVar4 + 12, setDynamicRet);
+
+    setReturnU32(ctx, setDynamicRet);
 }
 
 void sceMpegDelete(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1054,7 +1469,21 @@ void sceMpegGetDecodeMode(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime
 
 void sceMpegGetPicture(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceMpegGetPicture", rdram, ctx, runtime);
+    // Minimal: set struct fields and return 0; full impl would call _getpic
+    const uint32_t param_1 = getRegU32(ctx, 4);
+    if (uint8_t *base = getMemPtr(rdram, param_1))
+    {
+        const uint32_t iVar1 = *reinterpret_cast<uint32_t *>(base + 0x40);
+        if (uint8_t *inner = getMemPtr(rdram, iVar1))
+        {
+            *reinterpret_cast<uint32_t *>(inner + 0xb0) = 1;
+            *reinterpret_cast<uint32_t *>(inner + 0xd8) = (getRegU32(ctx, 5) & 0x0FFFFFFFu) | 0x20000000u;
+            *reinterpret_cast<uint32_t *>(inner + 0xe4) = getRegU32(ctx, 6);
+            *reinterpret_cast<uint32_t *>(inner + 0xdc) = 0;
+            *reinterpret_cast<uint32_t *>(inner + 0xe0) = 0;
+        }
+    }
+    setReturnU32(ctx, 0u);
 }
 
 void sceMpegGetPictureRAW8(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -1084,7 +1513,22 @@ void sceMpegIsRefBuffEmpty(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtim
 
 void sceMpegReset(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceMpegReset", rdram, ctx, runtime);
+    (void)runtime;
+    const uint32_t param_1 = getRegU32(ctx, 4);
+    uint8_t *base = getMemPtr(rdram, param_1);
+    if (!base)
+        return;
+    uint32_t inner = *reinterpret_cast<uint32_t *>(base + 0x40);
+    if (inner == 0u)
+        return;
+    guestWrite32(rdram, inner + 0x00, 0u);
+    guestWrite32(rdram, inner + 0x04, 0u);
+    guestWrite32(rdram, inner + 0x08, 0u);
+    guestWrite32(rdram, param_1 + 0x08, 0u);
+    guestWrite32(rdram, inner + 0x80, 0xFFFFFFFFu);
+    guestWrite32(rdram, inner + 0xAC, 0u);
+    // _clearEach() and _initSeqAgain() skipped (would require calling recompiled code and returning here)
+    guestWrite32(rdram, 0x171904u, 0u);  // _totalFrames = 0
 }
 
 void sceMpegResetDefaultPtsGap(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)

@@ -14,13 +14,13 @@ void viBufCreate_0x11c100(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
 
     // 0x11c100: 0x3c020fff
     ctx->pc = 0x11c100u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4095 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4095 << 16));
     // 0x11c104: 0x27bdffc0
     ctx->pc = 0x11c104u;
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967232));
     // 0x11c108: 0x3442ffff
     ctx->pc = 0x11c108u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x11c10c: 0xffb00020
     ctx->pc = 0x11c10cu;
     WRITE64(ADD32(GPR_U32(ctx, 29), 32), GPR_U64(ctx, 16));
@@ -29,7 +29,7 @@ void viBufCreate_0x11c100(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     SET_GPR_U32(ctx, 6, AND32(GPR_U32(ctx, 6), GPR_U32(ctx, 2)));
     // 0x11c114: 0x3c032000
     ctx->pc = 0x11c114u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)8192 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)8192 << 16));
     // 0x11c118: 0x80802d
     ctx->pc = 0x11c118u;
     SET_GPR_U64(ctx, 16, (uint64_t)GPR_U64(ctx, 4) + (uint64_t)GPR_U64(ctx, 0));
@@ -38,7 +38,7 @@ void viBufCreate_0x11c100(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 31));
     // 0x11c120: 0xc33025
     ctx->pc = 0x11c120u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 6), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) | GPR_U64(ctx, 3));
     // 0x11c124: 0x712c0
     ctx->pc = 0x11c124u;
     SET_GPR_U32(ctx, 2, SLL32(GPR_U32(ctx, 7), 11));

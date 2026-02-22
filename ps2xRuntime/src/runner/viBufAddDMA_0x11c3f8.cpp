@@ -66,7 +66,7 @@ void viBufAddDMA_0x11c3f8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime
     {
         const bool branch_taken_0x11c430 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 0));
         ctx->pc = 0x11C434u;
-        SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
         if (branch_taken_0x11c430) {
             ctx->pc = 0x11C448u;
             goto label_11c448;
@@ -114,16 +114,16 @@ label_11c448:
     ctx->pc = 0x11C450u;
     // 0x11c450: 0x3c021000
     ctx->pc = 0x11c450u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4096 << 16));
     // 0x11c454: 0x3c031000
     ctx->pc = 0x11c454u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)4096 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)4096 << 16));
     // 0x11c458: 0x3442b400
     ctx->pc = 0x11c458u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 46080));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)46080);
     // 0x11c45c: 0x3463b410
     ctx->pc = 0x11c45cu;
-    SET_GPR_U32(ctx, 3, OR32(GPR_U32(ctx, 3), 46096));
+    SET_GPR_U64(ctx, 3, GPR_U64(ctx, 3) | (uint64_t)46096);
     // 0x11c460: 0x8c550000
     ctx->pc = 0x11c460u;
     SET_GPR_U32(ctx, 21, runtime->Load32(rdram, ctx, ADD32(GPR_U32(ctx, 2), 0))); // MMIO: 0x10000000
@@ -429,7 +429,7 @@ label_11c584:
     {
         const bool branch_taken_0x11c594 = (GPR_U32(ctx, 22) == GPR_U32(ctx, 0));
         ctx->pc = 0x11C598u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)4095 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)4095 << 16));
         if (branch_taken_0x11c594) {
             ctx->pc = 0x11C5ACu;
             goto label_11c5ac;
@@ -438,22 +438,22 @@ label_11c584:
     ctx->pc = 0x11C59Cu;
     // 0x11c59c: 0x3c033000
     ctx->pc = 0x11c59cu;
-    SET_GPR_U32(ctx, 3, ((uint32_t)12288 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)12288 << 16));
     // 0x11c5a0: 0x3442ffff
     ctx->pc = 0x11c5a0u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x11c5a4: 0x2a21024
     ctx->pc = 0x11c5a4u;
     SET_GPR_U32(ctx, 2, AND32(GPR_U32(ctx, 21), GPR_U32(ctx, 2)));
     // 0x11c5a8: 0x43a825
     ctx->pc = 0x11c5a8u;
-    SET_GPR_U32(ctx, 21, OR32(GPR_U32(ctx, 2), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 21, GPR_U64(ctx, 2) | GPR_U64(ctx, 3));
 label_11c5ac:
     // 0x11c5ac: 0xc04701c
     ctx->pc = 0x11C5ACu;
     SET_GPR_U32(ctx, 31, 0x11C5B4u);
     ctx->pc = 0x11C5B0u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 21), 256));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 21) | (uint64_t)256);
     ctx->pc = 0x11C070u;
     {
         const uint32_t __entryPc = ctx->pc;

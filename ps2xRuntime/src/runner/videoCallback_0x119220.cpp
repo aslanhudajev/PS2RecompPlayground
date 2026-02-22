@@ -17,13 +17,13 @@ void videoCallback_0x119220(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967152));
     // 0x119224: 0x3c020005
     ctx->pc = 0x119224u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)5 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)5 << 16));
     // 0x119228: 0xffb20030
     ctx->pc = 0x119228u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 48), GPR_U64(ctx, 18));
     // 0x11922c: 0x37a70008
     ctx->pc = 0x11922cu;
-    SET_GPR_U32(ctx, 7, OR32(GPR_U32(ctx, 29), 8));
+    SET_GPR_U64(ctx, 7, GPR_U64(ctx, 29) | (uint64_t)8);
     // 0x119230: 0xffb60070
     ctx->pc = 0x119230u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 112), GPR_U64(ctx, 22));
@@ -41,7 +41,7 @@ void videoCallback_0x119220(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     WRITE64(ADD32(GPR_U32(ctx, 29), 80), GPR_U64(ctx, 20));
     // 0x119244: 0x3c160075
     ctx->pc = 0x119244u;
-    SET_GPR_U32(ctx, 22, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 22, ((uint32_t)117 << 16));
     // 0x119248: 0xffbf0080
     ctx->pc = 0x119248u;
     WRITE64(ADD32(GPR_U32(ctx, 29), 128), GPR_U64(ctx, 31));
@@ -71,13 +71,13 @@ void videoCallback_0x119220(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 16, READ32(ADD32(GPR_U32(ctx, 2), 8)));
     // 0x11926c: 0x37a60004
     ctx->pc = 0x11926cu;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 29), 4));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 29) | (uint64_t)4);
     // 0x119270: 0x8e930008
     ctx->pc = 0x119270u;
     SET_GPR_U32(ctx, 19, READ32(ADD32(GPR_U32(ctx, 20), 8)));
     // 0x119274: 0x37a8000c
     ctx->pc = 0x119274u;
-    SET_GPR_U32(ctx, 8, OR32(GPR_U32(ctx, 29), 12));
+    SET_GPR_U64(ctx, 8, GPR_U64(ctx, 29) | (uint64_t)12);
     // 0x119278: 0x8e91000c
     ctx->pc = 0x119278u;
     SET_GPR_U32(ctx, 17, READ32(ADD32(GPR_U32(ctx, 20), 12)));
@@ -111,16 +111,16 @@ void videoCallback_0x119220(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 29), 0)));
     // 0x119298: 0x3c020fff
     ctx->pc = 0x119298u;
-    SET_GPR_U32(ctx, 2, ((uint32_t)4095 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)4095 << 16));
     // 0x11929c: 0x8fa60008
     ctx->pc = 0x11929cu;
     SET_GPR_U32(ctx, 6, READ32(ADD32(GPR_U32(ctx, 29), 8)));
     // 0x1192a0: 0x3442ffff
     ctx->pc = 0x1192a0u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 2), 65535));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 2) | (uint64_t)65535);
     // 0x1192a4: 0x3c032000
     ctx->pc = 0x1192a4u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)8192 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)8192 << 16));
     // 0x1192a8: 0x822024
     ctx->pc = 0x1192a8u;
     SET_GPR_U32(ctx, 4, AND32(GPR_U32(ctx, 4), GPR_U32(ctx, 2)));
@@ -138,10 +138,10 @@ void videoCallback_0x119220(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     SET_GPR_U64(ctx, 9, (uint64_t)GPR_U64(ctx, 16) + (uint64_t)GPR_U64(ctx, 0));
     // 0x1192bc: 0xc33025
     ctx->pc = 0x1192bcu;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 6), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) | GPR_U64(ctx, 3));
     // 0x1192c0: 0x832025
     ctx->pc = 0x1192c0u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), GPR_U32(ctx, 3)));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | GPR_U64(ctx, 3));
     // 0x1192c4: 0x260402d
     ctx->pc = 0x1192c4u;
     SET_GPR_U64(ctx, 8, (uint64_t)GPR_U64(ctx, 19) + (uint64_t)GPR_U64(ctx, 0));
@@ -212,7 +212,7 @@ void videoCallback_0x119220(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
     ctx->pc = 0x1192FCu;
     // 0x1192fc: 0x3c040017
     ctx->pc = 0x1192fcu;
-    SET_GPR_U32(ctx, 4, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 4, ((uint32_t)23 << 16));
     // 0x119300: 0xc04647a
     ctx->pc = 0x119300u;
     SET_GPR_U32(ctx, 31, 0x119308u);

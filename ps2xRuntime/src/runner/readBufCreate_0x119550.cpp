@@ -14,7 +14,7 @@ void readBufCreate_0x119550(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runti
 
     // 0x119550: 0x3c030005
     ctx->pc = 0x119550u;
-    SET_GPR_U32(ctx, 3, ((uint32_t)5 << 16));
+    SET_GPR_S32(ctx, 3, ((uint32_t)5 << 16));
     // 0x119554: 0x24020001
     ctx->pc = 0x119554u;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));

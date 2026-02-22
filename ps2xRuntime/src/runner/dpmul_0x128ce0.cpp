@@ -189,7 +189,7 @@ label_128d6c:
 label_128d7c:
     // 0x128d7c: 0x3c020075
     ctx->pc = 0x128d7cu;
-    SET_GPR_U32(ctx, 2, ((uint32_t)117 << 16));
+    SET_GPR_S32(ctx, 2, ((uint32_t)117 << 16));
     // 0x128d80: 0x10000074
     ctx->pc = 0x128D80u;
     {
@@ -288,7 +288,7 @@ label_128db8:
 label_128dd0:
     // 0x128dd0: 0x3c16ffff
     ctx->pc = 0x128dd0u;
-    SET_GPR_U32(ctx, 22, ((uint32_t)65535 << 16));
+    SET_GPR_S32(ctx, 22, ((uint32_t)65535 << 16));
     // 0x128dd4: 0x16b03e
     ctx->pc = 0x128dd4u;
     SET_GPR_U64(ctx, 22, GPR_U64(ctx, 22) >> (32 + 0));
@@ -427,7 +427,7 @@ label_128dd0:
     SET_GPR_U32(ctx, 3, XOR32(GPR_U32(ctx, 3), GPR_U32(ctx, 6)));
     // 0x128e64: 0x2348825
     ctx->pc = 0x128e64u;
-    SET_GPR_U32(ctx, 17, OR32(GPR_U32(ctx, 17), GPR_U32(ctx, 20)));
+    SET_GPR_U64(ctx, 17, GPR_U64(ctx, 17) | GPR_U64(ctx, 20));
     // 0x128e68: 0x24a50004
     ctx->pc = 0x128e68u;
     SET_GPR_S32(ctx, 5, ADD32(GPR_U32(ctx, 5), 4));
@@ -463,7 +463,7 @@ label_128dd0:
     ctx->pc = 0x128E8Cu;
     // 0x128e8c: 0x34068000
     ctx->pc = 0x128e8cu;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 0), 32768));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 0) | (uint64_t)32768);
     // 0x128e90: 0x6343c
     ctx->pc = 0x128e90u;
     SET_GPR_U64(ctx, 6, GPR_U64(ctx, 6) << (32 + 16));
@@ -500,7 +500,7 @@ label_128ea0:
     SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) >> 1);
     // 0x128eb4: 0x862025
     ctx->pc = 0x128eb4u;
-    SET_GPR_U32(ctx, 4, OR32(GPR_U32(ctx, 4), GPR_U32(ctx, 6)));
+    SET_GPR_U64(ctx, 4, GPR_U64(ctx, 4) | GPR_U64(ctx, 6));
 label_128eb8:
     // 0x128eb8: 0x11887a
     ctx->pc = 0x128eb8u;
@@ -550,7 +550,7 @@ label_128ecc:
     SET_GPR_U32(ctx, 5, READ32(ADD32(GPR_U32(ctx, 29), 72)));
     // 0x128ee4: 0x34088000
     ctx->pc = 0x128ee4u;
-    SET_GPR_U32(ctx, 8, OR32(GPR_U32(ctx, 0), 32768));
+    SET_GPR_U64(ctx, 8, GPR_U64(ctx, 0) | (uint64_t)32768);
     // 0x128ee8: 0x8443c
     ctx->pc = 0x128ee8u;
     SET_GPR_U64(ctx, 8, GPR_U64(ctx, 8) << (32 + 16));
@@ -572,7 +572,7 @@ label_128ef8:
     SET_GPR_U32(ctx, 3, AND32(GPR_U32(ctx, 4), GPR_U32(ctx, 8)));
     // 0x128f00: 0x2271025
     ctx->pc = 0x128f00u;
-    SET_GPR_U32(ctx, 2, OR32(GPR_U32(ctx, 17), GPR_U32(ctx, 7)));
+    SET_GPR_U64(ctx, 2, GPR_U64(ctx, 17) | GPR_U64(ctx, 7));
     // 0x128f04: 0x24a5ffff
     ctx->pc = 0x128f04u;
     SET_GPR_S32(ctx, 5, ADD32(GPR_U32(ctx, 5), 4294967295));

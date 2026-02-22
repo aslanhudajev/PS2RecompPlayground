@@ -336,6 +336,12 @@
     X(sceGsSyncV)                             \
     X(sceGsSyncVCallback)                     \
     X(sceGszbufaddr)                          \
+    X(sceeFontInit)                           \
+    X(sceeFontLoadFont)                       \
+    X(sceeFontPrintfAt2)                      \
+    X(sceeFontSetColour)                      \
+    X(sceeFontSetFont)                        \
+    X(sceeFontSetScale)                       \
     X(sceIoctl)                               \
     X(sceIpuInit)                             \
     X(sceIpuRestartDMA)                       \

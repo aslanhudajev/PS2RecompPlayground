@@ -14,7 +14,7 @@ void _dualPrimeVector_0x1229b8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *ru
 
     // 0x1229b8: 0x3c080017
     ctx->pc = 0x1229b8u;
-    SET_GPR_U32(ctx, 8, ((uint32_t)23 << 16));
+    SET_GPR_S32(ctx, 8, ((uint32_t)23 << 16));
     // 0x1229bc: 0x24020003
     ctx->pc = 0x1229bcu;
     SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 3));
@@ -26,7 +26,7 @@ void _dualPrimeVector_0x1229b8(uint8_t* rdram, R5900Context* ctx, PS2Runtime *ru
     {
         const bool branch_taken_0x1229c4 = (GPR_U32(ctx, 3) != GPR_U32(ctx, 2));
         ctx->pc = 0x1229C8u;
-        SET_GPR_U32(ctx, 2, ((uint32_t)23 << 16));
+        SET_GPR_S32(ctx, 2, ((uint32_t)23 << 16));
         if (branch_taken_0x1229c4) {
             ctx->pc = 0x122ADCu;
             goto label_122adc;

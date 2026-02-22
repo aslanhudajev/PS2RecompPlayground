@@ -32,10 +32,10 @@ void GetVoiceStatus_0x10bf40(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runt
     ctx->pc = 0x10BF50u;
     // 0x10bf50: 0x34861700
     ctx->pc = 0x10bf50u;
-    SET_GPR_U32(ctx, 6, OR32(GPR_U32(ctx, 4), 5888));
+    SET_GPR_U64(ctx, 6, GPR_U64(ctx, 4) | (uint64_t)5888);
     // 0x10bf54: 0x34058040
     ctx->pc = 0x10bf54u;
-    SET_GPR_U32(ctx, 5, OR32(GPR_U32(ctx, 0), 32832));
+    SET_GPR_U64(ctx, 5, GPR_U64(ctx, 0) | (uint64_t)32832);
     // 0x10bf58: 0xc045c80
     ctx->pc = 0x10BF58u;
     SET_GPR_U32(ctx, 31, 0x10BF60u);
