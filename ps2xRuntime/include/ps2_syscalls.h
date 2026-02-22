@@ -24,4 +24,6 @@ namespace ps2_syscalls
     void WaitVSyncTick(uint8_t *rdram, PS2Runtime *runtime);
 }
 
+std::string translatePs2Path(const char *ps2Path);
+
 #endif // PS2_SYSCALLS_H

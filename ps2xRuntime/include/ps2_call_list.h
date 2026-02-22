@@ -199,6 +199,12 @@
     X(sceSifLoadElfPart)                      \
     X(sceSifLoadModule)                       \
     X(sceSifSendCmd)                          \
+    X(sceeFontInit)                           \
+    X(sceeFontLoadFont)                       \
+    X(sceeFontPrintfAt2)                      \
+    X(sceeFontSetColour)                      \
+    X(sceeFontSetFont)                        \
+    X(sceeFontSetScale)                       \
     X(sceVu0ecossin)                          \
     X(iopGetArea)                             \
     X(mcCallMessageTypeSe)                    \
