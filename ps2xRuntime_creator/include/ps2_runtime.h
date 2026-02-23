@@ -8,12 +8,12 @@
 #include <string>
 #include <functional>
 #if defined(_MSC_VER)
-    #include <intrin.h>
+#include <intrin.h>
 #elif defined(USE_SSE2NEON)
-    #include "sse2neon.h"
+#include "sse2neon.h"
 #else
-    #include <immintrin.h> // For SSE/AVX instructions
-    #include <smmintrin.h> // For SSE4.1 instructions
+#include <immintrin.h> // For SSE/AVX instructions
+#include <smmintrin.h> // For SSE4.1 instructions
 #endif
 #include <atomic>
 #include <mutex>
@@ -22,11 +22,6 @@
 #include <iomanip>
 
 #include "ps2_memory.h"
-#include "ps2_gs_gpu.h"
-#include "ps2_iop.h"
-#include "ps2_vu1.h"
-#include "ps2_audio.h"
-#include "ps2_pad.h"
 
 enum PS2Exception
 {
@@ -115,6 +110,10 @@ struct alignas(16) R5900Context
     uint32_t llbit;
     uint32_t lladdr;
 
+    // Delay slot state tracking
+    bool in_delay_slot;
+    uint32_t branch_pc;
+
     // COP2 control registers (VU0 integer + control)
     uint32_t cop2_ccr[32];
 
@@ -136,6 +135,9 @@ struct alignas(16) R5900Context
         // 0x00000000 = Normal mode (after BIOS handoff).
         cop0_status = 0x00000000;
         cop0_prid = 0x00002e20; // CPU ID for R5900
+
+        in_delay_slot = false;
+        branch_pc = 0;
     }
 
     void dump() const
@@ -177,7 +179,8 @@ inline uint32_t getRegU32(const R5900Context *ctx, int reg)
 
 inline void setReturnU32(R5900Context *ctx, uint32_t value)
 {
-    ctx->r[2] = _mm_set_epi64x(0, static_cast<int64_t>(static_cast<int32_t>(value)));
+    // R5900 sign-extends 32-bit results into 64-bit GPR, even for unsigned values.
+    ctx->r[2] = _mm_set_epi64x(0, static_cast<int64_t>(static_cast<int32_t>(value))); // $v0
 }
 
 inline void setReturnS32(R5900Context *ctx, int32_t value)
@@ -418,34 +421,33 @@ public:
 
     static inline bool isSpecialAddress(uint32_t addr)
     {
-        // BIOS (physical + cached/uncached aliases)
-        if ((addr >= PS2_BIOS_BASE && addr < (PS2_BIOS_BASE + PS2_BIOS_SIZE)) ||
-            (addr >= 0xBFC00000u && addr < (0xBFC00000u + PS2_BIOS_SIZE)))
+        auto inRange = [](uint32_t value, uint32_t base, uint32_t size) -> bool
         {
-            return true;
-        }
+            return (value - base) < size;
+        };
 
-        // Scratchpad (16KB)
-        if (addr >= PS2_SCRATCHPAD_BASE && addr < (PS2_SCRATCHPAD_BASE + PS2_SCRATCHPAD_SIZE))
-            return true;
-
-        // EE MMIO window (Timers, DMAC, INTC, etc)
-        if (addr >= PS2_IO_BASE && addr < (PS2_IO_BASE + PS2_IO_SIZE))
-            return true;
-
-        // GS privileged regs
-        if (addr >= PS2_GS_PRIV_REG_BASE && addr < (PS2_GS_PRIV_REG_BASE + PS2_GS_PRIV_REG_SIZE))
-            return true;
+        auto isPhysicalSpecial = [&](uint32_t physAddr) -> bool
+        {
+            if (inRange(physAddr, PS2_BIOS_BASE, PS2_BIOS_SIZE))
+                return true;
+            if (inRange(physAddr, PS2_SCRATCHPAD_BASE, PS2_SCRATCHPAD_SIZE))
+                return true;
+            if (inRange(physAddr, PS2_IO_BASE, PS2_IO_SIZE))
+                return true;
+            if (inRange(physAddr, PS2_GS_PRIV_REG_BASE, PS2_GS_PRIV_REG_SIZE))
+                return true;
+            if (physAddr >= PS2_VU0_CODE_BASE && physAddr < (PS2_VU1_DATA_BASE + PS2_VU1_DATA_SIZE))
+                return true;
+            return false;
+        };
 
         // KSEG2/KSEG3 (TLB mapped)
         if (addr >= 0xC0000000u)
             return true;
 
-        // VU Memory (Micro/Data) mapped into EE space
-        if (addr >= PS2_VU0_CODE_BASE && addr < (PS2_VU1_DATA_BASE + PS2_VU1_DATA_SIZE))
-            return true;
-
-        return false;
+        // KSEG0/KSEG1 aliases → physical
+        const uint32_t physAddr = (addr >= 0x80000000u) ? (addr & 0x1FFFFFFFu) : addr;
+        return isPhysicalSpecial(physAddr);
     }
 
 public:
@@ -454,17 +456,6 @@ public:
 
     inline PS2Memory &memory() { return m_memory; }
     inline const PS2Memory &memory() const { return m_memory; }
-
-    inline GS &gs() { return m_gs; }
-    inline const GS &gs() const { return m_gs; }
-    inline IOP &iop() { return m_iop; }
-    inline const IOP &iop() const { return m_iop; }
-    inline PS2AudioBackend &audioBackend() { return m_audioBackend; }
-    inline const PS2AudioBackend &audioBackend() const { return m_audioBackend; }
-    inline PSPadBackend &padBackend() { return m_padBackend; }
-    inline const PSPadBackend &padBackend() const { return m_padBackend; }
-    inline VU1Interpreter &vu1() { return m_vu1; }
-    inline const VU1Interpreter &vu1() const { return m_vu1; }
 
 private:
     struct GuestHeapBlock
@@ -490,11 +481,6 @@ private:
 
 private:
     PS2Memory m_memory;
-    GS m_gs;
-    IOP m_iop;
-    PS2AudioBackend m_audioBackend;
-    PSPadBackend m_padBackend;
-    VU1Interpreter m_vu1;
     R5900Context m_cpuContext;
     mutable std::mutex m_guestHeapMutex;
     std::vector<GuestHeapBlock> m_guestHeapBlocks;
@@ -525,4 +511,3 @@ private:
 };
 
 #endif // PS2_RUNTIME_H
-
