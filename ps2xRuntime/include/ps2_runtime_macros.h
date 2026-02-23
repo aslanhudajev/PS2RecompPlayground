@@ -44,7 +44,12 @@ static inline uint32_t ps2_clz32(uint32_t x)
     return static_cast<uint32_t>(std::countl_zero(x));
 }
 
-#define PS2_BLENDV_PS(a, b, mask) _mm_blendv_ps((a), (b), (mask))
+// SSE2-compatible replacement for _mm_blendv_ps (SSE4.1): when mask sign bit is 1 take a, else b
+static inline __m128 ps2_blendv_ps(__m128 a, __m128 b, __m128 mask)
+{
+    __m128 sign_mask = _mm_castsi128_ps(_mm_srai_epi32(_mm_castps_si128(mask), 31));
+    return _mm_or_ps(_mm_and_ps(sign_mask, a), _mm_andnot_ps(sign_mask, b));
+}
 #define PS2_MIN_EPI32(a, b) _mm_min_epi32((a), (b))
 #define PS2_MAX_EPI32(a, b) _mm_max_epi32((a), (b))
 #define PS2_SHUFFLE_EPI8(v, mask) _mm_shuffle_epi8((v), (mask))
@@ -115,7 +120,8 @@ static inline uint32_t ps2_clz32(uint32_t x)
 #define PS2_PXOR(a, b) _mm_xor_si128((__m128i)(a), (__m128i)(b))
 #define PS2_PNOR(a, b) _mm_xor_si128(_mm_or_si128((__m128i)(a), (__m128i)(b)), _mm_set1_epi32(0xFFFFFFFF))
 
-// PS2 VU (Vector Unit) operations
+// PS2 VU (Vector Unit) operations - use ps2_blendv_ps (SSE2) not _mm_blendv_ps (SSE4.1)
+#define PS2_BLENDV_PS(a, b, mask) ps2_blendv_ps((__m128)(a), (__m128)(b), (__m128)(mask))
 #define PS2_VADD(a, b) _mm_add_ps((__m128)(a), (__m128)(b))
 #define PS2_VSUB(a, b) _mm_sub_ps((__m128)(a), (__m128)(b))
 #define PS2_VMUL(a, b) _mm_mul_ps((__m128)(a), (__m128)(b))

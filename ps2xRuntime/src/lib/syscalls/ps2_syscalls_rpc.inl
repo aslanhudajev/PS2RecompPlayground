@@ -1201,6 +1201,16 @@ void sceSifSendCmd(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     setReturnS32(ctx, 1);
 }
 
+void sceSifGetReg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    ps2_stubs::sceSifGetReg(rdram, ctx, runtime);
+}
+
+void sceSifSetReg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    ps2_stubs::sceSifSetReg(rdram, ctx, runtime);
+}
+
 void sceRpcGetPacket(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
     uint32_t queuePtr = getRegU32(ctx, 4);

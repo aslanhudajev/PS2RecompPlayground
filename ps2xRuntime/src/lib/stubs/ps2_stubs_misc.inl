@@ -917,10 +917,10 @@ void sceIpuInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
     PS2Memory &mem = runtime->memory();
 
-    // 1) setD4_CHCR(1)
-    auto setD4 = runtime->lookupFunction(SETD4_CHCR_ENTRY);
-    if (setD4)
+    // 1) setD4_CHCR(1) - skip if not registered (lookupFunction returns crash handler, not null)
+    if (runtime->hasFunction(SETD4_CHCR_ENTRY))
     {
+        auto setD4 = runtime->lookupFunction(SETD4_CHCR_ENTRY);
         ctx->r[4] = _mm_set_epi64x(0, 1);  // a0 = 1
         setD4(rdram, ctx, runtime);
     }
@@ -1921,6 +1921,10 @@ namespace
     std::mutex g_sifDmaTransferMutex;
     uint32_t g_nextSifDmaTransferId = 1u;
 
+    std::mutex g_sifRegMutex;
+    std::unordered_map<uint32_t, uint32_t> g_sifRegs;
+    std::unordered_map<uint32_t, uint16_t> g_sifSregs;
+
     uint32_t allocateSifDmaTransferId()
     {
         std::lock_guard<std::mutex> lock(g_sifDmaTransferMutex);
@@ -2106,12 +2110,45 @@ void sceSifGetOtherData(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceSifGetReg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifGetReg", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    const uint32_t regId = getRegU32(ctx, 4);
+
+    std::lock_guard<std::mutex> lock(g_sifRegMutex);
+    auto it = g_sifRegs.find(regId);
+    uint32_t val;
+    if (it != g_sifRegs.end())
+    {
+        val = it->second;
+    }
+    else
+    {
+        if (regId == 0x80000000u)
+        {
+            val = 0u;
+        }
+        else if (regId == 4u)
+        {
+            val = 0x20000u;
+        }
+        else
+        {
+            val = 0u;
+        }
+    }
+    setReturnS32(ctx, static_cast<int32_t>(val));
 }
 
 void sceSifGetSreg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifGetSreg", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    const uint32_t regId = getRegU32(ctx, 4);
+
+    std::lock_guard<std::mutex> lock(g_sifRegMutex);
+    auto it = g_sifSregs.find(regId);
+    const uint16_t val = (it != g_sifSregs.end()) ? it->second : 0u;
+    setReturnS32(ctx, static_cast<int32_t>(val));
 }
 
 void sceSifInitCmd(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2274,7 +2311,14 @@ void sceSifSetIopAddr(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceSifSetReg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifSetReg", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    const uint32_t regId = getRegU32(ctx, 4);
+    const uint32_t val = getRegU32(ctx, 5);
+
+    std::lock_guard<std::mutex> lock(g_sifRegMutex);
+    g_sifRegs[regId] = val;
+    setReturnS32(ctx, 0);
 }
 
 void sceSifSetRpcQueue(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -2284,7 +2328,14 @@ void sceSifSetRpcQueue(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceSifSetSreg(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceSifSetSreg", rdram, ctx, runtime);
+    (void)rdram;
+    (void)runtime;
+    const uint32_t regId = getRegU32(ctx, 4);
+    const uint16_t val = static_cast<uint16_t>(getRegU32(ctx, 5) & 0xFFFFu);
+
+    std::lock_guard<std::mutex> lock(g_sifRegMutex);
+    g_sifSregs[regId] = val;
+    setReturnS32(ctx, 0);
 }
 
 void sceSifSetSysCmdBuffer(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -3017,7 +3068,28 @@ void stat(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void strcasecmp(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("strcasecmp", rdram, ctx, runtime);
+    uint32_t str1Addr = getRegU32(ctx, 4); // $a0
+    uint32_t str2Addr = getRegU32(ctx, 5); // $a1
+
+    const char *hostStr1 = reinterpret_cast<const char *>(getConstMemPtr(rdram, str1Addr));
+    const char *hostStr2 = reinterpret_cast<const char *>(getConstMemPtr(rdram, str2Addr));
+    int result = 0;
+
+    if (hostStr1 && hostStr2)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        result = ::_stricmp(hostStr1, hostStr2);
+#else
+        result = ::strcasecmp(hostStr1, hostStr2);
+#endif
+    }
+    else
+    {
+        result = (hostStr1 == nullptr) - (hostStr2 == nullptr);
+        if (result == 0 && hostStr1 == nullptr)
+            result = 1;
+    }
+    setReturnS32(ctx, result);
 }
 
 void vfprintf(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)

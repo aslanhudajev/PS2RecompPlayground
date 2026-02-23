@@ -51,7 +51,7 @@ namespace ps2_syscalls
             GsSetCrt(rdram, ctx, runtime);
             return true;
         case 0x04:
-            ExitThread(rdram, ctx, runtime);
+            FlushCache(rdram, ctx, runtime);
             return true;
         case 0x10:
             AddIntcHandler(rdram, ctx, runtime);
@@ -285,6 +285,13 @@ namespace ps2_syscalls
         case 0x78:
         case static_cast<uint32_t>(-0x78):
             ps2_stubs::sceSifSetDChain(rdram, ctx, runtime);
+            return true;
+        case 0x79:
+        case 0x7b:
+            ps2_stubs::sceSifSetReg(rdram, ctx, runtime);
+            return true;
+        case 0x7a:
+            ps2_stubs::sceSifGetReg(rdram, ctx, runtime);
             return true;
         case 0x85:
             SetMemoryMode(rdram, ctx, runtime);

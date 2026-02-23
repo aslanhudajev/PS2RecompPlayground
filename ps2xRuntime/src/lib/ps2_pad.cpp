@@ -1,5 +1,7 @@
 #include "ps2_pad.h"
 #include "raylib.h"
+#include <chrono>
+#include <cstdio>
 #include <cstring>
 
 namespace
@@ -94,5 +96,29 @@ bool PSPadBackend::readState(int /*port*/, int /*slot*/, uint8_t *data, size_t s
 
     data[2] = static_cast<uint8_t>(btns & 0xFF);
     data[3] = static_cast<uint8_t>(btns >> 8);
+
+    // Log when input is detected (transition from no-input to input)
+    {
+        static bool s_lastHadInput = false;
+        static uint64_t s_inputEventCount = 0;
+        static const auto s_start = std::chrono::steady_clock::now();
+        const bool hasInput = (btns != 0xFFFFu);
+        if (hasInput)
+        {
+            if (!s_lastHadInput)
+            {
+                const auto now = std::chrono::steady_clock::now();
+                const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - s_start).count();
+                std::fprintf(stderr, "[PAD] Input #%llu at t=%llums buttons=0x%04x\n",
+                             static_cast<unsigned long long>(++s_inputEventCount),
+                             static_cast<unsigned long long>(ms), btns);
+            }
+            s_lastHadInput = true;
+        }
+        else
+        {
+            s_lastHadInput = false;
+        }
+    }
     return true;
 }

@@ -1,0 +1,28 @@
+#include "ps2_runtime_macros.h"
+#include "ps2_runtime.h"
+#include "ps2_recompiled_functions.h"
+#include "ps2_recompiled_stubs.h"
+
+#include "ps2_syscalls.h"
+#include "ps2_stubs.h"
+#include "ps2_init_log.h"
+
+// Function: sfuo_IsPrepEnd
+// Address: 0x19f610 - 0x19f618
+void sfuo_IsPrepEnd_0x19f610(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    PS2_INIT_LOG_ENTRY("sfuo_IsPrepEnd");
+
+
+    ctx->pc = 0x19f610u;
+
+    // 0x19f610: 0x3e00008
+    ctx->pc = 0x19F610u;
+    {
+        uint32_t jumpTarget = GPR_U32(ctx, 31);
+        ctx->pc = 0x19F614u;
+        SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 1));
+        ctx->pc = jumpTarget;
+        return;
+    }
+    ctx->pc = 0x19F618u;
+}

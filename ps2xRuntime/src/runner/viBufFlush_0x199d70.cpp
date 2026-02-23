@@ -1,0 +1,87 @@
+#include "ps2_runtime_macros.h"
+#include "ps2_runtime.h"
+#include "ps2_recompiled_functions.h"
+#include "ps2_recompiled_stubs.h"
+
+#include "ps2_syscalls.h"
+#include "ps2_stubs.h"
+#include "ps2_init_log.h"
+
+// Function: viBufFlush
+// Address: 0x199d70 - 0x199dc0
+void viBufFlush_0x199d70(uint8_t* rdram, R5900Context* ctx, PS2Runtime *runtime) {
+    PS2_INIT_LOG_ENTRY("viBufFlush");
+
+
+    ctx->pc = 0x199d70u;
+
+    // 0x199d70: 0x27bdffe0
+    ctx->pc = 0x199d70u;
+    SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 4294967264));
+    // 0x199d74: 0xffb00000
+    ctx->pc = 0x199d74u;
+    WRITE64(ADD32(GPR_U32(ctx, 29), 0), GPR_U64(ctx, 16));
+    // 0x199d78: 0xffbf0010
+    ctx->pc = 0x199d78u;
+    WRITE64(ADD32(GPR_U32(ctx, 29), 16), GPR_U64(ctx, 31));
+    // 0x199d7c: 0x80802d
+    ctx->pc = 0x199d7cu;
+    SET_GPR_U64(ctx, 16, (uint64_t)GPR_U64(ctx, 4) + (uint64_t)GPR_U64(ctx, 0));
+    // 0x199d80: 0xc055248
+    ctx->pc = 0x199D80u;
+    SET_GPR_U32(ctx, 31, 0x199D88u);
+    ctx->pc = 0x199D84u;
+    SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 16), 64)));
+    ctx->pc = 0x154920u;
+    {
+        const uint32_t __entryPc = ctx->pc;
+        WaitSema_0x154920(rdram, ctx, runtime);
+        if (ctx->pc == __entryPc) { ctx->pc = 0x199D88u; }
+        else if (ctx->pc != 0x199D88u) { ctx->pc = 0x199D88u; }
+    }
+    if (ctx->pc != 0x199D88u) { return; }
+    ctx->pc = 0x199D88u;
+    // 0x199d88: 0x8e030014
+    ctx->pc = 0x199d88u;
+    SET_GPR_U32(ctx, 3, READ32(ADD32(GPR_U32(ctx, 16), 20)));
+    // 0x199d8c: 0x2402ffff
+    ctx->pc = 0x199d8cu;
+    SET_GPR_S32(ctx, 2, ADD32(GPR_U32(ctx, 0), 4294967295));
+    // 0x199d90: 0x8e040040
+    ctx->pc = 0x199d90u;
+    SET_GPR_U32(ctx, 4, READ32(ADD32(GPR_U32(ctx, 16), 64)));
+    // 0x199d94: 0x24650800
+    ctx->pc = 0x199d94u;
+    SET_GPR_S32(ctx, 5, ADD32(GPR_U32(ctx, 3), 2048));
+    // 0x199d98: 0xdfbf0010
+    ctx->pc = 0x199d98u;
+    SET_GPR_U64(ctx, 31, READ64(ADD32(GPR_U32(ctx, 29), 16)));
+    // 0x199d9c: 0x45102a
+    ctx->pc = 0x199d9cu;
+    SET_GPR_U32(ctx, 2, SLT32(GPR_S32(ctx, 2), GPR_S32(ctx, 5)));
+    // 0x199da0: 0x24630fff
+    ctx->pc = 0x199da0u;
+    SET_GPR_S32(ctx, 3, ADD32(GPR_U32(ctx, 3), 4095));
+    // 0x199da4: 0xa2180b
+    ctx->pc = 0x199da4u;
+    if (GPR_U32(ctx, 2) != 0) SET_GPR_U32(ctx, 3, GPR_U32(ctx, 5));
+    // 0x199da8: 0x31ac3
+    ctx->pc = 0x199da8u;
+    SET_GPR_S32(ctx, 3, SRA32(GPR_S32(ctx, 3), 11));
+    // 0x199dac: 0x31ac0
+    ctx->pc = 0x199dacu;
+    SET_GPR_U32(ctx, 3, SLL32(GPR_U32(ctx, 3), 11));
+    // 0x199db0: 0xae030014
+    ctx->pc = 0x199db0u;
+    WRITE32(ADD32(GPR_U32(ctx, 16), 20), GPR_U32(ctx, 3));
+    // 0x199db4: 0xdfb00000
+    ctx->pc = 0x199db4u;
+    SET_GPR_U64(ctx, 16, READ64(ADD32(GPR_U32(ctx, 29), 0)));
+    // 0x199db8: 0x8055240
+    ctx->pc = 0x199DB8u;
+    ctx->pc = 0x199DBCu;
+    SET_GPR_S32(ctx, 29, ADD32(GPR_U32(ctx, 29), 32));
+    ctx->pc = 0x154900u;
+    SignalSema_0x154900(rdram, ctx, runtime); return;
+    ctx->pc = 0x199DC0u;
+}
