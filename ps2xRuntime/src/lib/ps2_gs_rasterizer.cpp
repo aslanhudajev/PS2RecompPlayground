@@ -167,9 +167,9 @@ uint32_t GSRasterizer::sampleTexture(GS *gs, float s, float t, uint16_t u, uint1
     {
         texU = static_cast<int>(u >> 4);
         texV = static_cast<int>(v >> 4);
-    }
-    else
-    {
+        }
+        else
+        {
         float invQ = (gs->m_curQ != 0.0f) ? (1.0f / gs->m_curQ) : 1.0f;
         texU = static_cast<int>(s * invQ * static_cast<float>(texW));
         texV = static_cast<int>(t * invQ * static_cast<float>(texH));
@@ -315,8 +315,8 @@ void GSRasterizer::drawSprite(GS *gs)
             }
         }
     }
-    else
-    {
+            else
+            {
         for (int y = y0; y <= y1; ++y)
             for (int x = x0; x <= x1; ++x)
                 writePixel(gs, x, y, r, g, b, a);
@@ -368,7 +368,7 @@ void GSRasterizer::drawTriangle(GS *gs)
             float w2 = 1.0f - w0 - w1;
 
             if (w0 < 0.0f || w1 < 0.0f || w2 < 0.0f)
-                continue;
+            continue;
 
             uint8_t r, g, b, a;
             if (gs->m_prim.iip)
@@ -392,9 +392,9 @@ void GSRasterizer::drawTriangle(GS *gs)
                     iu = static_cast<uint16_t>(v0.u * w0 + v1.u * w1 + v2.u * w2);
                     iv = static_cast<uint16_t>(v0.v * w0 + v1.v * w1 + v2.v * w2);
                     is = 0; it = 0;
-                }
-                else
-                {
+                    }
+                    else
+                    {
                     is = v0.s * w0 + v1.s * w1 + v2.s * w2;
                     it = v0.t * w0 + v1.t * w1 + v2.t * w2;
                     iu = 0; iv = 0;
