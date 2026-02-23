@@ -129,6 +129,31 @@ PS2Memory::~PS2Memory()
     }
 }
 
+void PS2Memory::processGIFPacket(uint32_t srcPhysAddr, uint32_t qwCount)
+{
+    if (!m_rdram || qwCount == 0)
+        return;
+    const uint64_t bytes64 = static_cast<uint64_t>(qwCount) * 16ull;
+    uint32_t sizeBytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
+    if (srcPhysAddr >= PS2_RAM_SIZE)
+        return;
+    if (static_cast<uint64_t>(srcPhysAddr) + static_cast<uint64_t>(sizeBytes) > static_cast<uint64_t>(PS2_RAM_SIZE))
+        sizeBytes = PS2_RAM_SIZE - srcPhysAddr;
+    if (sizeBytes < 16)
+        return;
+
+    m_seenGifCopy = true;
+    m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+    if (m_gifPacketCallback)
+        m_gifPacketCallback(m_rdram + srcPhysAddr, sizeBytes);
+}
+
+void PS2Memory::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
+{
+    if (m_gifPacketCallback && data && sizeBytes >= 16)
+        m_gifPacketCallback(data, sizeBytes);
+}
+
 bool PS2Memory::initialize(size_t ramSize)
 {
     auto cleanup = [this]()
@@ -616,42 +641,52 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
 
             if ((channelBase == 0x1000A000 || channelBase == 0x10009000) && m_gsVRAM)
             {
-                auto doCopy = [&](uint32_t srcAddr, uint32_t qwCount)
+                auto dispatchTransfer = [&](uint32_t srcAddr, uint32_t qwCount)
                 {
-                    const uint64_t bytes64 = static_cast<uint64_t>(qwCount) * 16ull;
-                    uint32_t bytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
-                    const bool scratch = isScratchpad(srcAddr);
-                    uint32_t src = 0;
+                    if (qwCount == 0)
+                        return;
+                    uint32_t srcPhys = 0;
                     try
                     {
-                        src = translateAddress(srcAddr);
+                        srcPhys = translateAddress(srcAddr);
                     }
                     catch (const std::exception &)
                     {
                         return;
                     }
-                    const uint8_t *base;
-                    uint32_t maxSz;
-                    if (scratch)
+                    const bool scratch = isScratchpad(srcAddr);
+                    if (channelBase == 0x1000A000)
                     {
-                        base = m_scratchpad;
-                        maxSz = PS2_SCRATCHPAD_SIZE;
+                        if (scratch)
+                        {
+                            const uint64_t bytes64 = static_cast<uint64_t>(qwCount) * 16ull;
+                            uint32_t bytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
+                            if (srcPhys + bytes > PS2_SCRATCHPAD_SIZE)
+                                bytes = PS2_SCRATCHPAD_SIZE - srcPhys;
+                            if (bytes >= 16)
+                            {
+                                m_seenGifCopy = true;
+                                m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+                                processGIFPacket(m_scratchpad + srcPhys, bytes);
+                            }
+                        }
+                        else if (srcPhys < PS2_RAM_SIZE)
+                        {
+                            processGIFPacket(srcPhys, qwCount);
+                        }
+                        return;
                     }
-                    else
+                    if (channelBase == 0x10009000 && !scratch)
                     {
-                        base = m_rdram;
-                        maxSz = PS2_RAM_SIZE;
+                        const uint64_t bytes64 = static_cast<uint64_t>(qwCount) * 16ull;
+                        uint32_t bytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
+                        if (srcPhys >= PS2_RAM_SIZE)
+                            return;
+                        if (srcPhys + bytes > PS2_RAM_SIZE)
+                            bytes = PS2_RAM_SIZE - srcPhys;
+                        if (bytes > 0)
+                            processVIF1Data(srcPhys, bytes);
                     }
-                    if (src >= maxSz)
-                        return;
-                    if (src + bytes > maxSz)
-                        bytes = maxSz - src;
-                    if (bytes == 0)
-                        return;
-                    m_seenGifCopy = true;
-                    m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
-                    if (m_gifPacketCallback)
-                        m_gifPacketCallback(base + src, bytes);
                 };
 
                 uint32_t chcr = value;
@@ -659,7 +694,7 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
 
                 if (mode == 0 && qwc > 0)
                 {
-                    doCopy(madr, qwc);
+                    dispatchTransfer(madr, qwc);
                 }
                 else if (mode == 1)
                 {
@@ -748,13 +783,15 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                     {
                         m_seenGifCopy = true;
                         m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
-                        if (m_gifPacketCallback)
-                            m_gifPacketCallback(chainBuf.data(), static_cast<uint32_t>(chainBuf.size()));
+                        if (channelBase == 0x1000A000)
+                            processGIFPacket(chainBuf.data(), static_cast<uint32_t>(chainBuf.size()));
+                        else if (channelBase == 0x10009000)
+                            processVIF1Data(static_cast<const uint8_t *>(chainBuf.data()), static_cast<uint32_t>(chainBuf.size()));
                     }
                 }
                 else if (qwc > 0)
                 {
-                    doCopy(madr, qwc);
+                    dispatchTransfer(madr, qwc);
                 }
                 m_ioRegisters[address] &= ~0x100;
             }

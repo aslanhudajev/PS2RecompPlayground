@@ -1265,77 +1265,29 @@ void sceeFontLoadFont(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     FAST_WRITE32(kFontBase + fontOff + 0x1cu, spaceWidth);
 
     {
-        uint32_t headerQWs = 6;
         uint32_t imageBytes = (uint32_t)qwc * 16u;
-        uint32_t totalBytes = headerQWs * 16u + imageBytes;
 
-        std::vector<uint8_t> packet(totalBytes, 0);
-        auto store64 = [&](uint32_t off, uint64_t val) {
-            std::memcpy(packet.data() + off, &val, 8);
-        };
-
-        // QW0: GIF A+D tag — NLOOP=4, NREG=1, FLG=PACKED(0), EOP=0
-        store64(0x00, 0x1000000000000004ull);
-        store64(0x08, 0x000000000000000Eull);
-
-        // QW1: BITBLTBUF (reg 0x50) — DBP=tbp0, DBW=tw, DPSM=PSMT4(20)
-        uint64_t bitbltbuf = ((uint64_t)(uint32_t)tbp0 << 32)
-                           | ((uint64_t)(uint32_t)tw << 48)
-                           | 0x1400000000000000ull;
-        store64(0x10, bitbltbuf);
-        store64(0x18, 0x0000000000000050ull);
-
-        // QW2: TRXPOS (reg 0x51) — all zeros (start at 0,0)
-        store64(0x20, 0ull);
-        store64(0x28, 0x0000000000000051ull);
-
-        // QW3: TRXREG (reg 0x52) — RRW=width, RRH=height
-        uint64_t trxreg = (uint64_t)(uint32_t)width
-                        | ((uint64_t)(uint32_t)height << 32);
-        store64(0x30, trxreg);
-        store64(0x38, 0x0000000000000052ull);
-
-        // QW4: TRXDIR (reg 0x53) — 0 = host→local
-        store64(0x40, 0ull);
-        store64(0x48, 0x0000000000000053ull);
-
-        // QW5: GIF IMAGE tag — NLOOP=qwc, EOP=1, FLG=IMAGE(2)
-        uint64_t imageTag = (uint64_t)(uint32_t)qwc
-                          | 0x0800000000008000ull;
-        store64(0x50, imageTag);
-        store64(0x58, 0ull);
-
-        // QW6+: font texture image data from fontDataAddr + 0x10
+        // Creator approach: write directly to VRAM instead of going through processGIFPacket.
+        uint8_t *vram = runtime->memory().getGSVRAM();
         const uint8_t *imgSrc = getConstMemPtr(rdram, fontDataAddr + 0x10u);
-        if (imgSrc && imageBytes > 0)
-            std::memcpy(packet.data() + headerQWs * 16u, imgSrc, imageBytes);
-
-        runtime->gs().processGIFPacket(packet.data(), totalBytes);
-
-        // Ensure font texture is in linear layout (GIF/processImageData may use different timing
-        // or the real GS uses block layout). We always do a direct linear copy to match readTexelPSMT4.
-        {
-            uint8_t *vram = runtime->memory().getGSVRAM();
-            const uint8_t *imgSrc = getConstMemPtr(rdram, fontDataAddr + 0x10u);
-            if (vram && imgSrc && imageBytes > 0) {
-                uint32_t texBase = (uint32_t)tbp0 * 256u;
-                uint32_t texStride = (uint32_t)tw * 64u / 2u;
-                uint32_t rowBytes = (width + 1u) / 2u;
-                for (uint32_t row = 0; row < height && (row + 1u) * rowBytes <= imageBytes; ++row) {
-                    uint32_t dstOff = texBase + row * texStride;
-                    uint32_t srcOff = row * rowBytes;
-                    if (dstOff + rowBytes <= PS2_GS_VRAM_SIZE)
-                        std::memcpy(vram + dstOff, imgSrc + srcOff, rowBytes);
-                }
-                std::fprintf(stderr, "[sceeFontLoadFont] direct linear copy: texBase=0x%x stride=%u w=%d h=%d rowBytes=%u\n",
-                       texBase, texStride, width, height, rowBytes);
-                for (int row = 0; row < 4 && row < height; row++) {
-                    uint32_t rowOff = texBase + (uint32_t)row * texStride;
-                    std::fprintf(stderr, "  VRAM row %d (off=0x%x): %02x %02x %02x %02x %02x %02x %02x %02x\n",
-                           row, rowOff,
-                           vram[rowOff+0], vram[rowOff+1], vram[rowOff+2], vram[rowOff+3],
-                           vram[rowOff+4], vram[rowOff+5], vram[rowOff+6], vram[rowOff+7]);
-                }
+        if (vram && imgSrc && imageBytes > 0) {
+            uint32_t texBase = (uint32_t)tbp0 * 256u;
+            uint32_t texStride = (uint32_t)tw * 64u / 2u;
+            uint32_t rowBytes = (width + 1u) / 2u;
+            for (uint32_t row = 0; row < height && (row + 1u) * rowBytes <= imageBytes; ++row) {
+                uint32_t dstOff = texBase + row * texStride;
+                uint32_t srcOff = row * rowBytes;
+                if (dstOff + rowBytes <= PS2_GS_VRAM_SIZE)
+                    std::memcpy(vram + dstOff, imgSrc + srcOff, rowBytes);
+            }
+            std::fprintf(stderr, "[sceeFontLoadFont] direct linear copy: texBase=0x%x stride=%u w=%d h=%d rowBytes=%u\n",
+                   texBase, texStride, width, height, rowBytes);
+            for (int row = 0; row < 4 && row < height; row++) {
+                uint32_t rowOff = texBase + (uint32_t)row * texStride;
+                std::fprintf(stderr, "  VRAM row %d (off=0x%x): %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                       row, rowOff,
+                       vram[rowOff+0], vram[rowOff+1], vram[rowOff+2], vram[rowOff+3],
+                       vram[rowOff+4], vram[rowOff+5], vram[rowOff+6], vram[rowOff+7]);
             }
         }
     }

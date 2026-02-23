@@ -287,6 +287,18 @@ public:
     using GifPacketCallback = std::function<void(const uint8_t *, uint32_t)>;
     void setGifPacketCallback(GifPacketCallback cb) { m_gifPacketCallback = std::move(cb); }
 
+    /// Process GIF packet from RDRAM (used by DMA path). Reads from m_rdram at srcPhysAddr.
+    void processGIFPacket(uint32_t srcPhysAddr, uint32_t qwCount);
+
+    /// Process GIF packet from arbitrary buffer (used by stubs, VU1). Forwards to GS via callback.
+    void processGIFPacket(const uint8_t *data, uint32_t sizeBytes);
+
+    /// Process VIF1 data from RDRAM (used by VIF1 DMA channel).
+    void processVIF1Data(uint32_t srcPhysAddr, uint32_t sizeBytes);
+
+    /// Process VIF1 data from buffer (used by VIF1 chain mode).
+    void processVIF1Data(const uint8_t *data, uint32_t sizeBytes);
+
     // Main RAM (32MB)
     uint8_t *m_rdram;
 

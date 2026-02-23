@@ -143,7 +143,9 @@ void sceGsPutDrawEnv(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         return;
     }
 
-    runtime->gs().processGIFPacket(ptr, 144);
+    // Game writes draw env to RDRAM; we submit it to GS. The game does not DMA this
+    // data separately—sceGsPutDrawEnv must submit it for drawing to work.
+    runtime->memory().processGIFPacket(ptr, 144);
 
     setReturnS32(ctx, 0);
 }

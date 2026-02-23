@@ -13,9 +13,5 @@ void handleLibSdRpc(PS2Runtime *runtime, uint32_t sid, uint32_t rpcNum,
         return;
     }
     runtime->audioBackend().onSoundCommand(sid, rpcNum, sendBuf, sendSize, recvBuf, recvSize);
-    if (recvBuf && recvSize > 0)
-    {
-        std::memset(recvBuf, 0, recvSize);
-    }
 }
 }

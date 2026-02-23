@@ -1,5 +1,6 @@
 #include "ps2_vu1.h"
 #include "ps2_gs_gpu.h"
+#include "ps2_memory.h"
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -55,7 +56,8 @@ void VU1Interpreter::applyDestAcc(const float *result, uint8_t dest)
 
 void VU1Interpreter::execute(uint8_t *vuCode, uint32_t codeSize,
                               uint8_t *vuData, uint32_t dataSize,
-                              GS &gs, uint32_t startPC, uint32_t itop,
+                              GS &gs, PS2Memory *memory,
+                              uint32_t startPC, uint32_t itop,
                               uint32_t maxCycles)
 {
     m_state.pc = startPC;
@@ -65,22 +67,22 @@ void VU1Interpreter::execute(uint8_t *vuCode, uint32_t codeSize,
     m_state.vf[0][1] = 0.0f;
     m_state.vf[0][2] = 0.0f;
     m_state.vf[0][3] = 1.0f;
-    run(vuCode, codeSize, vuData, dataSize, gs, maxCycles);
+    run(vuCode, codeSize, vuData, dataSize, gs, memory, maxCycles);
 }
 
 void VU1Interpreter::resume(uint8_t *vuCode, uint32_t codeSize,
                              uint8_t *vuData, uint32_t dataSize,
-                             GS &gs, uint32_t itop,
-                             uint32_t maxCycles)
+                             GS &gs, PS2Memory *memory,
+                             uint32_t itop, uint32_t maxCycles)
 {
     m_state.ebit = false;
     m_state.itop = itop;
-    run(vuCode, codeSize, vuData, dataSize, gs, maxCycles);
+    run(vuCode, codeSize, vuData, dataSize, gs, memory, maxCycles);
 }
 
 void VU1Interpreter::run(uint8_t *vuCode, uint32_t codeSize,
                           uint8_t *vuData, uint32_t dataSize,
-                          GS &gs, uint32_t maxCycles)
+                          GS &gs, PS2Memory *memory, uint32_t maxCycles)
 {
     for (uint32_t cycle = 0; cycle < maxCycles; ++cycle)
     {
@@ -105,7 +107,7 @@ void VU1Interpreter::run(uint8_t *vuCode, uint32_t codeSize,
         {
             execUpper(upper);
         }
-        execLower(lower & 0x7FFFFFFF, vuData, dataSize, gs, upper);
+        execLower(lower & 0x7FFFFFFF, vuData, dataSize, gs, memory, upper);
 
         // Enforce VF0 invariant
         m_state.vf[0][0] = 0.0f;
@@ -479,7 +481,7 @@ void VU1Interpreter::execUpper(uint32_t instr)
 // ============================================================================
 // Lower instructions
 // ============================================================================
-void VU1Interpreter::execLower(uint32_t instr, uint8_t *vuData, uint32_t dataSize, GS &gs, uint32_t upperInstr)
+void VU1Interpreter::execLower(uint32_t instr, uint8_t *vuData, uint32_t dataSize, GS &gs, PS2Memory *memory, uint32_t upperInstr)
 {
     (void)upperInstr;
     if (instr == 0x00000000 || instr == 0x8000033C) // NOP
@@ -999,7 +1001,10 @@ void VU1Interpreter::execLower(uint32_t instr, uint8_t *vuData, uint32_t dataSiz
             }
             if (totalBytes > 0 && addr + totalBytes <= dataSize)
             {
-                gs.processGIFPacket(vuData + addr, totalBytes);
+                if (memory)
+                    memory->processGIFPacket(vuData + addr, totalBytes);
+                else
+                    gs.processGIFPacket(vuData + addr, totalBytes);
             }
             return;
         }

@@ -4,6 +4,7 @@
 #include <cstdint>
 
 class GS;
+class PS2Memory;
 
 struct VU1State
 {
@@ -30,16 +31,18 @@ public:
     void reset();
 
     // Execute VU1 microprogram starting at bytePC until E-bit termination or cycle limit.
+    // When memory is non-null, XGKICK submits via memory->processGIFPacket; otherwise via gs.
     void execute(uint8_t *vuCode, uint32_t codeSize,
                  uint8_t *vuData, uint32_t dataSize,
-                 GS &gs, uint32_t startPC, uint32_t itop,
+                 GS &gs, PS2Memory *memory = nullptr,
+                 uint32_t startPC = 0, uint32_t itop = 0,
                  uint32_t maxCycles = 65536);
 
     // Resume execution from the current PC (for MSCNT).
     void resume(uint8_t *vuCode, uint32_t codeSize,
                 uint8_t *vuData, uint32_t dataSize,
-                GS &gs, uint32_t itop,
-                uint32_t maxCycles = 65536);
+                GS &gs, PS2Memory *memory = nullptr,
+                uint32_t itop = 0, uint32_t maxCycles = 65536);
 
     VU1State &state() { return m_state; }
     const VU1State &state() const { return m_state; }
@@ -49,10 +52,10 @@ private:
 
     void run(uint8_t *vuCode, uint32_t codeSize,
              uint8_t *vuData, uint32_t dataSize,
-             GS &gs, uint32_t maxCycles);
+             GS &gs, PS2Memory *memory, uint32_t maxCycles);
 
     void execUpper(uint32_t instr);
-    void execLower(uint32_t instr, uint8_t *vuData, uint32_t dataSize, GS &gs, uint32_t upperInstr);
+    void execLower(uint32_t instr, uint8_t *vuData, uint32_t dataSize, GS &gs, PS2Memory *memory, uint32_t upperInstr);
 
     // Helpers
     void applyDest(float *dst, const float *result, uint8_t dest);

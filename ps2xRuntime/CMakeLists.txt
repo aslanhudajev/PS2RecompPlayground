@@ -33,6 +33,7 @@ add_library(ps2_runtime_obj OBJECT
     src/lib/ps2_runtime.cpp
     src/lib/ps2_stubs.cpp
     src/lib/ps2_syscalls.cpp
+    src/lib/ps2_vif1_interpreter.cpp
     src/lib/ps2_vu1.cpp
 )
 add_library(ps2_runtime ALIAS ps2_runtime_obj)

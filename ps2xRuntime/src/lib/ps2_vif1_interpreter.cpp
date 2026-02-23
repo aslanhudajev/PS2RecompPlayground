@@ -47,7 +47,14 @@ void PS2Memory::processVIF1Data(uint32_t srcPhys, uint32_t sizeBytes)
     if (requestedEnd > static_cast<uint64_t>(PS2_RAM_SIZE))
         sizeBytes = PS2_RAM_SIZE - srcPhys;
 
-    const uint8_t *data = m_rdram + srcPhys;
+    processVIF1Data(m_rdram + srcPhys, sizeBytes);
+}
+
+void PS2Memory::processVIF1Data(const uint8_t *data, uint32_t sizeBytes)
+{
+    if (!data || !m_gsVRAM || sizeBytes == 0u)
+        return;
+
     uint32_t pos = 0; // byte offset
 
     while (pos + 4 <= sizeBytes)
@@ -170,10 +177,7 @@ void PS2Memory::processVIF1Data(uint32_t srcPhys, uint32_t sizeBytes)
 
             if (qwCount > 0)
             {
-                // The GIF data starts at current position in the source buffer
-                // processGIFPacket expects a physical RAM address
-                uint32_t gifPhysAddr = srcPhys + pos;
-                processGIFPacket(gifPhysAddr, qwCount);
+                processGIFPacket(data + pos, qwCount * 16);
                 g_vifDirectCount++;
             }
 
