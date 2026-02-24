@@ -217,9 +217,10 @@ public:
     void unlockDisplaySnapshot();
     uint32_t getLastDisplayBaseBytes() const;
 
-    /// Perform local-to-host transfer (TRXDIR=1). Reads VRAM using current BITBLTBUF/TRXPOS/TRXREG
-    /// and writes to dst in host format. Returns bytes written. Call after GIF packet sets TRXDIR=1.
-    uint32_t performLocalToHostTransfer(uint8_t *dst, uint32_t maxBytes);
+    /// Consume bytes from local-to-host output buffer (host interface emulation).
+    /// When TRXDIR=1 is received via GIF, GS reads VRAM and fills this buffer.
+    /// EE reads from host interface; this simulates that. Returns bytes copied.
+    uint32_t consumeLocalToHostBytes(uint8_t *dst, uint32_t maxBytes);
 
     /// Refresh display snapshot from current VRAM. Call before UploadFrame
     /// so we display fresh data (e.g. games that draw directly without BITBLT).
@@ -231,6 +232,7 @@ private:
     void vertexKick(bool drawing);
 
     void processImageData(const uint8_t *data, uint32_t sizeBytes);
+    void performLocalToHostToBuffer();
 
     GSContext &activeContext();
 
@@ -264,6 +266,9 @@ private:
     std::vector<uint8_t> m_displaySnapshot;
     std::mutex m_snapshotMutex;
     uint32_t m_lastDisplayBaseBytes = 0;
+
+    std::vector<uint8_t> m_localToHostBuffer;
+    size_t m_localToHostReadPos = 0;
 
     GSRasterizer m_rasterizer;
 };

@@ -50,6 +50,8 @@ void GS::reset()
     m_hwregY = 0;
     m_vtxCount = 0;
     m_vtxIndex = 0;
+    m_localToHostBuffer.clear();
+    m_localToHostReadPos = 0;
 
     for (int i = 0; i < 2; ++i)
     {
@@ -566,6 +568,10 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
                 snapshotVRAM();
             }
         }
+        else if (m_trxdir == 1 && m_vram)
+        {
+            performLocalToHostToBuffer();
+        }
         break;
     }
     case GS_REG_HWREG:
@@ -804,10 +810,12 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
 
 }
 
-uint32_t GS::performLocalToHostTransfer(uint8_t *dst, uint32_t maxBytes)
+void GS::performLocalToHostToBuffer()
 {
-    if (!m_vram || !dst || maxBytes == 0)
-        return 0;
+    m_localToHostBuffer.clear();
+    m_localToHostReadPos = 0;
+    if (!m_vram)
+        return;
 
     uint32_t sbp = m_bitbltbuf.sbp;
     uint8_t sbw = m_bitbltbuf.sbw;
@@ -823,16 +831,15 @@ uint32_t GS::performLocalToHostTransfer(uint8_t *dst, uint32_t maxBytes)
     uint32_t ssax = m_trxpos.ssax;
     uint32_t ssay = m_trxpos.ssay;
 
-    uint32_t written = 0;
-
     if (bpp == 4)
     {
         uint32_t rowBytes = (rrw + 1u) / 2u;
         if (rowBytes == 0) rowBytes = 1;
+        m_localToHostBuffer.reserve(rowBytes * rrh);
         uint32_t widthBlocks = static_cast<uint32_t>(sbw);
-        for (uint32_t y = 0; y < rrh && written + rowBytes <= maxBytes; ++y)
+        for (uint32_t y = 0; y < rrh; ++y)
         {
-            for (uint32_t x = 0; x < rrw && written + (x / 2u) + 1 <= maxBytes; ++x)
+            for (uint32_t x = 0; x < rrw; ++x)
             {
                 uint32_t vx = ssax + x;
                 uint32_t vy = ssay + y;
@@ -844,13 +851,11 @@ uint32_t GS::performLocalToHostTransfer(uint8_t *dst, uint32_t maxBytes)
                     int shift = static_cast<int>((nibbleAddr & 1u) << 2);
                     nibble = static_cast<uint8_t>((m_vram[byteOff] >> shift) & 0x0Fu);
                 }
-                uint32_t outIdx = written + (x / 2u);
                 if (x & 1u)
-                    dst[outIdx] = static_cast<uint8_t>((dst[outIdx] & 0x0Fu) | (nibble << 4));
+                    m_localToHostBuffer.back() = static_cast<uint8_t>((m_localToHostBuffer.back() & 0x0Fu) | (nibble << 4));
                 else
-                    dst[outIdx] = nibble;
+                    m_localToHostBuffer.push_back(nibble);
             }
-            written += rowBytes;
         }
     }
     else if (spsm == GS_PSM_CT24 || spsm == GS_PSM_Z24)
@@ -858,21 +863,20 @@ uint32_t GS::performLocalToHostTransfer(uint8_t *dst, uint32_t maxBytes)
         uint32_t storageBpp = 4;
         uint32_t transferBpp = 3;
         uint32_t storageStride = stridePixels * storageBpp;
+        m_localToHostBuffer.reserve(rrw * rrh * transferBpp);
 
-        for (uint32_t y = 0; y < rrh && written + rrw * transferBpp <= maxBytes; ++y)
+        for (uint32_t y = 0; y < rrh; ++y)
         {
             for (uint32_t x = 0; x < rrw; ++x)
             {
                 uint32_t srcOff = base + (ssay + y) * storageStride + (ssax + x) * storageBpp;
-                uint32_t dstOff = written + x * transferBpp;
                 if (srcOff + 4 <= m_vramSize)
                 {
-                    dst[dstOff + 0] = m_vram[srcOff + 0];
-                    dst[dstOff + 1] = m_vram[srcOff + 1];
-                    dst[dstOff + 2] = m_vram[srcOff + 2];
+                    m_localToHostBuffer.push_back(m_vram[srcOff + 0]);
+                    m_localToHostBuffer.push_back(m_vram[srcOff + 1]);
+                    m_localToHostBuffer.push_back(m_vram[srcOff + 2]);
                 }
             }
-            written += rrw * transferBpp;
         }
     }
     else
@@ -881,15 +885,29 @@ uint32_t GS::performLocalToHostTransfer(uint8_t *dst, uint32_t maxBytes)
         if (bytesPerPixel == 0) bytesPerPixel = 4;
         uint32_t strideBytes = stridePixels * bytesPerPixel;
         uint32_t rowBytes = rrw * bytesPerPixel;
+        m_localToHostBuffer.reserve(rowBytes * rrh);
 
-        for (uint32_t y = 0; y < rrh && written + rowBytes <= maxBytes; ++y)
+        for (uint32_t y = 0; y < rrh; ++y)
         {
             uint32_t srcOff = base + (ssay + y) * strideBytes + ssax * bytesPerPixel;
             if (srcOff + rowBytes <= m_vramSize)
-                std::memcpy(dst + written, m_vram + srcOff, rowBytes);
-            written += rowBytes;
+            {
+                for (uint32_t i = 0; i < rowBytes; ++i)
+                    m_localToHostBuffer.push_back(m_vram[srcOff + i]);
+            }
         }
     }
+}
 
-    return written;
+uint32_t GS::consumeLocalToHostBytes(uint8_t *dst, uint32_t maxBytes)
+{
+    if (!dst || maxBytes == 0)
+        return 0;
+    size_t avail = m_localToHostBuffer.size() - m_localToHostReadPos;
+    if (avail == 0)
+        return 0;
+    size_t toCopy = (avail < maxBytes) ? avail : static_cast<size_t>(maxBytes);
+    std::memcpy(dst, m_localToHostBuffer.data() + m_localToHostReadPos, toCopy);
+    m_localToHostReadPos += toCopy;
+    return static_cast<uint32_t>(toCopy);
 }

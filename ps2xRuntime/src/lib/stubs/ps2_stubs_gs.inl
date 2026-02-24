@@ -102,8 +102,8 @@ void sceGsExecStoreImage(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         return;
     }
 
-    /* Local-to-host: submit GIF packet to set BITBLTBUF, TRXPOS, TRXREG, TRXDIR=1.
-     * GS path: register setup via GIF, then performLocalToHostTransfer reads VRAM. */
+    /* Local-to-host: submit GIF packet via Path 3. GS receives TRXDIR=1, reads VRAM into
+     * host output buffer. Stub consumes from buffer (simulating EE reading host interface). */
     uint32_t sbp = (static_cast<uint32_t>(img.vram_addr) * 2048u) / 256u;
     uint64_t bitbltbuf = (static_cast<uint64_t>(sbp & 0x3FFFu) << 0) |
                         (static_cast<uint64_t>(fbw & 0x3Fu) << 16) |
@@ -151,7 +151,7 @@ void sceGsExecStoreImage(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     mem.writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0);
     mem.processPendingTransfers();
 
-    runtime->gs().performLocalToHostTransfer(dst, totalImageBytes);
+    runtime->gs().consumeLocalToHostBytes(dst, totalImageBytes);
 
     setReturnS32(ctx, 0);
 }
