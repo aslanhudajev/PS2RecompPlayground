@@ -1,8 +1,10 @@
 #include "ps2_gs_gpu.h"
 #include "ps2_gs_common.h"
+#include "ps2_gs_psmt4.h"
 #include "ps2_memory.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 
 namespace
@@ -92,10 +94,32 @@ uint32_t GS::getLastDisplayBaseBytes() const
     return m_lastDisplayBaseBytes;
 }
 
+void GS::refreshDisplaySnapshot()
+{
+    snapshotVRAM();
+}
+
 void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
 {
     if (!data || sizeBytes < 16 || !m_vram)
         return;
+
+    static int s_gifLogCount = 0;
+    const bool verbose = (s_gifLogCount < 32);
+
+    /* Each processGIFPacket call = one DMA transfer (one packet). m_hwreg must not leak
+       from the previous packet. If this packet starts with PACKED (new transfer setup),
+       reset; continuation packets start with IMAGE and must preserve m_hwreg. */
+    if (sizeBytes >= 16)
+    {
+        const uint64_t tagLo = loadLE64(data);
+        const uint8_t flg = static_cast<uint8_t>((tagLo >> 58) & 0x3);
+        if (flg == GIF_FMT_PACKED)
+        {
+            m_hwregX = 0;
+            m_hwregY = 0;
+        }
+    }
 
     uint32_t offset = 0;
     while (offset + 16 <= sizeBytes)
@@ -110,6 +134,14 @@ void GS::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
         uint8_t flg = static_cast<uint8_t>((tagLo >> 58) & 0x3);
         uint32_t nreg = static_cast<uint32_t>((tagLo >> 60) & 0xF);
         if (nreg == 0) nreg = 16;
+
+        if (verbose)
+        {
+            const char *fmtStr = (flg == 0) ? "PACKED" : (flg == 1) ? "REGLIST" : (flg == 2) ? "IMAGE" : "?";
+            std::fprintf(stderr, "[GS processGIFPacket] tag nloop=%u flg=%s nreg=%u pre=%d\n",
+                         nloop, fmtStr, nreg, ((tagLo >> 46) & 1) ? 1 : 0);
+            ++s_gifLogCount;
+        }
 
         bool pre = ((tagLo >> 46) & 1) != 0;
         if (pre)
@@ -528,6 +560,7 @@ void GS::writeRegister(uint8_t regAddr, uint64_t value)
                 }
             }
 
+            /* Common double-buffered display: copy from block 0 to 0 or 32, 640x512 */
             if (sbp == 0u && (dbp == 0u || dbp == 0x20u) && rrw >= 640u && rrh >= 512u) {
                 m_lastDisplayBaseBytes = (dbp == 0x20u) ? 8192u : 0u;
                 snapshotVRAM();
@@ -666,29 +699,34 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
 
     if (bpp == 4)
     {
-        uint32_t strideBytes = stridePixels / 2u;
-        if (strideBytes == 0) strideBytes = 1;
         uint32_t rowBytes = (rrw + 1u) / 2u;
-        uint32_t offset = 0;
-
-        while (offset < sizeBytes && m_hwregY < rrh)
+        if (rowBytes == 0) rowBytes = 1;
+        uint32_t widthBlocks = (dbw != 0) ? static_cast<uint32_t>(dbw) : 1u;
+        for (uint32_t y = 0; y < rrh && (y * rowBytes) < sizeBytes; ++y)
         {
-            uint32_t dstY = dsay + m_hwregY;
-            uint32_t rowStart = base + dstY * strideBytes + (dsax / 2u);
-            uint32_t bytesThisRow = rowBytes - (m_hwregX / 2u);
-            uint32_t bytesAvail = sizeBytes - offset;
-            if (bytesThisRow > bytesAvail)
-                bytesThisRow = bytesAvail;
-
-            if (rowStart + (m_hwregX / 2u) + bytesThisRow <= m_vramSize)
+            uint32_t srcRowOff = y * rowBytes;
+            for (uint32_t x = 0; x < rrw && (srcRowOff + (x / 2u)) < sizeBytes; ++x)
             {
-                std::memcpy(m_vram + rowStart + (m_hwregX / 2u), data + offset, bytesThisRow);
-            }
+                uint32_t srcByte = data[srcRowOff + (x / 2u)];
+                uint32_t nibble = (x & 1u) ? ((srcByte >> 4) & 0xFu) : (srcByte & 0xFu);
 
-            offset += bytesThisRow;
-            m_hwregX = 0;
-            ++m_hwregY;
+                /* GS PSMT4 IMAGE: pixel (x,y) in source -> dest (vx,vy). */
+                uint32_t vx = dsax + x;
+                uint32_t vy = dsay + y;
+                /* addrPSMT4: DobieStation/PCSX2 swizzled layout; returns nibble address */
+                uint32_t nibbleAddr = GSPSMT4::addrPSMT4(dbp, widthBlocks, vx, vy);
+                uint32_t byteOff = nibbleAddr >> 1;
+
+                if (byteOff < m_vramSize)
+                {
+                    int shift = static_cast<int>((nibbleAddr & 1u) << 2);
+                    uint8_t &b = m_vram[byteOff];
+                    b = static_cast<uint8_t>((b & (0xF0u >> shift)) | ((nibble & 0x0Fu) << shift));
+                }
+            }
         }
+        m_hwregX = 0;
+        m_hwregY = rrh;
     }
     else if (dpsm == GS_PSM_CT24 || dpsm == GS_PSM_Z24)
     {
@@ -763,4 +801,95 @@ void GS::processImageData(const uint8_t *data, uint32_t sizeBytes)
             }
         }
     }
+
+}
+
+uint32_t GS::performLocalToHostTransfer(uint8_t *dst, uint32_t maxBytes)
+{
+    if (!m_vram || !dst || maxBytes == 0)
+        return 0;
+
+    uint32_t sbp = m_bitbltbuf.sbp;
+    uint8_t sbw = m_bitbltbuf.sbw;
+    uint8_t spsm = m_bitbltbuf.spsm;
+
+    if (sbw == 0) sbw = 1;
+    uint32_t base = sbp * 256u;
+    uint32_t bpp = bitsPerPixel(spsm);
+    uint32_t stridePixels = static_cast<uint32_t>(sbw) * 64u;
+
+    uint32_t rrw = m_trxreg.rrw;
+    uint32_t rrh = m_trxreg.rrh;
+    uint32_t ssax = m_trxpos.ssax;
+    uint32_t ssay = m_trxpos.ssay;
+
+    uint32_t written = 0;
+
+    if (bpp == 4)
+    {
+        uint32_t rowBytes = (rrw + 1u) / 2u;
+        if (rowBytes == 0) rowBytes = 1;
+        uint32_t widthBlocks = static_cast<uint32_t>(sbw);
+        for (uint32_t y = 0; y < rrh && written + rowBytes <= maxBytes; ++y)
+        {
+            for (uint32_t x = 0; x < rrw && written + (x / 2u) + 1 <= maxBytes; ++x)
+            {
+                uint32_t vx = ssax + x;
+                uint32_t vy = ssay + y;
+                uint32_t nibbleAddr = GSPSMT4::addrPSMT4(sbp, widthBlocks, vx, vy);
+                uint32_t byteOff = nibbleAddr >> 1;
+                uint8_t nibble = 0;
+                if (byteOff < m_vramSize)
+                {
+                    int shift = static_cast<int>((nibbleAddr & 1u) << 2);
+                    nibble = static_cast<uint8_t>((m_vram[byteOff] >> shift) & 0x0Fu);
+                }
+                uint32_t outIdx = written + (x / 2u);
+                if (x & 1u)
+                    dst[outIdx] = static_cast<uint8_t>((dst[outIdx] & 0x0Fu) | (nibble << 4));
+                else
+                    dst[outIdx] = nibble;
+            }
+            written += rowBytes;
+        }
+    }
+    else if (spsm == GS_PSM_CT24 || spsm == GS_PSM_Z24)
+    {
+        uint32_t storageBpp = 4;
+        uint32_t transferBpp = 3;
+        uint32_t storageStride = stridePixels * storageBpp;
+
+        for (uint32_t y = 0; y < rrh && written + rrw * transferBpp <= maxBytes; ++y)
+        {
+            for (uint32_t x = 0; x < rrw; ++x)
+            {
+                uint32_t srcOff = base + (ssay + y) * storageStride + (ssax + x) * storageBpp;
+                uint32_t dstOff = written + x * transferBpp;
+                if (srcOff + 4 <= m_vramSize)
+                {
+                    dst[dstOff + 0] = m_vram[srcOff + 0];
+                    dst[dstOff + 1] = m_vram[srcOff + 1];
+                    dst[dstOff + 2] = m_vram[srcOff + 2];
+                }
+            }
+            written += rrw * transferBpp;
+        }
+    }
+    else
+    {
+        uint32_t bytesPerPixel = bpp / 8u;
+        if (bytesPerPixel == 0) bytesPerPixel = 4;
+        uint32_t strideBytes = stridePixels * bytesPerPixel;
+        uint32_t rowBytes = rrw * bytesPerPixel;
+
+        for (uint32_t y = 0; y < rrh && written + rowBytes <= maxBytes; ++y)
+        {
+            uint32_t srcOff = base + (ssay + y) * strideBytes + ssax * bytesPerPixel;
+            if (srcOff + rowBytes <= m_vramSize)
+                std::memcpy(dst + written, m_vram + srcOff, rowBytes);
+            written += rowBytes;
+        }
+    }
+
+    return written;
 }

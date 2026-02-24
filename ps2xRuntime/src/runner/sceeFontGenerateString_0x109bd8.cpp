@@ -35,13 +35,13 @@ void sceeFontGenerateString_0x109bd8(uint8_t* rdram, R5900Context* ctx, PS2Runti
 
     static int s_genStrCount = 0;
     ++s_genStrCount;
-    {
-        const char* hostStr = reinterpret_cast<const char*>(getConstMemPtr(rdram, strAddr));
-        if (s_genStrCount <= 5) {
-            std::fprintf(stderr, "[sceeFontGenStr #%d] str=\"%s\" fontId=%d bufAddr=0x%x paramX=%lld paramY=%lld paramW=%d paramH=%d colour=0x%x align='%c' param14=%u\n",
-                   s_genStrCount, hostStr ? hostStr : "(null)", fontId, bufAddr,
-                   (long long)paramX, (long long)paramY, paramW, paramH, colour, (char)alignCh, param14);
-        }
+    const char* hostStr = reinterpret_cast<const char*>(getConstMemPtr(rdram, strAddr));
+    const bool isSpecialProduction = (hostStr && (std::strstr(hostStr, "special") || std::strstr(hostStr, "production")));
+    if (s_genStrCount <= 5 || isSpecialProduction) {
+        std::fprintf(stderr, "[sceeFontGenStr #%d] str=\"%s\" fontId=%d bufAddr=0x%x paramX=%lld paramY=%lld paramW=%d paramH=%d colour=0x%x align='%c' param14=%u%s\n",
+               s_genStrCount, hostStr ? hostStr : "(null)", fontId, bufAddr,
+               (long long)paramX, (long long)paramY, paramW, paramH, colour, (char)alignCh, param14,
+               isSpecialProduction ? " [TARGET STRING - full glyph log]" : "");
     }
 
     const uint32_t gp = getRegU32(ctx, 28);
@@ -168,7 +168,7 @@ label_check_printable:
                 iVar22_qw += 2;
                 iStack_dc += 1;
 
-                if (s_genStrCount <= 3) {
+                if (s_genStrCount <= 3 || isSpecialProduction) {
                     uint16_t uv0u = FAST_READ16(fontPtr + iVar19_off + 0);
                     uint16_t uv0v = FAST_READ16(fontPtr + iVar19_off + 2);
                     uint16_t uv1u = FAST_READ16(fontPtr + iVar19_off + 4);
@@ -177,34 +177,58 @@ label_check_printable:
                     int16_t dy0 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 10);
                     int16_t dx1 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 12);
                     int16_t dy1 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 14);
-                    std::fprintf(stderr, "[sceeFontGenStr #%d] char='%c'(0x%02x) glyphIdx=%d glyphOff=0x%x fontPtr=0x%x "
-                           "UV0=(%u,%u) UV1=(%u,%u) dx0=%d dy0=%d dx1=%d dy1=%d baseX=%d sVar7=%d\n",
-                           s_genStrCount, (bVar1 >= 0x21 && bVar1 < 0x7f) ? bVar1 : '?', bVar1,
-                           glyphIdx, iVar19_off, fontPtr,
-                           uv0u, uv0v, uv1u, uv1v, dx0, dy0, dx1, dy1, baseX, sVar7);
+                    std::fprintf(stderr, "[sceeFontGenStr GLYPH] char='%c'(0x%02x) glyphIdx=%d glyphOff=0x%x fontPtr=0x%x "
+                           "UV0=(%u,%u)->texU/V=(%u,%u) UV1=(%u,%u)->texU/V=(%u,%u) dx0=%d dy0=%d dx1=%d dy1=%d\n",
+                           (bVar1 >= 0x21 && bVar1 < 0x7f) ? bVar1 : '?', bVar1, glyphIdx, iVar19_off, fontPtr,
+                           uv0u, uv0v, uv0u >> 4, uv0v >> 4, uv1u, uv1v, uv1u >> 4, uv1v >> 4,
+                           dx0, dy0, dx1, dy1);
+                    if (isSpecialProduction) {
+                        std::fprintf(stderr, "[sceeFontGenStr GLYPH raw32] char='%c' @ fontPtr+0x%x: ",
+                                     (bVar1 >= 0x21 && bVar1 < 0x7f) ? bVar1 : '?', iVar19_off);
+                        for (int k = 0; k < 32; ++k)
+                            std::fprintf(stderr, "%02x ", FAST_READ8(fontPtr + iVar19_off + k));
+                        std::fprintf(stderr, "\n");
+                    }
                 }
 
-                FAST_WRITE16(s2 + 0x00, FAST_READ16(fontPtr + iVar19_off + 0));
-                FAST_WRITE16(s2 + 0x02, FAST_READ16(fontPtr + iVar19_off + 2));
+                uint16_t wU0 = FAST_READ16(fontPtr + iVar19_off + 0);
+                uint16_t wV0 = FAST_READ16(fontPtr + iVar19_off + 2);
+                FAST_WRITE16(s2 + 0x00, wU0);
+                FAST_WRITE16(s2 + 0x02, wV0);
 
                 int16_t dx0 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 8);
                 int16_t dy0 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 10);
-                FAST_WRITE16(s2 + 0x08, (uint16_t)(sVar7 + (int16_t)(int)((float)(int)dx0 * sclx)));
+                uint16_t wX0 = (uint16_t)(sVar7 + (int16_t)(int)((float)(int)dx0 * sclx));
                 int yVal0 = (int)((float)(int)dy0 * scly) >> (int)shiftAmt;
-                FAST_WRITE16(s2 + 0x0a, (uint16_t)(sVar8 + (int16_t)yVal0));
+                uint16_t wY0 = (uint16_t)(sVar8 + (int16_t)yVal0);
+                FAST_WRITE16(s2 + 0x08, wX0);
+                FAST_WRITE16(s2 + 0x0a, wY0);
                 FAST_WRITE32(s2 + 0x0c, 1u);
+
+                if (s_genStrCount <= 2 || isSpecialProduction) {
+                    std::fprintf(stderr, "[sceeFontGenStr SEND] v0: char='%c' UV=(%u,%u) XY=(%u,%u) [12.4] texU/V=(%u,%u)\n",
+                                (bVar1 >= 0x21 && bVar1 < 0x7f) ? bVar1 : '?', wU0, wV0, wX0, wY0, wU0 >> 4, wV0 >> 4);
+                }
 
                 s2 += 0x10u;
 
-                FAST_WRITE16(s2 + 0x00, FAST_READ16(fontPtr + iVar19_off + 4));
-                FAST_WRITE16(s2 + 0x02, FAST_READ16(fontPtr + iVar19_off + 6));
+                uint16_t wU1 = FAST_READ16(fontPtr + iVar19_off + 4);
+                uint16_t wV1 = FAST_READ16(fontPtr + iVar19_off + 6);
+                FAST_WRITE16(s2 + 0x00, wU1);
+                FAST_WRITE16(s2 + 0x02, wV1);
 
                 int16_t dx1 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 12);
                 int16_t dy1 = (int16_t)FAST_READ16(fontPtr + iVar19_off + 14);
-                FAST_WRITE16(s2 + 0x08, (uint16_t)(sVar7 + (int16_t)(int)((float)(int)dx1 * sclx)));
+                uint16_t wX1 = (uint16_t)(sVar7 + (int16_t)(int)((float)(int)dx1 * sclx));
                 int yVal1 = (int)((float)(int)dy1 * scly) >> (int)shiftAmt;
-                FAST_WRITE16(s2 + 0x0a, (uint16_t)(sVar8 + (int16_t)yVal1));
+                uint16_t wY1 = (uint16_t)(sVar8 + (int16_t)yVal1);
+                FAST_WRITE16(s2 + 0x08, wX1);
+                FAST_WRITE16(s2 + 0x0a, wY1);
                 FAST_WRITE32(s2 + 0x0c, 1u);
+                if (s_genStrCount <= 2 || isSpecialProduction) {
+                    std::fprintf(stderr, "[sceeFontGenStr SEND] v1: char='%c' UV=(%u,%u) XY=(%u,%u) texU/V=(%u,%u)\n",
+                                (bVar1 >= 0x21 && bVar1 < 0x7f) ? bVar1 : '?', wU1, wV1, wX1, wY1, wU1 >> 4, wV1 >> 4);
+                }
 
                 s2 += 0x10u;
             }

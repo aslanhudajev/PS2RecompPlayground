@@ -1,7 +1,9 @@
 #include "ps2_gs_rasterizer.h"
 #include "ps2_gs_gpu.h"
 #include "ps2_gs_common.h"
+#include "ps2_gs_psmt4.h"
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 
 using namespace GSInternal;
@@ -111,14 +113,15 @@ uint32_t GSRasterizer::readTexelPSMCT32(GS *gs, uint32_t tbp0, uint32_t tbw, int
 uint32_t GSRasterizer::readTexelPSMT4(GS *gs, uint32_t tbp0, uint32_t tbw, int texU, int texV)
 {
     if (tbw == 0) tbw = 1;
-    uint32_t base = tbp0 * 256u;
-    uint32_t stride = tbw * 64u / 2u;
-    uint32_t byteOff = base + static_cast<uint32_t>(texV) * stride + static_cast<uint32_t>(texU) / 2u;
+    /* addrPSMT4: DobieStation/PCSX2 swizzled layout; nibble pos encoded in LSB */
+    uint32_t nibbleAddr = GSPSMT4::addrPSMT4(tbp0, tbw, static_cast<uint32_t>(texU), static_cast<uint32_t>(texV));
+    uint32_t byteOff = nibbleAddr >> 1;
     if (byteOff >= gs->m_vramSize)
         return 0;
     uint8_t packed = gs->m_vram[byteOff];
-    uint32_t result = (texU & 1) ? ((packed >> 4) & 0xFu) : (packed & 0xFu);
-    return result;
+    uint32_t shift = (nibbleAddr & 1u) << 2;
+    uint32_t idx = (packed >> shift) & 0xFu;
+    return idx;
 }
 
 uint32_t GSRasterizer::lookupCLUT(GS *gs, uint8_t index, uint32_t cbp, uint8_t cpsm, uint8_t csa)

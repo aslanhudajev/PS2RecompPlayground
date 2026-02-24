@@ -21,6 +21,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include "ps2_gif_arbiter.h"
 #include "ps2_memory.h"
 #include "ps2_gs_gpu.h"
 #include "ps2_iop.h"
@@ -465,6 +466,8 @@ public:
     inline const PSPadBackend &padBackend() const { return m_padBackend; }
     inline VU1Interpreter &vu1() { return m_vu1; }
     inline const VU1Interpreter &vu1() const { return m_vu1; }
+    inline GifArbiter &gifArbiter() { return m_gifArbiter; }
+    inline const GifArbiter &gifArbiter() const { return m_gifArbiter; }
 
 private:
     struct GuestHeapBlock
@@ -488,8 +491,8 @@ private:
 
     void HandleIntegerOverflow(R5900Context *ctx);
 
-private:
     PS2Memory m_memory;
+    GifArbiter m_gifArbiter;
     GS m_gs;
     IOP m_iop;
     PS2AudioBackend m_audioBackend;

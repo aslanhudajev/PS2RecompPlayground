@@ -1,5 +1,6 @@
 // Based on Blackline Interactive implementation
 #include "ps2_memory.h"
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 
@@ -78,33 +79,32 @@ void PS2Memory::processVIF1Data(const uint8_t *data, uint32_t sizeBytes)
         }
         else if (opcode == VIF_STCYCL)
         {
-            // Set write cycle: CL in bits 7:0, WL in bits 15:8
-            // Used with UNPACK - store for later
+            vif1_regs.cycle = imm;
             continue;
         }
         else if (opcode == VIF_OFFSET)
         {
-            // Set double-buffer offset
+            vif1_regs.ofst = imm & 0x3FFu;
             continue;
         }
         else if (opcode == VIF_BASE)
         {
-            // Set double-buffer base
+            vif1_regs.base = imm & 0x3FFu;
             continue;
         }
         else if (opcode == VIF_ITOP)
         {
-            // Set ITOP register
+            vif1_regs.itop = imm & 0x3FFu;
             continue;
         }
         else if (opcode == VIF_STMOD)
         {
-            // Set decompression mode
+            vif1_regs.mode = imm & 3u;
             continue;
         }
         else if (opcode == VIF_MSKPATH3)
         {
-            // Mask/unmask GIF PATH3
+            m_path3Masked = (imm & 1u) != 0;
             continue;
         }
         else if (opcode == VIF_MARK)
@@ -119,7 +119,9 @@ void PS2Memory::processVIF1Data(const uint8_t *data, uint32_t sizeBytes)
         }
         else if (opcode == VIF_MSCAL || opcode == VIF_MSCALF)
         {
-            // Start VU1 microprogram at address IMM - skip (no VU1 emu)
+            uint32_t startPC = (uint32_t)imm * 8u;
+            if (m_vu1MscalCallback)
+                m_vu1MscalCallback(startPC, vif1_regs.itop);
             continue;
         }
         else if (opcode == VIF_MSCNT)
@@ -153,10 +155,17 @@ void PS2Memory::processVIF1Data(const uint8_t *data, uint32_t sizeBytes)
         }
         else if (opcode == VIF_MPG)
         {
-            // Upload microprogram to VU1: NUM*8 bytes of data follow
-            uint32_t mpgBytes = (uint32_t)num * 8;
-            // Align to QW
+            uint32_t destAddr = (uint32_t)imm * 8u;
+            uint32_t mpgBytes = (uint32_t)num * 8u;
             mpgBytes = (mpgBytes + 15) & ~15u;
+            if (m_vu1Code && destAddr < PS2_VU1_CODE_SIZE && mpgBytes > 0)
+            {
+                uint32_t copyBytes = mpgBytes;
+                if (destAddr + copyBytes > PS2_VU1_CODE_SIZE)
+                    copyBytes = PS2_VU1_CODE_SIZE - destAddr;
+                if (pos + copyBytes <= sizeBytes)
+                    std::memcpy(m_vu1Code + destAddr, data + pos, copyBytes);
+            }
             pos += mpgBytes;
             if (pos > sizeBytes)
                 break;
@@ -177,7 +186,10 @@ void PS2Memory::processVIF1Data(const uint8_t *data, uint32_t sizeBytes)
 
             if (qwCount > 0)
             {
-                processGIFPacket(data + pos, qwCount * 16);
+                static int s_path2Log = 0;
+                if (s_path2Log++ < 30 || (s_path2Log % 300) == 0)
+                    std::fprintf(stderr, "[PATH2 VIF_DIRECT] pos=%u qwc=%u bytes=%u\n", pos, qwCount, qwCount * 16);
+                submitGifPacket(GifPathId::Path2, data + pos, qwCount * 16);
                 g_vifDirectCount++;
             }
 
@@ -191,52 +203,50 @@ void PS2Memory::processVIF1Data(const uint8_t *data, uint32_t sizeBytes)
         }
         else if ((opcode & 0x60) == 0x60)
         {
-            // UNPACK commands (0x60-0x7F)
-            // Format: VN in bits 25:24, VL in bits 27:26
-            // NUM = number of vectors, IMM = VU addr
-            // Skip the data payload
+            // UNPACK commands (0x60-0x7F): write to VU1 data memory
             uint8_t vn = (opcode >> 2) & 0x3; // 0=S, 1=V2, 2=V3, 3=V4
             uint8_t vl = opcode & 0x3;        // 0=32, 1=16, 2=8, 3=5
-
-            // Calculate component count and size
             int components = vn + 1;
-            int bitsPerComponent;
+            int bitsPerComponent = 32;
             switch (vl)
             {
-            case 0:
-                bitsPerComponent = 32;
-                break;
-            case 1:
-                bitsPerComponent = 16;
-                break;
-            case 2:
-                bitsPerComponent = 8;
-                break;
-            case 3:
-                bitsPerComponent = 16;
-                break; // V4-5 is special (4x16 packed)
-            default:
-                bitsPerComponent = 32;
-                break;
+            case 0: bitsPerComponent = 32; break;
+            case 1: bitsPerComponent = 16; break;
+            case 2: bitsPerComponent = 8; break;
+            case 3: bitsPerComponent = (vn == 3) ? 4 : 16; break;
+            default: break;
             }
-
-            // Total bits per vector
-            int bitsPerVector;
-            if (vl == 3 && vn == 3)
-            {
-                // V4-5: 4 components × 4-bit nibbles = 16 bits per vector.
-                bitsPerVector = 16;
-            }
-            else
-            {
-                bitsPerVector = components * bitsPerComponent;
-            }
-
+            int bitsPerVector = (vl == 3 && vn == 3) ? 16 : (components * bitsPerComponent);
             uint32_t bytesPerVector = (bitsPerVector + 7) / 8;
             uint32_t totalBytes = (uint32_t)num * bytesPerVector;
-            // Align to 32-bit word boundary
             totalBytes = (totalBytes + 3) & ~3u;
 
+            uint32_t vuAddr = (uint32_t)imm & 0x3FFu;
+            if (m_vu1Data && totalBytes > 0 && pos + totalBytes <= sizeBytes)
+            {
+                if (bytesPerVector == 16 && vuAddr * 16u < PS2_VU1_DATA_SIZE)
+                {
+                    // V4-32 et al: direct 16-byte copies
+                    for (uint32_t i = 0; i < num; ++i)
+                    {
+                        uint32_t destOff = ((vuAddr + i) & 0x3FFu) * 16u;
+                        if (destOff + 16 <= PS2_VU1_DATA_SIZE)
+                            std::memcpy(m_vu1Data + destOff, data + pos + i * 16, 16);
+                    }
+                }
+                else
+                {
+                    // Packed formats: raw copy into VU mem (simplified)
+                    uint32_t destOff = vuAddr * 16u;
+                    if (destOff < PS2_VU1_DATA_SIZE)
+                    {
+                        uint32_t copyBytes = totalBytes;
+                        if (destOff + copyBytes > PS2_VU1_DATA_SIZE)
+                            copyBytes = PS2_VU1_DATA_SIZE - destOff;
+                        std::memcpy(m_vu1Data + destOff, data + pos, copyBytes);
+                    }
+                }
+            }
             pos += totalBytes;
             g_vifUnpackCount++;
 

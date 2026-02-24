@@ -6,6 +6,8 @@
 #include <functional>
 #include <vector>
 #include <unordered_map>
+
+#include "ps2_gif_arbiter.h"
 #include <atomic>
 #if defined(_MSC_VER)
     #include <intrin.h>
@@ -286,6 +288,21 @@ public:
 
     using GifPacketCallback = std::function<void(const uint8_t *, uint32_t)>;
     void setGifPacketCallback(GifPacketCallback cb) { m_gifPacketCallback = std::move(cb); }
+    void setGifArbiter(GifArbiter *arbiter) { m_gifArbiter = arbiter; }
+
+    using Vu1MscalCallback = std::function<void(uint32_t startPC, uint32_t itop)>;
+    void setVu1MscalCallback(Vu1MscalCallback cb) { m_vu1MscalCallback = std::move(cb); }
+
+    uint8_t *getVU1Code() { return m_vu1Code; }
+    const uint8_t *getVU1Code() const { return m_vu1Code; }
+    uint8_t *getVU1Data() { return m_vu1Data; }
+    const uint8_t *getVU1Data() const { return m_vu1Data; }
+
+    bool isPath3Masked() const { return m_path3Masked; }
+
+    /// Submit a GIF packet to the arbiter (preferred). Uses arbiter if set, else callback.
+    /// If drainImmediately is true (default), drains arbiter after submit. Set false when batching.
+    void submitGifPacket(GifPathId pathId, const uint8_t *data, uint32_t sizeBytes, bool drainImmediately = true);
 
     /// Process GIF packet from RDRAM (used by DMA path). Reads from m_rdram at srcPhysAddr.
     void processGIFPacket(uint32_t srcPhysAddr, uint32_t qwCount);
@@ -298,6 +315,9 @@ public:
 
     /// Process VIF1 data from buffer (used by VIF1 chain mode).
     void processVIF1Data(const uint8_t *data, uint32_t sizeBytes);
+
+    /// Process all pending GIF and VIF1 transfers, submit to arbiter, then drain.
+    void processPendingTransfers();
 
     // Main RAM (32MB)
     uint8_t *m_rdram;
@@ -335,6 +355,22 @@ public:
     std::vector<TLBEntry> m_tlbEntries;
 
     GifPacketCallback m_gifPacketCallback;
+    GifArbiter *m_gifArbiter = nullptr;
+    Vu1MscalCallback m_vu1MscalCallback;
+
+    uint8_t *m_vu1Code = nullptr;
+    uint8_t *m_vu1Data = nullptr;
+    bool m_path3Masked = false;
+
+    struct PendingTransfer
+    {
+        bool fromScratchpad = false;
+        uint32_t srcAddr = 0;
+        uint32_t qwc = 0;
+        std::vector<uint8_t> chainData;
+    };
+    std::vector<PendingTransfer> m_pendingGifTransfers;
+    std::vector<PendingTransfer> m_pendingVif1Transfers;
 
     struct CodeRegion
     {

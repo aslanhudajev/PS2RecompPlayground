@@ -1,7 +1,9 @@
 #include "ps2_vu1.h"
 #include "ps2_gs_gpu.h"
+#include "ps2_gif_arbiter.h"
 #include "ps2_memory.h"
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 
@@ -1001,8 +1003,11 @@ void VU1Interpreter::execLower(uint32_t instr, uint8_t *vuData, uint32_t dataSiz
             }
             if (totalBytes > 0 && addr + totalBytes <= dataSize)
             {
+                static int s_path1Log = 0;
+                if (s_path1Log++ < 30 || (s_path1Log % 300) == 0)
+                    std::fprintf(stderr, "[PATH1 XGKICK] addr=0x%x totalBytes=%u\n", addr, totalBytes);
                 if (memory)
-                    memory->processGIFPacket(vuData + addr, totalBytes);
+                    memory->submitGifPacket(GifPathId::Path1, vuData + addr, totalBytes);
                 else
                     gs.processGIFPacket(vuData + addr, totalBytes);
             }

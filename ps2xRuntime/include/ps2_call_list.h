@@ -338,8 +338,11 @@
     X(sceGszbufaddr)                          \
     X(sceeFontInit)                           \
     X(sceeFontLoadFont)                       \
+    X(sceeFontPrintfAt)                       \
     X(sceeFontPrintfAt2)                      \
+    X(sceeFontClose)                          \
     X(sceeFontSetColour)                      \
+    X(sceeFontSetMode)                        \
     X(sceeFontSetFont)                        \
     X(sceeFontSetScale)                       \
     X(sceIoctl)                               \

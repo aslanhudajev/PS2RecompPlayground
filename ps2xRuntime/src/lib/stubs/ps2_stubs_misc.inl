@@ -1118,27 +1118,63 @@ void sceeFontInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
     if (runtime && a0 != 0u)
     {
-        uint8_t *vram = runtime->memory().getGSVRAM();
-        if (vram)
+        if ((a0 * 256u) + 64u <= PS2_GS_VRAM_SIZE)
         {
-            uint32_t clutOff = a0 * 256u;
-            if (clutOff + 64u <= PS2_GS_VRAM_SIZE)
+            uint32_t clutData[16];
+            for (uint32_t i = 0; i < 16u; ++i)
             {
-                for (uint32_t i = 0; i < 16u; ++i)
+                uint8_t alpha = static_cast<uint8_t>((i * 0x80u) / 15u);
+                clutData[i] = (i == 0)
+                    ? 0x00000000u
+                    : (0x80u | (0x80u << 8) | (0x80u << 16) | (static_cast<uint32_t>(alpha) << 24));
+            }
+            /* Submit CLUT via GIF IMAGE path (PS2-accurate: all VRAM updates through GIF). */
+            constexpr uint32_t kClutQwc = 4u;           /* 64 bytes = 4 quadwords */
+            constexpr uint32_t kHeaderQwc = 6u;        /* PACKED tag + 4 A+D pairs + IMAGE tag (128-bit qwc) */
+            constexpr uint32_t kTotalQwc = kHeaderQwc + kClutQwc;
+            uint32_t pktAddr = runtime->guestMalloc(kTotalQwc * 16u, 16u);
+            if (pktAddr != 0u)
+            {
+                uint8_t *pkt = getMemPtr(rdram, pktAddr);
+                if (pkt)
                 {
-                    uint8_t alpha = static_cast<uint8_t>((i * 0x80u) / 15u);
-                    uint32_t entry = (i == 0)
-                        ? 0x00000000u
-                        : (0x80u | (0x80u << 8) | (0x80u << 16) | (static_cast<uint32_t>(alpha) << 24));
-                    std::memcpy(vram + clutOff + i * 4u, &entry, 4);
+                    uint64_t *q = reinterpret_cast<uint64_t *>(pkt);
+                    const uint32_t dbp = a0 & 0x3FFFu;
+                    constexpr uint8_t psm = 0u;         /* PSMCT32 */
+                    q[0] = (4ULL << 60) | (1ULL << 56) | 1ULL;
+                    q[1] = 0x0E0E0E0E0E0E0E0EULL;
+                    q[2] = (static_cast<uint64_t>(dbp) << 32) | (1ULL << 48) | (static_cast<uint64_t>(psm) << 56);
+                    q[3] = 0x50ULL;
+                    q[4] = 0ULL;
+                    q[5] = 0x51ULL;
+                    q[6] = 16ULL | (1ULL << 32);
+                    q[7] = 0x52ULL;
+                    q[8] = 0ULL;
+                    q[9] = 0x53ULL;
+                    q[10] = (2ULL << 58) | (kClutQwc & 0x7FFF) | (1ULL << 15);
+                    q[11] = 0ULL;
+                    /* IMAGE data must immediately follow IMAGE tag at byte 96 (12*8), same as font texture */
+                    std::memcpy(pkt + 12u * 8u, clutData, 64u);
+                    std::fprintf(stderr, "[sceeFontInit CLUT] pktAddr=0x%x dbp=%u\n", pktAddr, dbp);
+                    std::fprintf(stderr, "[sceeFontInit CLUT] PACKED regs: BITBLTBUF=0x50 data=0x%llx | TRXPOS=0x51 data=0x%llx | TRXREG=0x52 data=0x%llx | TRXDIR=0x53 data=0x%llx\n",
+                                 (unsigned long long)q[2], (unsigned long long)q[4], (unsigned long long)q[6], (unsigned long long)q[8]);
+                    std::fprintf(stderr, "[sceeFontInit CLUT] clutData[0..3]: %08x %08x %08x %08x pkt+96[0..63]: ",
+                                 clutData[0], clutData[1], clutData[2], clutData[3]);
+                    for (uint32_t i = 0; i < 64u; ++i)
+                        std::fprintf(stderr, "%02x ", pkt[12u * 8u + i]);
+                    std::fprintf(stderr, "\n");
+                    constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+                    constexpr uint32_t CHCR_STR_MODE0 = 0x101u;
+                    runtime->memory().writeIORegister(GIF_CHANNEL + 0x10u, pktAddr);
+                    runtime->memory().writeIORegister(GIF_CHANNEL + 0x20u, kTotalQwc & 0xFFFFu);
+                    runtime->memory().writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0);
+                    runtime->memory().processPendingTransfers();
+                    std::fprintf(stderr, "[sceeFontInit CLUT] DONE sent via GIF dbp=%u (16 entries PSMCT32)\n", dbp);
                 }
-                std::fprintf(stderr, "[sceeFontInit] CLUT at cbp=0x%x (byteOff=0x%x):\n", a0, clutOff);
-                for (uint32_t i = 0; i < 16u; ++i)
-                {
-                    uint32_t v; std::memcpy(&v, vram + clutOff + i * 4u, 4);
-                    std::fprintf(stderr, "  CLUT[%2u] = 0x%08x (r=%u g=%u b=%u a=%u)\n",
-                           i, v, v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF);
-                }
+            }
+            else
+            {
+                std::fprintf(stderr, "[sceeFontInit] guestMalloc failed for CLUT packet\n");
             }
         }
     }
@@ -1267,27 +1303,58 @@ void sceeFontLoadFont(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     {
         uint32_t imageBytes = (uint32_t)qwc * 16u;
 
-        // Creator approach: write directly to VRAM instead of going through processGIFPacket.
-        uint8_t *vram = runtime->memory().getGSVRAM();
-        const uint8_t *imgSrc = getConstMemPtr(rdram, fontDataAddr + 0x10u);
-        if (vram && imgSrc && imageBytes > 0) {
-            uint32_t texBase = (uint32_t)tbp0 * 256u;
-            uint32_t texStride = (uint32_t)tw * 64u / 2u;
-            uint32_t rowBytes = (width + 1u) / 2u;
-            for (uint32_t row = 0; row < height && (row + 1u) * rowBytes <= imageBytes; ++row) {
-                uint32_t dstOff = texBase + row * texStride;
-                uint32_t srcOff = row * rowBytes;
-                if (dstOff + rowBytes <= PS2_GS_VRAM_SIZE)
-                    std::memcpy(vram + dstOff, imgSrc + srcOff, rowBytes);
-            }
-            std::fprintf(stderr, "[sceeFontLoadFont] direct linear copy: texBase=0x%x stride=%u w=%d h=%d rowBytes=%u\n",
-                   texBase, texStride, width, height, rowBytes);
-            for (int row = 0; row < 4 && row < height; row++) {
-                uint32_t rowOff = texBase + (uint32_t)row * texStride;
-                std::fprintf(stderr, "  VRAM row %d (off=0x%x): %02x %02x %02x %02x %02x %02x %02x %02x\n",
-                       row, rowOff,
-                       vram[rowOff+0], vram[rowOff+1], vram[rowOff+2], vram[rowOff+3],
-                       vram[rowOff+4], vram[rowOff+5], vram[rowOff+6], vram[rowOff+7]);
+        if (imageBytes > 0) {
+            const uint8_t psm = 20u; // PSMT4
+            const uint32_t headerQwc = 12u;
+            const uint32_t imageQwc = qwc;
+            const uint32_t totalQwc = headerQwc + imageQwc;
+            uint32_t pktAddr = runtime->guestMalloc(totalQwc * 16u, 16u);
+            if (pktAddr != 0u) {
+                uint8_t *pkt = getMemPtr(rdram, pktAddr);
+                /* Standard sceeFont: texture at +0x10 (after 16-byte header). */
+                const uint32_t imgOff = 0x10u;
+                const uint8_t *imgSrc = getConstMemPtr(rdram, fontDataAddr + imgOff);
+                if (pkt && imgSrc) {
+                    std::fprintf(stderr, "[sceeFontLoadFont] imgSrc at +0x%x bytes[0-7]: %02x %02x %02x %02x %02x %02x %02x %02x  [190-198]: %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                        imgOff,
+                        imgSrc[0], imgSrc[1], imgSrc[2], imgSrc[3], imgSrc[4], imgSrc[5], imgSrc[6], imgSrc[7],
+                        imgSrc[190], imgSrc[191], imgSrc[192], imgSrc[193], imgSrc[194], imgSrc[195], imgSrc[196], imgSrc[197], imgSrc[198]);
+                }
+                if (pkt && imgSrc) {
+                    uint64_t *q = reinterpret_cast<uint64_t *>(pkt);
+                    const uint32_t dbp = (uint32_t)tbp0 & 0x3FFFu;
+                    const uint32_t dbw = (uint32_t)(tw > 0 ? tw : 1) & 0x3Fu;
+                    const uint32_t rrw = (uint32_t)(width > 0 ? width : 64);
+                    const uint32_t rrh = (uint32_t)(height > 0 ? height : 1);
+
+                    // PACKED tag: nreg=4, nloop=1 (4 A+D pairs)
+                    q[0] = (4ULL << 60) | (1ULL << 56) | 1ULL;
+                    q[1] = 0x0E0E0E0E0E0E0E0EULL;
+                    q[2] = (static_cast<uint64_t>(psm) << 24) | (1ULL << 16) |
+                           (static_cast<uint64_t>(dbp) << 32) | (static_cast<uint64_t>(dbw) << 48) |
+                           (static_cast<uint64_t>(psm) << 56);
+                    q[3] = 0x50ULL;
+                    q[4] = 0ULL;
+                    q[5] = 0x51ULL;
+                    q[6] = (static_cast<uint64_t>(rrh) << 32) | static_cast<uint64_t>(rrw);
+                    q[7] = 0x52ULL;
+                    q[8] = 0ULL;
+                    q[9] = 0x53ULL;
+                    q[10] = (2ULL << 58) | (static_cast<uint64_t>(imageQwc) & 0x7FFF) | (1ULL << 15);
+                    q[11] = 0ULL;
+                    std::memcpy(pkt + 12 * 8, imgSrc, imageBytes);
+
+                    std::fprintf(stderr, "[sceeFontLoadFont] PATH3 texture: pktAddr=0x%x totalQwc=%u dbp=%u rrw=%u rrh=%u\n",
+                                 pktAddr, totalQwc, dbp, rrw, rrh);
+
+                    constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+                    constexpr uint32_t CHCR_STR_MODE0 = 0x101u;
+                    runtime->memory().writeIORegister(GIF_CHANNEL + 0x10u, pktAddr);
+                    runtime->memory().writeIORegister(GIF_CHANNEL + 0x20u, totalQwc & 0xFFFFu);
+                    runtime->memory().writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0);
+                }
+            } else {
+                std::fprintf(stderr, "[sceeFontLoadFont] guestMalloc failed for texture packet, skipping upload\n");
             }
         }
     }
@@ -1313,8 +1380,47 @@ void sceeFontLoadFont(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     setReturnS32(ctx, retTbp);
 }
 
+void sceeFontPrintfAt(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    // Full implementation in runner sceeFontPrintfAt_0x109a68; stub used for syscall path
+    TODO_NAMED("sceeFontPrintfAt", rdram, ctx, runtime);
+}
+
 void sceeFontPrintfAt2(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
+    setReturnS32(ctx, 0);
+}
+
+void sceeFontClose(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    static constexpr uint32_t kFontBase = 0x176148u;
+    static constexpr uint32_t kFontEntrySz = 0x24u;
+    const int fontId = (int)getRegU32(ctx, 4);
+    const uint32_t fontOff = static_cast<uint32_t>(fontId * (int)kFontEntrySz);
+    const uint32_t glyphPtr = FAST_READ32(kFontBase + fontOff);
+    if (glyphPtr != 0u)
+    {
+        if (runtime)
+        {
+            uint32_t kernPtr = FAST_READ32(glyphPtr + 0x2000u);
+            if (kernPtr != 0u)
+                runtime->guestFree(kernPtr);
+            runtime->guestFree(glyphPtr);
+        }
+        FAST_WRITE32(kFontBase + fontOff, 0u);
+        setReturnS32(ctx, 0);
+    }
+    else
+    {
+        std::fprintf(stderr, "[sceeFontClose] Font ID(%d) not open\n", fontId);
+        setReturnS32(ctx, -1);
+    }
+}
+
+void sceeFontSetMode(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    const uint32_t gp = getRegU32(ctx, 28);
+    writeU32AtGp(rdram, gp, -0x7c98, getRegU32(ctx, 4));
     setReturnS32(ctx, 0);
 }
 

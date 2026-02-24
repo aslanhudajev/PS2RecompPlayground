@@ -1,5 +1,6 @@
 #include "ps2_memory.h"
 #include <iostream>
+#include <cstdio>
 #include <cstring>
 #include <stdexcept>
 #include <algorithm>
@@ -127,6 +128,133 @@ PS2Memory::~PS2Memory()
         delete[] iop_ram;
         iop_ram = nullptr;
     }
+
+    if (m_vu1Code)
+    {
+        delete[] m_vu1Code;
+        m_vu1Code = nullptr;
+    }
+    if (m_vu1Data)
+    {
+        delete[] m_vu1Data;
+        m_vu1Data = nullptr;
+    }
+}
+
+void PS2Memory::processPendingTransfers()
+{
+    static int s_pptLog = 0;
+    const bool logPpt = (s_pptLog++ % 100) == 0;
+    const size_t nGif = m_pendingGifTransfers.size();
+    if (logPpt && nGif > 0)
+        std::fprintf(stderr, "[processPendingTransfers] GIF: %zu pending\n", nGif);
+
+    for (size_t idx = 0; idx < m_pendingGifTransfers.size(); ++idx)
+    {
+        auto &p = m_pendingGifTransfers[idx];
+        if (!p.chainData.empty())
+        {
+            if (logPpt)
+                std::fprintf(stderr, "[processPendingTransfers] PATH3 GIF[%zu] chainData: %zu bytes\n",
+                             idx, p.chainData.size());
+            m_seenGifCopy = true;
+            m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+            submitGifPacket(GifPathId::Path3, p.chainData.data(), static_cast<uint32_t>(p.chainData.size()), false);
+        }
+        else if (p.qwc > 0)
+        {
+            const uint64_t bytes64 = static_cast<uint64_t>(p.qwc) * 16ull;
+            uint32_t sizeBytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
+            uint32_t srcPhys = 0;
+            try
+            {
+                srcPhys = translateAddress(p.srcAddr);
+            }
+            catch (const std::exception &e)
+            {
+                std::fprintf(stderr, "[processPendingTransfers] GIF[%zu] translateAddress(0x%x) failed: %s\n",
+                             idx, p.srcAddr, e.what());
+                continue;
+            }
+            if (logPpt)
+                std::fprintf(stderr, "[processPendingTransfers] PATH3 GIF[%zu] srcAddr=0x%x srcPhys=0x%x qwc=%u sizeBytes=%u spr=%d\n",
+                             idx, p.srcAddr, srcPhys, p.qwc, sizeBytes, p.fromScratchpad ? 1 : 0);
+            if (p.fromScratchpad)
+            {
+                if (srcPhys + sizeBytes <= PS2_SCRATCHPAD_SIZE && sizeBytes >= 16)
+                {
+                    m_seenGifCopy = true;
+                    m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+                    submitGifPacket(GifPathId::Path3, m_scratchpad + srcPhys, sizeBytes, false);
+                }
+            }
+            else if (srcPhys < PS2_RAM_SIZE)
+            {
+                if (static_cast<uint64_t>(srcPhys) + sizeBytes > PS2_RAM_SIZE)
+                    sizeBytes = PS2_RAM_SIZE - srcPhys;
+                if (sizeBytes >= 16)
+                {
+                    m_seenGifCopy = true;
+                    m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+                    submitGifPacket(GifPathId::Path3, m_rdram + srcPhys, sizeBytes, false);
+                }
+                else if (logPpt)
+                    std::fprintf(stderr, "[processPendingTransfers] GIF[%zu] SKIP: sizeBytes=%u < 16 or out of range\n", idx, sizeBytes);
+            }
+            else if (logPpt)
+                std::fprintf(stderr, "[processPendingTransfers] GIF[%zu] SKIP: srcPhys=0x%x >= RAM_SIZE\n", idx, srcPhys);
+        }
+    }
+    m_pendingGifTransfers.clear();
+
+    for (auto &p : m_pendingVif1Transfers)
+    {
+        if (!p.chainData.empty())
+        {
+            processVIF1Data(p.chainData.data(), static_cast<uint32_t>(p.chainData.size()));
+        }
+        else if (p.qwc > 0 && !p.fromScratchpad)
+        {
+            uint32_t srcPhys = 0;
+            try
+            {
+                srcPhys = translateAddress(p.srcAddr);
+            }
+            catch (const std::exception &)
+            {
+                continue;
+            }
+            if (srcPhys < PS2_RAM_SIZE)
+            {
+                const uint64_t bytes64 = static_cast<uint64_t>(p.qwc) * 16ull;
+                uint32_t sizeBytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
+                if (srcPhys + sizeBytes > PS2_RAM_SIZE)
+                    sizeBytes = PS2_RAM_SIZE - srcPhys;
+                if (sizeBytes > 0)
+                    processVIF1Data(srcPhys, sizeBytes);
+            }
+        }
+    }
+    const bool hadGif = !m_pendingGifTransfers.empty();
+    const bool hadVif1 = !m_pendingVif1Transfers.empty();
+    m_pendingGifTransfers.clear();
+    m_pendingVif1Transfers.clear();
+
+    if (m_gifArbiter)
+        m_gifArbiter->drain();
+
+    static constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+    static constexpr uint32_t VIF1_CHANNEL = 0x10009000;
+    if (hadGif)
+    {
+        m_ioRegisters[GIF_CHANNEL + 0x00] &= ~0x100u;
+        m_ioRegisters[GIF_CHANNEL + 0x20] = 0;
+    }
+    if (hadVif1)
+    {
+        m_ioRegisters[VIF1_CHANNEL + 0x00] &= ~0x100u;
+        m_ioRegisters[VIF1_CHANNEL + 0x20] = 0;
+    }
 }
 
 void PS2Memory::processGIFPacket(uint32_t srcPhysAddr, uint32_t qwCount)
@@ -142,15 +270,56 @@ void PS2Memory::processGIFPacket(uint32_t srcPhysAddr, uint32_t qwCount)
     if (sizeBytes < 16)
         return;
 
+    static int s_gifCopyLog = 0;
+    if (s_gifCopyLog++ < 15 || (s_gifCopyLog % 200) == 0)
+        std::fprintf(stderr, "[PATH3 GIF copy] srcPhys=0x%x qwc=%u size=%u\n", srcPhysAddr, qwCount, sizeBytes);
+
     m_seenGifCopy = true;
     m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
-    if (m_gifPacketCallback)
-        m_gifPacketCallback(m_rdram + srcPhysAddr, sizeBytes);
+    submitGifPacket(GifPathId::Path3, m_rdram + srcPhysAddr, sizeBytes);
+}
+
+void PS2Memory::submitGifPacket(GifPathId pathId, const uint8_t *data, uint32_t sizeBytes, bool drainImmediately)
+{
+    if (!data || sizeBytes < 16)
+        return;
+    if (pathId == GifPathId::Path3 && m_path3Masked)
+    {
+        static int s_skip = 0;
+        if (s_skip++ < 5)
+            std::fprintf(stderr, "[submitGifPacket] PATH3 masked, skip size=%u\n", sizeBytes);
+        return;
+    }
+    const char *pn = (pathId == GifPathId::Path1) ? "PATH1" : (pathId == GifPathId::Path2) ? "PATH2" : "PATH3";
+    static int s_submitLog = 0;
+    const bool isClutSize = (sizeBytes == 160u);
+    if (s_submitLog < 80 || (s_submitLog % 400) == 0 || isClutSize)
+        std::fprintf(stderr, "[submitGifPacket] %s size=%u drainNow=%d%s\n", pn, sizeBytes, drainImmediately ? 1 : 0, isClutSize ? " (CLUT?)" : "");
+    if (isClutSize && data)
+    {
+        std::fprintf(stderr, "[submitGifPacket CLUT] data+96[0..31]: ");
+        for (uint32_t i = 0; i < 32u && 96u + i < sizeBytes; ++i)
+            std::fprintf(stderr, "%02x ", data[96u + i]);
+        std::fprintf(stderr, "\n");
+    }
+    ++s_submitLog;
+    if (m_gifArbiter)
+    {
+        m_gifArbiter->submit(pathId, data, sizeBytes);
+        if (drainImmediately)
+            m_gifArbiter->drain();
+    }
+    else if (m_gifPacketCallback)
+    {
+        m_gifPacketCallback(data, sizeBytes);
+    }
 }
 
 void PS2Memory::processGIFPacket(const uint8_t *data, uint32_t sizeBytes)
 {
-    if (m_gifPacketCallback && data && sizeBytes >= 16)
+    if (m_gifArbiter)
+        submitGifPacket(GifPathId::Path3, data, sizeBytes);
+    else if (m_gifPacketCallback && data && sizeBytes >= 16)
         m_gifPacketCallback(data, sizeBytes);
 }
 
@@ -162,11 +331,15 @@ bool PS2Memory::initialize(size_t ramSize)
         delete[] m_scratchpad;
         delete[] iop_ram;
         delete[] m_gsVRAM;
+        delete[] m_vu1Code;
+        delete[] m_vu1Data;
         m_rdram = nullptr;
         m_scratchpad = nullptr;
         ps2SetScratchpadHostPtr(nullptr);
         iop_ram = nullptr;
         m_gsVRAM = nullptr;
+        m_vu1Code = nullptr;
+        m_vu1Data = nullptr;
     };
 
     cleanup();
@@ -210,6 +383,12 @@ bool PS2Memory::initialize(size_t ramSize)
         // Initialize VIF registers
         memset(&vif0_regs, 0, sizeof(vif0_regs));
         memset(&vif1_regs, 0, sizeof(vif1_regs));
+
+        // Allocate VU1 code and data memory
+        m_vu1Code = new uint8_t[PS2_VU1_CODE_SIZE];
+        m_vu1Data = new uint8_t[PS2_VU1_DATA_SIZE];
+        std::memset(m_vu1Code, 0, PS2_VU1_CODE_SIZE);
+        std::memset(m_vu1Data, 0, PS2_VU1_DATA_SIZE);
 
         // Initialize DMA registers
         memset(dma_regs, 0, sizeof(dma_regs));
@@ -641,52 +820,24 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
 
             if ((channelBase == 0x1000A000 || channelBase == 0x10009000) && m_gsVRAM)
             {
-                auto dispatchTransfer = [&](uint32_t srcAddr, uint32_t qwCount)
+                auto enqueueTransfer = [&](uint32_t srcAddr, uint32_t qwCount)
                 {
                     if (qwCount == 0)
                         return;
-                    uint32_t srcPhys = 0;
-                    try
-                    {
-                        srcPhys = translateAddress(srcAddr);
-                    }
-                    catch (const std::exception &)
-                    {
-                        return;
-                    }
                     const bool scratch = isScratchpad(srcAddr);
+                    static int s_enqLog = 0;
+                    if (s_enqLog++ < 15 || (s_enqLog % 150) == 0)
+                        std::fprintf(stderr, "[PATH3 DMA enqueue] ch=0x%x srcAddr=0x%x qwc=%u scratch=%d -> %s\n",
+                                     channelBase, srcAddr, qwCount, scratch ? 1 : 0,
+                                     channelBase == 0x1000A000 ? "GIF" : (channelBase == 0x10009000 && !scratch ? "VIF1" : "skip"));
+                    PendingTransfer pt;
+                    pt.fromScratchpad = scratch;
+                    pt.srcAddr = srcAddr;
+                    pt.qwc = qwCount;
                     if (channelBase == 0x1000A000)
-                    {
-                        if (scratch)
-                        {
-                            const uint64_t bytes64 = static_cast<uint64_t>(qwCount) * 16ull;
-                            uint32_t bytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
-                            if (srcPhys + bytes > PS2_SCRATCHPAD_SIZE)
-                                bytes = PS2_SCRATCHPAD_SIZE - srcPhys;
-                            if (bytes >= 16)
-                            {
-                                m_seenGifCopy = true;
-                                m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
-                                processGIFPacket(m_scratchpad + srcPhys, bytes);
-                            }
-                        }
-                        else if (srcPhys < PS2_RAM_SIZE)
-                        {
-                            processGIFPacket(srcPhys, qwCount);
-                        }
-                        return;
-                    }
-                    if (channelBase == 0x10009000 && !scratch)
-                    {
-                        const uint64_t bytes64 = static_cast<uint64_t>(qwCount) * 16ull;
-                        uint32_t bytes = (bytes64 > 0xFFFFFFFFull) ? 0xFFFFFFFFu : static_cast<uint32_t>(bytes64);
-                        if (srcPhys >= PS2_RAM_SIZE)
-                            return;
-                        if (srcPhys + bytes > PS2_RAM_SIZE)
-                            bytes = PS2_RAM_SIZE - srcPhys;
-                        if (bytes > 0)
-                            processVIF1Data(srcPhys, bytes);
-                    }
+                        m_pendingGifTransfers.push_back(pt);
+                    else if (channelBase == 0x10009000 && !scratch)
+                        m_pendingVif1Transfers.push_back(pt);
                 };
 
                 uint32_t chcr = value;
@@ -694,7 +845,7 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
 
                 if (mode == 0 && qwc > 0)
                 {
-                    dispatchTransfer(madr, qwc);
+                    enqueueTransfer(madr, qwc);
                 }
                 else if (mode == 1)
                 {
@@ -724,6 +875,9 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                         if (bytes == 0) return;
                         chainBuf.insert(chainBuf.end(), base2 + src, base2 + src + bytes);
                     };
+
+                    std::vector<uint32_t> retStack;
+                    retStack.reserve(8);
 
                     while (tagsProcessed < kMaxChainTags)
                     {
@@ -771,6 +925,21 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                             if (tagQwc > 0) appendData(addr, tagQwc, id);
                             tagAddr = tagAddr + 16;
                             break;
+                        case 5: // call: data from addr, next tag at addr, save return
+                            if (tagQwc > 0) appendData(addr, tagQwc, id);
+                            if (retStack.size() < 16)
+                                retStack.push_back(tagAddr + 16);
+                            tagAddr = addr;
+                            break;
+                        case 6: // ret: restore return address
+                            if (!retStack.empty())
+                            {
+                                tagAddr = retStack.back();
+                                retStack.pop_back();
+                            }
+                            else
+                                goto chain_done;
+                            break;
                         case 7: // end: data follows tag inline, then end
                             if (tagQwc > 0) appendData(tagAddr + 16, tagQwc, id);
                             goto chain_done;
@@ -781,19 +950,26 @@ bool PS2Memory::writeIORegister(uint32_t address, uint32_t value)
                 chain_done:
                     if (!chainBuf.empty())
                     {
-                        m_seenGifCopy = true;
-                        m_gifCopyCount.fetch_add(1, std::memory_order_relaxed);
+                        static int s_chainLog = 0;
+                        if (s_chainLog++ < 20 || (s_chainLog % 200) == 0)
+                            std::fprintf(stderr, "[PATH3 DMA chain] ch=0x%x chainBytes=%zu -> %s\n",
+                                         channelBase, chainBuf.size(),
+                                         channelBase == 0x1000A000 ? "pendingGif" : "pendingVif1");
+                        PendingTransfer pt;
+                        pt.fromScratchpad = false;
+                        pt.srcAddr = 0;
+                        pt.qwc = 0;
+                        pt.chainData = std::move(chainBuf);
                         if (channelBase == 0x1000A000)
-                            processGIFPacket(chainBuf.data(), static_cast<uint32_t>(chainBuf.size()));
+                            m_pendingGifTransfers.push_back(std::move(pt));
                         else if (channelBase == 0x10009000)
-                            processVIF1Data(static_cast<const uint8_t *>(chainBuf.data()), static_cast<uint32_t>(chainBuf.size()));
+                            m_pendingVif1Transfers.push_back(std::move(pt));
                     }
                 }
                 else if (qwc > 0)
                 {
-                    dispatchTransfer(madr, qwc);
+                    enqueueTransfer(madr, qwc);
                 }
-                m_ioRegisters[address] &= ~0x100;
             }
         }
         return true;

@@ -18,40 +18,57 @@ void sceGsExecLoadImage(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     }
 
     uint32_t fbw = img.vram_width ? img.vram_width : std::max<uint32_t>(1, (img.width + 63) / 64);
-    uint32_t base = static_cast<uint32_t>(img.vram_addr) * 2048u;
-    uint32_t stride = bytesForPixels(img.psm, fbw * 64u);
-    if (stride == 0)
+    const uint32_t totalImageBytes = rowBytes * static_cast<uint32_t>(img.height);
+    const uint32_t headerQwc = 12u; // PACKED tag + 4 A+D regs + IMAGE tag
+    const uint32_t imageQwc = (totalImageBytes + 15u) / 16u;
+    const uint32_t totalQwc = headerQwc + imageQwc;
+
+    uint32_t pktAddr = runtime->guestMalloc(totalQwc * 16u, 16u);
+    if (pktAddr == 0)
     {
         setReturnS32(ctx, -1);
         return;
     }
 
-    uint8_t *gsvram = runtime->memory().getGSVRAM();
-    uint8_t *src = getMemPtr(rdram, srcAddr);
-    if (!gsvram || !src)
+    uint8_t *pkt = getMemPtr(rdram, pktAddr);
+    const uint8_t *src = getConstMemPtr(rdram, srcAddr);
+    if (!pkt || !src)
     {
         setReturnS32(ctx, -1);
         return;
     }
 
-    for (uint32_t row = 0; row < img.height; ++row)
-    {
-        uint32_t dstOff = base + (static_cast<uint32_t>(img.y) + row) * stride + bytesForPixels(img.psm, static_cast<uint32_t>(img.x));
-        uint32_t srcOff = row * rowBytes;
-        if (dstOff >= PS2_GS_VRAM_SIZE)
-            break;
-        uint32_t copyBytes = rowBytes;
-        if (dstOff + copyBytes > PS2_GS_VRAM_SIZE)
-            copyBytes = PS2_GS_VRAM_SIZE - dstOff;
-        std::memcpy(gsvram + dstOff, src + srcOff, copyBytes);
-    }
+    uint32_t dbp = (static_cast<uint32_t>(img.vram_addr) * 2048u) / 256u;
+    uint32_t dsax = static_cast<uint32_t>(img.x);
+    uint32_t dsay = static_cast<uint32_t>(img.y);
 
-    if (img.width >= 320 && img.height >= 200)
-    {
-        auto &gs = runtime->memory().gs();
-        gs.dispfb1 = makeDispFb(img.vram_addr, fbw, img.psm, 0, 0);
-        gs.display1 = makeDisplay(0, 0, 0, 0, img.width - 1, img.height - 1);
-    }
+    uint64_t *q = reinterpret_cast<uint64_t *>(pkt);
+    q[0] = 0x1000000000000004ULL; // PACKED, nloop=4, nreg=1, EOP=1
+    q[1] = 0x0E0E0E0E0E0E0E0EULL; // A+D for all
+    q[2] = (static_cast<uint64_t>(img.psm & 0x3Fu) << 24) | (static_cast<uint64_t>(1u) << 16) |
+           (static_cast<uint64_t>(dbp & 0x3FFFu) << 32) | (static_cast<uint64_t>(fbw & 0x3Fu) << 48) |
+           (static_cast<uint64_t>(img.psm & 0x3Fu) << 56);
+    q[3] = 0x50ULL;
+    q[4] = (static_cast<uint64_t>(dsay & 0x7FFu) << 48) | (static_cast<uint64_t>(dsax & 0x7FFu) << 32);
+    q[5] = 0x51ULL;
+    q[6] = (static_cast<uint64_t>(img.height) << 32) | static_cast<uint64_t>(img.width);
+    q[7] = 0x52ULL;
+    q[8] = 0ULL; // TRXDIR = host to local
+    q[9] = 0x53ULL;
+    q[10] = (static_cast<uint64_t>(2) << 58) | (static_cast<uint64_t>(imageQwc) & 0x7FFF) |
+            (1ULL << 15); // IMAGE, EOP
+    q[11] = 0ULL;
+
+    std::memcpy(pkt + 12 * 8, src, totalImageBytes);
+
+    constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+    constexpr uint32_t CHCR_STR_MODE0 = 0x101u;
+    auto &mem = runtime->memory();
+    mem.writeIORegister(GIF_CHANNEL + 0x10u, pktAddr);
+    mem.writeIORegister(GIF_CHANNEL + 0x20u, totalQwc & 0xFFFFu);
+    mem.writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0);
+
+    // dispfb/display for large images: caller should use sceGsPutDispEnv. No direct gs.* write.
 
     setReturnS32(ctx, 0);
 }
@@ -76,33 +93,65 @@ void sceGsExecStoreImage(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     }
 
     uint32_t fbw = img.vram_width ? img.vram_width : std::max<uint32_t>(1, (img.width + 63) / 64);
-    uint32_t base = static_cast<uint32_t>(img.vram_addr) * 2048u;
-    uint32_t stride = bytesForPixels(img.psm, fbw * 64u);
-    if (stride == 0)
-    {
-        setReturnS32(ctx, -1);
-        return;
-    }
+    const uint32_t totalImageBytes = rowBytes * static_cast<uint32_t>(img.height);
 
-    uint8_t *gsvram = runtime->memory().getGSVRAM();
     uint8_t *dst = getMemPtr(rdram, dstAddr);
-    if (!gsvram || !dst)
+    if (!dst)
     {
         setReturnS32(ctx, -1);
         return;
     }
 
-    for (uint32_t row = 0; row < img.height; ++row)
+    /* Local-to-host: submit GIF packet to set BITBLTBUF, TRXPOS, TRXREG, TRXDIR=1.
+     * GS path: register setup via GIF, then performLocalToHostTransfer reads VRAM. */
+    uint32_t sbp = (static_cast<uint32_t>(img.vram_addr) * 2048u) / 256u;
+    uint64_t bitbltbuf = (static_cast<uint64_t>(sbp & 0x3FFFu) << 0) |
+                        (static_cast<uint64_t>(fbw & 0x3Fu) << 16) |
+                        (static_cast<uint64_t>(img.psm & 0x3Fu) << 24) |
+                        (static_cast<uint64_t>(0u) << 32) |
+                        (static_cast<uint64_t>(1u) << 48) |
+                        (static_cast<uint64_t>(0u) << 56);
+    uint64_t trxpos = (static_cast<uint64_t>(img.x & 0x7FFu) << 0) |
+                      (static_cast<uint64_t>(img.y & 0x7FFu) << 16) |
+                      (static_cast<uint64_t>(0u) << 32) |
+                      (static_cast<uint64_t>(0u) << 48);
+    uint64_t trxreg = static_cast<uint64_t>(img.height) << 32 | static_cast<uint64_t>(img.width);
+
+    uint32_t pktAddr = runtime->guestMalloc(80u, 16u);
+    if (pktAddr == 0)
     {
-        uint32_t srcOff = base + (static_cast<uint32_t>(img.y) + row) * stride + bytesForPixels(img.psm, static_cast<uint32_t>(img.x));
-        uint32_t dstOff = row * rowBytes;
-        if (srcOff >= PS2_GS_VRAM_SIZE)
-            break;
-        uint32_t copyBytes = rowBytes;
-        if (srcOff + copyBytes > PS2_GS_VRAM_SIZE)
-            copyBytes = PS2_GS_VRAM_SIZE - srcOff;
-        std::memcpy(dst + dstOff, gsvram + srcOff, copyBytes);
+        setReturnS32(ctx, -1);
+        return;
     }
+
+    uint8_t *pkt = getMemPtr(rdram, pktAddr);
+    if (!pkt)
+    {
+        setReturnS32(ctx, -1);
+        return;
+    }
+
+    uint64_t *q = reinterpret_cast<uint64_t *>(pkt);
+    q[0] = 0x1000000000000004ULL;
+    q[1] = 0x0E0E0E0E0E0E0E0EULL;
+    q[2] = bitbltbuf;
+    q[3] = 0x50ULL;
+    q[4] = trxpos;
+    q[5] = 0x51ULL;
+    q[6] = trxreg;
+    q[7] = 0x52ULL;
+    q[8] = 1ULL;
+    q[9] = 0x53ULL;
+
+    constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+    constexpr uint32_t CHCR_STR_MODE0 = 0x101u;
+    auto &mem = runtime->memory();
+    mem.writeIORegister(GIF_CHANNEL + 0x10u, pktAddr);
+    mem.writeIORegister(GIF_CHANNEL + 0x20u, 5u);
+    mem.writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0);
+    mem.processPendingTransfers();
+
+    runtime->gs().performLocalToHostTransfer(dst, totalImageBytes);
 
     setReturnS32(ctx, 0);
 }
@@ -116,20 +165,21 @@ void sceGsGetGParam(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 void sceGsPutDispEnv(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
     uint32_t envAddr = getRegU32(ctx, 4);
-    GsDispEnvMem env{};
-    if (readGsDispEnv(rdram, envAddr, env))
+    uint8_t *ptr = getMemPtr(rdram, envAddr);
+    if (!ptr)
     {
-        auto &gs = runtime->memory().gs();
-        if (env.pmode)
-            gs.pmode = env.pmode;
-        if (env.smode2)
-            gs.smode2 = env.smode2;
-        gs.dispfb1 = env.dispfb;
-        gs.display1 = env.display;
-        if (env.bgcolor)
-            gs.bgcolor = env.bgcolor;
-
+        setReturnS32(ctx, -1);
+        return;
     }
+    // Program GIF DMA (PATH3) to transfer 5 QWs (pmode, smode2, dispfb, display, bgcolor).
+    // Processing is deferred until sceGsSyncPath.
+    constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+    constexpr uint32_t QWC = 5;
+    constexpr uint32_t CHCR_STR_MODE0 = 0x101u;
+    auto &mem = runtime->memory();
+    mem.writeIORegister(GIF_CHANNEL + 0x10u, envAddr);
+    mem.writeIORegister(GIF_CHANNEL + 0x20u, QWC);
+    mem.writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0);
     setReturnS32(ctx, 0);
 }
 
@@ -143,9 +193,15 @@ void sceGsPutDrawEnv(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         return;
     }
 
-    // Game writes draw env to RDRAM; we submit it to GS. The game does not DMA this
-    // data separately—sceGsPutDrawEnv must submit it for drawing to work.
-    runtime->memory().processGIFPacket(ptr, 144);
+    // Program GIF DMA (PATH3) to transfer 9 QWs from envAddr. Processing is deferred
+    // until sceGsSyncPath; the transfer is enqueued as pending.
+    constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+    constexpr uint32_t QWC = 9;
+    constexpr uint32_t CHCR_STR_MODE0 = 0x101u; // STR=1, mode=0 (normal)
+    auto &mem = runtime->memory();
+    mem.writeIORegister(GIF_CHANNEL + 0x10u, envAddr); // MADR
+    mem.writeIORegister(GIF_CHANNEL + 0x20u, QWC);    // QWC
+    mem.writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0); // CHCR: start transfer
 
     setReturnS32(ctx, 0);
 }
@@ -164,11 +220,42 @@ void sceGsResetGraph(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
         g_gparam.ffmode = static_cast<uint8_t>(ffmode & 0x1);
         writeGsGParamToScratch(runtime);
 
-        auto &gs = runtime->memory().gs();
-        gs.pmode = makePmode(1, 0, 0, 0, 0, 0x80);
-        gs.smode2 = (interlace & 0x1) | ((ffmode & 0x1) << 1);
-        gs.dispfb1 = makeDispFb(0, 10, 0, 0, 0);
-        gs.display1 = makeDisplay(0, 0, 0, 0, 639, 447);
+        uint64_t pmode = makePmode(1, 0, 0, 0, 0, 0x80);
+        uint64_t smode2 = (interlace & 0x1) | ((ffmode & 0x1) << 1);
+        uint64_t dispfb = makeDispFb(0, 10, 0, 0, 0);
+        uint64_t display = makeDisplay(0, 0, 0, 0, 639, 447);
+        uint64_t bgcolor = 0ULL;
+
+        if (runtime)
+        {
+            uint32_t pktAddr = runtime->guestMalloc(192u, 16u);
+            if (pktAddr != 0u)
+            {
+                uint8_t *pkt = getMemPtr(rdram, pktAddr);
+                if (pkt)
+                {
+                    uint64_t *q = reinterpret_cast<uint64_t *>(pkt);
+                    q[0] = 0x1000000000000005ULL;
+                    q[1] = 0x0E0E0E0E0E0E0E0EULL;
+                    q[2] = pmode;
+                    q[3] = 0x41ULL;
+                    q[4] = smode2;
+                    q[5] = 0x42ULL;
+                    q[6] = dispfb;
+                    q[7] = 0x59ULL;
+                    q[8] = display;
+                    q[9] = 0x5aULL;
+                    q[10] = bgcolor;
+                    q[11] = 0x5fULL;
+                    constexpr uint32_t GIF_CHANNEL = 0x1000A000;
+                    constexpr uint32_t CHCR_STR_MODE0 = 0x101u;
+                    auto &mem = runtime->memory();
+                    mem.writeIORegister(GIF_CHANNEL + 0x10u, pktAddr);
+                    mem.writeIORegister(GIF_CHANNEL + 0x20u, 12u);
+                    mem.writeIORegister(GIF_CHANNEL + 0x00u, CHCR_STR_MODE0);
+                }
+            }
+        }
     }
 
     setReturnS32(ctx, 0);
@@ -181,7 +268,12 @@ void sceGsResetPath(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
 void sceGsSetDefClear(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 {
-    TODO_NAMED("sceGsSetDefClear", rdram, ctx, runtime);
+    // Sets default clear (r,g,b,a) for subsequent SetDefDrawEnv. Clear is applied via GIF
+    // when PutDrawEnv sends the draw env packet. Params typically: a0=env or r, a1=g, a2=b, a3=a.
+    (void)rdram;
+    (void)ctx;
+    (void)runtime;
+    setReturnS32(ctx, 0);
 }
 
 void sceGsSetDefDBuffDc(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
@@ -326,6 +418,8 @@ void sceGsSyncPath(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
     if (mode == 0)
     {
+        mem.processPendingTransfers();
+
         uint32_t count = 0;
         constexpr uint32_t kTimeout = 0x1000000;
 

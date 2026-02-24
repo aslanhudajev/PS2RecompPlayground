@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <chrono>
@@ -213,12 +214,19 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt)
     uint8_t *rdram = rt->memory().getRDRAM();
     uint8_t *gsvram = rt->memory().getGSVRAM();
 
-    // Use the GS display snapshot (double-buffered) to avoid tearing/flicker.
+    // Use the GS display snapshot (taken at BITBLT frame flip) to avoid tearing.
+    // When no snapshot exists, use live gsvram. Do NOT snapshot every frame
+    // (causes race with game draws → flicker/chromatic aberration).
     uint32_t snapSize = 0;
     const uint8_t *snapVram = rt->gs().lockDisplaySnapshot(snapSize);
     const uint8_t *vramSrc = (snapVram && snapSize > 0) ? snapVram : gsvram;
 
-    // When we have a snapshot (taken at frame flip): use the base captured then.
+    static int s_uploadLog = 0;
+    if ((s_uploadLog++ % 60) == 0)
+        std::fprintf(stderr, "[UploadFrame] dispfb=0x%x fbp=%u baseBytes=0x%x snap=%d\n",
+                     dispfb, fbp, baseBytes, snapVram ? 1 : 0);
+
+    // When we have a snapshot (taken at BITBLT): use the base captured then.
     if (snapVram)
     {
         baseBytes = rt->gs().getLastDisplayBaseBytes();
@@ -333,7 +341,13 @@ bool PS2Runtime::initialize(const char *title)
 
     m_gs.init(m_memory.getGSVRAM(), static_cast<uint32_t>(PS2_GS_VRAM_SIZE), &m_memory.gs());
     m_gs.reset();
-    m_memory.setGifPacketCallback([this](const uint8_t *data, uint32_t size) { m_gs.processGIFPacket(data, size); });
+    m_gifArbiter.setProcessPacketFn([this](const uint8_t *data, uint32_t size) { m_gs.processGIFPacket(data, size); });
+    m_memory.setGifArbiter(&m_gifArbiter);
+    m_memory.setVu1MscalCallback([this](uint32_t startPC, uint32_t itop) {
+        m_vu1.execute(m_memory.getVU1Code(), PS2_VU1_CODE_SIZE,
+                      m_memory.getVU1Data(), PS2_VU1_DATA_SIZE,
+                      m_gs, &m_memory, startPC, itop, 65536);
+    });
 
     m_iop.init(m_memory.getRDRAM());
     m_iop.reset();
