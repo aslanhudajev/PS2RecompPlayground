@@ -186,6 +186,44 @@ void sceSifLoadModuleBuffer(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runti
     setReturnS32(ctx, moduleId);
 }
 
+// Syscall 0x83: FindAddress - search symbol table for matching symbol ID
+// Args: $a0 = table start, $a1 = table end, $a2 = symbol ID to find
+// Returns: $v0 = address of table entry if found, 0 otherwise
+//
+// InitSystemCallTableAddress alternates between two symbol IDs (0x137A90 and 0x137A58)
+// and loops until $s1 == $s0 (i.e. $s3 - $s2 == 0xA4). When the table is empty (no real
+// kernel/OSD exports in recompiled context), we return synthetic matches so the loop exits.
+void FindAddress(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
+{
+    const uint32_t tableStart = getRegU32(ctx, 4);
+    const uint32_t tableEnd = getRegU32(ctx, 5);
+    const uint32_t symbolId = getRegU32(ctx, 6);
+
+    uint32_t result = 0;
+    for (uint32_t ptr = tableStart; ptr < tableEnd; ptr += 4)
+    {
+        const uint32_t *entry = reinterpret_cast<const uint32_t *>(getConstMemPtr(rdram, ptr));
+        if (entry && *entry == symbolId)
+        {
+            result = ptr;
+            break;
+        }
+    }
+
+    // Workaround: when table is empty (recompiled ELF has no kernel exports at 0x80000000),
+    // InitSystemCallTableAddress hangs. Return synthetic matches so loop exits: we need
+    // $s3 - $s2 == 0xA4 (so $s1 == $s0). First FindAddress → $s3, second → $s2.
+    if (result == 0 && tableStart >= 0x80000000u && tableEnd <= 0x80080000u)
+    {
+        static uint32_t s_findAddressCallCount = 0;
+        const uint32_t idx = (s_findAddressCallCount++) & 1u;
+        constexpr uint32_t kBase = 0x80000100u;
+        result = idx ? kBase : (kBase + 0xA4u); // $s3 = kBase+0xA4, $s2 = kBase → $s3-$s2 = 0xA4
+    }
+
+    setReturnU32(ctx, result);
+}
+
 void TODO(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime, uint32_t encodedSyscallId)
 {
     // a bit more detail mayber reomve old logic, lets get it more raw

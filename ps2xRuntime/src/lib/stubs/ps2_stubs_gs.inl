@@ -309,7 +309,10 @@ void sceGsSetDefDrawEnv(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
 
     uint32_t psm = param_2 & 0xFU;
     uint32_t fbw = ((static_cast<uint32_t>(w) + 63u) >> 6) & 0x3FU;
+    const uint32_t savedA0 = getRegU32(ctx, 4);
+    SET_GPR_U32(ctx, 4, param_2);  // sceGszbufaddr expects psm in a0
     sceGszbufaddr(rdram, ctx, runtime);
+    SET_GPR_U32(ctx, 4, savedA0);
     int32_t zbuf = static_cast<int32_t>(static_cast<int16_t>(getRegU32(ctx, 2) & 0xFFFF));
 
     uint8_t *const ptr = getMemPtr(rdram, envAddr);

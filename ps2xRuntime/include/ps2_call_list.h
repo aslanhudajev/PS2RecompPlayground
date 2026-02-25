@@ -5,6 +5,7 @@
 #define PS2_SYSCALL_LIST(X)   \
     X(FlushCache)             \
     X(ResetEE)                \
+    X(FindAddress)            \
     X(SetMemoryMode)          \
                               \
     X(CreateThread)           \
